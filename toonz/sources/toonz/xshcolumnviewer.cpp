@@ -959,7 +959,7 @@ void ColumnArea::DrawHeader::drawColumnName() const {
         p.fillRect(columnName, m_viewer->getXsheetColumnNameBgColor());
     }
 
-    if (o->flag(PredefinedFlag::LAYER_NAME_BORDER)) p.drawRect(columnName);
+    if (o->flag(PredefinedFlag::LAYER_NAME_BORDER)) p.drawRect(columnName.adjusted(0, 0, 1, 0));
 
     if (o->isVerticalTimeline() &&
         m_viewer->getXsheetLayout() == QString("Classic")) {
