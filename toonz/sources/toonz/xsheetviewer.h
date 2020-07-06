@@ -205,7 +205,8 @@ class XsheetViewer final : public QFrame, public SaveLoadQSettings {
   Q_PROPERTY(
       QColor LightLineColor READ getLightLineColor WRITE setLightLineColor)
   Q_PROPERTY(QColor DarkLineColor READ getDarkLineColor WRITE setDarkLineColor)
-  Q_PROPERTY(QColor ColumnIconLineColor READ getColumnIconLineColor WRITE setColumnIconLineColor)
+  Q_PROPERTY(QColor ColumnIconLineColor READ getColumnIconLineColor WRITE
+                 setColumnIconLineColor)
 
   // Row
   QColor m_currentRowBgColor;      // current frame / column (210,210,210)
@@ -215,6 +216,7 @@ class XsheetViewer final : public QFrame, public SaveLoadQSettings {
   QColor m_textColor;              // text color (black)
   QColor m_previewFrameTextColor;  // frame number in preview range (blue)
   QColor m_onionSkinAreaBgColor;
+  QColor m_frameRangeMarkerLineColor;  // timeline frame markers
   Q_PROPERTY(QColor CurrentRowBgColor READ getCurrentRowBgColor WRITE
                  setCurrentRowBgColor)
   Q_PROPERTY(
@@ -228,6 +230,8 @@ class XsheetViewer final : public QFrame, public SaveLoadQSettings {
                  setPreviewFrameTextColor)
   Q_PROPERTY(QColor OnionSkinAreaBgColor READ getOnionSkinAreaBgColor WRITE
                  setOnionSkinAreaBgColor)
+  Q_PROPERTY(QColor FrameRangeMarkerLineColor READ getFrameRangeMarkerLineColor
+                 WRITE setFrameRangeMarkerLineColor)
   // Column
   QColor m_emptyColumnHeadColor;  // empty column header (200,200,200)
   Q_PROPERTY(QColor EmptyColumnHeadColor READ getEmptyColumnHeadColor WRITE
@@ -736,7 +740,15 @@ public:
   QColor getDarkLineColor() const { return m_darkLineColor; }
 
   QColor getColumnIconLineColor() const { return m_columnIconLineColor; }
-  void setColumnIconLineColor(const QColor &color) { m_columnIconLineColor = color; }
+  void setColumnIconLineColor(const QColor &color) {
+    m_columnIconLineColor = color;
+  }
+  QColor getFrameRangeMarkerLineColor() const {
+    return m_frameRangeMarkerLineColor;
+  }
+  void setFrameRangeMarkerLineColor(const QColor &color) {
+    m_frameRangeMarkerLineColor = color;
+  }
 
   // Row
   void setCurrentRowBgColor(const QColor &color) {

@@ -135,7 +135,7 @@ void RowArea::drawRows(QPainter &p, int r0, int r1) {
       int x = horizontalLine.x1();
       int y = horizontalLine.y2() - (isAfterMarkers ? 6 : 3);
       horizontalLine.setP1(QPoint(x, y));
-      if (!isAfterMarkers) p.setPen(m_viewer->getTextColor());
+      if (!isAfterMarkers) p.setPen(m_viewer->getFrameRangeMarkerLineColor());
     }
     p.drawLine(horizontalLine);
   }
@@ -458,7 +458,7 @@ void RowArea::drawOnionSkinSelection(QPainter &p) {
   int maxMos   = 0;
   int mosCount = osMask.getMosCount();
   for (int i = 0; i < mosCount; i++) {
-    int mos                  = osMask.getMos(i);
+    int mos = osMask.getMos(i);
     if (minMos > mos) minMos = mos;
     if (maxMos < mos) maxMos = mos;
   }
@@ -851,8 +851,7 @@ void RowArea::paintEvent(QPaintEvent *event) {
 
 #ifdef WITH_STOPMOTION
   StopMotion *stopMotion = StopMotion::instance();
-  if (stopMotion->getPlaceOnXSheet() &&
-      (stopMotion->m_liveViewStatus > 0)) {
+  if (stopMotion->getPlaceOnXSheet() && (stopMotion->m_liveViewStatus > 0)) {
     drawStopMotionCameraIndicator(p);
   }
 
@@ -1319,10 +1318,10 @@ void RowArea::setMarker(int index) {
     if (m_r1 < 1) m_r1 = 1;
   }
   if (index == 0) {
-    m_r0                  = m_row;
+    m_r0 = m_row;
     if (m_r1 < m_r0) m_r1 = m_r0;
   } else if (index == 1) {
-    m_r1                  = m_row;
+    m_r1 = m_row;
     if (m_r1 < m_r0) m_r0 = m_r1;
     m_r1 -= (step == 0) ? (m_r1 - m_r0) : (m_r1 - m_r0) % step;
   }
@@ -1378,4 +1377,4 @@ void RowArea::onRemoveMarkers() {
 
 //-----------------------------------------------------------------------------
 
-}  // namespace XsheetGUI;
+}  // namespace XsheetGUI
