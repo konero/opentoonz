@@ -1083,7 +1083,7 @@ void CellArea::drawFrameSeparator(QPainter &p, int row, int col,
     horizontalLine.setP1(QPoint(x, y));
    color.setAlpha(255);
   } else if (!o->isVerticalTimeline() && !isAfterMarkers && emptyFrame)
-   color.setAlpha(50);
+   color.setAlpha(m_viewer->getMarkerLineColor().alpha());
   p.setPen(color);
   p.drawLine(horizontalLine);
 }
