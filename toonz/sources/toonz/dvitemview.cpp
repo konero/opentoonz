@@ -1755,13 +1755,13 @@ void DvItemViewerTitleBar::paintEvent(QPaintEvent *) {
   QRect rect(0, 0, width(), height());
 
   QBrush nb    = QBrush(Qt::NoBrush);
-  QPalette pal = QPalette(nb, nb, QBrush(QColor(255, 255, 255, 30)),
-                          QBrush(QColor(0, 0, 0, 110)),
+  QPalette pal = QPalette(nb, nb, QBrush(QColor(getColBorderColor())),
+                          QBrush(QColor(getColBorderColor())),
                           QBrush(QColor(Qt::gray)), nb, nb, nb, nb);
 
-  p.fillRect(rect, QColor(0, 0, 0, 90));  // bg color
+  p.fillRect(rect, getColColor());  // bg color
 
-  p.setPen(QColor(200, 200, 200, 255));  // text color
+  p.setPen(getColTextColor());  // text color
   int h  = 0;                            // fontMetrics().descent();
   int y  = rect.top();
   int ly = rect.height();
@@ -1778,11 +1778,11 @@ void DvItemViewerTitleBar::paintEvent(QPaintEvent *) {
     // paint background
     QColor bgColor;
     if (dataType == model->getCurrentOrderType())
-      bgColor = QColor(255, 255, 255, 30);
+      bgColor = QColor(getColSortedColor());
     else
       bgColor = QColor(0, 0, 0, 0);
 
-    QRect typeRect(x, y, columnLx, ly);
+    QRect typeRect(x - 1, y - 1, columnLx + 1, ly + 1);
     QBrush brush(bgColor);
     qDrawShadePanel(&p, typeRect, pal, false, 1, &brush);
 
@@ -1793,7 +1793,7 @@ void DvItemViewerTitleBar::paintEvent(QPaintEvent *) {
         arrowIcon = createQIconPNG("arrow_up");
       else
         arrowIcon = createQIconPNG("arrow_down");
-      p.drawPixmap(QRect(x + columnLx - 10, y + 6, 8, 8),
+      p.drawPixmap(QRect(x + columnLx - 11, y + 6, 8, 8),
                    arrowIcon.pixmap(8, 8));
     }
 
