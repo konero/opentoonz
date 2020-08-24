@@ -222,7 +222,7 @@ QString getIconThemePath(const QString &fileSVGPath) {
 
 //-----------------------------------------------------------------------------
 
-QPixmap setOpacity(QPixmap &pixmap, const qreal &opacity) {
+QPixmap setOpacity(QPixmap pixmap, const qreal &opacity) {
   static int devPixRatio = getDevPixRatio();
   const QSize pixmapSize(pixmap.width() * devPixRatio,
                          pixmap.height() * devPixRatio);
