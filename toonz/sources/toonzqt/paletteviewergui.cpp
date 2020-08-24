@@ -604,13 +604,13 @@ void PageViewer::paintEvent(QPaintEvent *e) {
 
       QRect chipRect = getColorChipRect(i);
       p.setPen(Qt::black);
-      drawColorChip(p, chipRect.adjusted(-2, 0, -2, 0), style);
+      drawColorChip(p, chipRect, style);
 
       // current style
       if (i == currentStyleIndexInPage && 0 <= i && i < getChipCount()) {
         QRect rect = getItemRect(i);
         if (!m_styleSelection->isSelected(m_page->getIndex(), i)) {
-          p.fillRect(rect.adjusted(21, 0, -3, 0), getCurrentCellColor());
+          p.fillRect(rect, getCurrentCellColor());
         }
       }
 
@@ -622,7 +622,7 @@ void PageViewer::paintEvent(QPaintEvent *e) {
 
       // name, index and shortcut
       QRect nameRect = getColorNameRect(i);
-      drawColorName(p, nameRect.adjusted(-2, 0, -3, 0), style, styleIndex);
+      drawColorName(p, nameRect, style, styleIndex);
 
       // if numpad shortcut is activated, draw shortcut scope
       if (Preferences::instance()->isUseNumpadForSwitchingStylesEnabled() &&
@@ -642,7 +642,7 @@ void PageViewer::paintEvent(QPaintEvent *e) {
       }
 
       // toggle link
-      drawToggleLink(p, chipRect.adjusted(0, 0, -2, 0), m_page->getStyle(i));
+      drawToggleLink(p, chipRect, m_page->getStyle(i));
     }
   } else {
     int currentStyleIndex = getCurrentStyleIndex();
