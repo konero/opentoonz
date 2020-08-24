@@ -610,14 +610,14 @@ void PageViewer::paintEvent(QPaintEvent *e) {
       if (i == currentStyleIndexInPage && 0 <= i && i < getChipCount()) {
         QRect rect = getItemRect(i);
         if (!m_styleSelection->isSelected(m_page->getIndex(), i)) {
-          p.fillRect(rect, getCurrentCellColor());
+          p.fillRect(rect.adjusted(23, 0, 0, 0), getCurrentCellColor());
         }
       }
 
       // selected
       if (m_styleSelection->isSelected(m_page->getIndex(), i)) {
         QRect itemRect = getItemRect(i);
-        p.fillRect(itemRect.adjusted(21, 0, -3, 0), getSelectedCellColor());
+        p.fillRect(itemRect.adjusted(23, 0, 0, 0), getSelectedCellColor());
       }
 
       // name, index and shortcut
@@ -629,16 +629,16 @@ void PageViewer::paintEvent(QPaintEvent *e) {
           m_viewType == LEVEL_PALETTE &&
           palette->getStyleShortcut(styleIndex) >= 0) {
         p.setPen(QPen(QColor(getListNumpadShortcutBorderColor()), 2));
-        p.drawLine(nameRect.topLeft() + QPoint(0, 1),
-                   nameRect.bottomLeft() + QPoint(0, 0));
-        p.setPen(QPen(QColor(getListNumpadShortcutBorderColor()), 2));
         p.drawLine(nameRect.topLeft() + QPoint(2, 1),
                    nameRect.bottomLeft() + QPoint(2, 0));
+        p.setPen(QPen(QColor(getListNumpadShortcutBorderColor()), 2));
+        p.drawLine(nameRect.topLeft() + QPoint(4, 1),
+                   nameRect.bottomLeft() + QPoint(4, 0));
 
         // draw a separator line between shortcut border and name
         p.setPen(QPen(QColor(getSeparatorColor())));
-        p.drawLine(nameRect.topLeft() + QPoint(3, 1),
-                   nameRect.bottomLeft() + QPoint(3, 0));
+        p.drawLine(nameRect.topLeft() + QPoint(5, 1),
+                   nameRect.bottomLeft() + QPoint(5, 0));
       }
 
       // toggle link
