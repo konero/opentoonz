@@ -246,7 +246,7 @@ QPixmap setOpacity(QPixmap &pixmap, const qreal &opacity) {
 
 //-----------------------------------------------------------------------------
 
-QPixmap recolorPixmap(QPixmap &pixmap, QColor color) {
+QPixmap recolorPixmap(QPixmap pixmap, QColor color) {
   // Change black pixels to any chosen color
   QImage img = pixmap.toImage().convertToFormat(QImage::Format_ARGB32);
   for (int y = 0; y < img.height(); y++) {
