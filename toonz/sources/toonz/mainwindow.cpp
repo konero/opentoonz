@@ -1447,9 +1447,24 @@ void MainWindow::closeEvent(QCloseEvent *event) {
 
 QAction *MainWindow::createAction(const char *id, const QString &name,
                                   const QString &defaultShortcut,
-                                  CommandType type) {
+                                  CommandType type, const char *iconSVGName) {
   QAction *action = new DVAction(name, this);
-  action->setIconVisibleInMenu(false);  // Hide icons
+  // In Qt5.15.2 - Windows, QMenu stylesheet has alignment issue when one item
+  // has icon and another has not one. (See
+  // https://bugreports.qt.io/browse/QTBUG-90242 for details.) To avoid the
+  // problem here we attach the temporary icons for every actions which have no
+  // icons. The temporary icon is visible in 20x20 pixel size (for command bar)
+  // with first 2 upper-case-letters in the command id, and is transparent in
+  // 16x16 pixel size so that it is hidden in menu bar. I put the transparent
+  // icon instead of using setIconVisibleInMenu(false) to avoid another
+  // alignment issue that the shortcut text overlaps command name.
+  if (!iconSVGName || !*iconSVGName) {
+#ifdef _WIN32
+    action->setIcon(createTemporaryIconFromName(id));
+#endif
+    // do nothing for other platforms
+  } else
+    action->setIcon(createQIcon(iconSVGName));
   addAction(action);
 #ifdef MACOSX
   // To prevent the wrong menu items (due to MacOS menu naming conventions),
@@ -1473,101 +1488,129 @@ QAction *MainWindow::createAction(const char *id, const QString &name,
 
 //-----------------------------------------------------------------------------
 
-QAction *MainWindow::createRightClickMenuAction(
-    const char *id, const QString &name, const QString &defaultShortcut) {
-  return createAction(id, name, defaultShortcut, RightClickMenuCommandType);
+QAction *MainWindow::createRightClickMenuAction(const char *id,
+                                                const QString &name,
+                                                const QString &defaultShortcut,
+                                                const char *iconSVGName) {
+  return createAction(id, name, defaultShortcut, RightClickMenuCommandType,
+                      iconSVGName);
 }
 
 //-----------------------------------------------------------------------------
 
 QAction *MainWindow::createMenuFileAction(const char *id, const QString &name,
-                                          const QString &defaultShortcut) {
-  return createAction(id, name, defaultShortcut, MenuFileCommandType);
+                                          const QString &defaultShortcut,
+                                          const char *iconSVGName) {
+  return createAction(id, name, defaultShortcut, MenuFileCommandType,
+                      iconSVGName);
 }
 
 //-----------------------------------------------------------------------------
 
 QAction *MainWindow::createMenuEditAction(const char *id, const QString &name,
-                                          const QString &defaultShortcut) {
-  return createAction(id, name, defaultShortcut, MenuEditCommandType);
+                                          const QString &defaultShortcut,
+                                          const char *iconSVGName) {
+  return createAction(id, name, defaultShortcut, MenuEditCommandType,
+                      iconSVGName);
 }
 
 //-----------------------------------------------------------------------------
 
-QAction *MainWindow::createMenuScanCleanupAction(
-    const char *id, const QString &name, const QString &defaultShortcut) {
-  return createAction(id, name, defaultShortcut, MenuScanCleanupCommandType);
+QAction *MainWindow::createMenuScanCleanupAction(const char *id,
+                                                 const QString &name,
+                                                 const QString &defaultShortcut,
+                                                 const char *iconSVGName) {
+  return createAction(id, name, defaultShortcut, MenuScanCleanupCommandType,
+                      iconSVGName);
 }
 
 //-----------------------------------------------------------------------------
 
 QAction *MainWindow::createMenuLevelAction(const char *id, const QString &name,
-                                           const QString &defaultShortcut) {
-  return createAction(id, name, defaultShortcut, MenuLevelCommandType);
+                                           const QString &defaultShortcut,
+                                           const char *iconSVGName) {
+  return createAction(id, name, defaultShortcut, MenuLevelCommandType,
+                      iconSVGName);
 }
 
 //-----------------------------------------------------------------------------
 
 QAction *MainWindow::createMenuXsheetAction(const char *id, const QString &name,
-                                            const QString &defaultShortcut) {
-  return createAction(id, name, defaultShortcut, MenuXsheetCommandType);
+                                            const QString &defaultShortcut,
+                                            const char *iconSVGName) {
+  return createAction(id, name, defaultShortcut, MenuXsheetCommandType,
+                      iconSVGName);
 }
 
 //-----------------------------------------------------------------------------
 
 QAction *MainWindow::createMenuCellsAction(const char *id, const QString &name,
-                                           const QString &defaultShortcut) {
-  return createAction(id, name, defaultShortcut, MenuCellsCommandType);
+                                           const QString &defaultShortcut,
+                                           const char *iconSVGName) {
+  return createAction(id, name, defaultShortcut, MenuCellsCommandType,
+                      iconSVGName);
 }
 
 //-----------------------------------------------------------------------------
 
 QAction *MainWindow::createMenuViewAction(const char *id, const QString &name,
-                                          const QString &defaultShortcut) {
-  return createAction(id, name, defaultShortcut, MenuViewCommandType);
+                                          const QString &defaultShortcut,
+                                          const char *iconSVGName) {
+  return createAction(id, name, defaultShortcut, MenuViewCommandType,
+                      iconSVGName);
 }
 
 //-----------------------------------------------------------------------------
 
 QAction *MainWindow::createMenuWindowsAction(const char *id,
                                              const QString &name,
-                                             const QString &defaultShortcut) {
-  return createAction(id, name, defaultShortcut, MenuWindowsCommandType);
+                                             const QString &defaultShortcut,
+                                             const char *iconSVGName) {
+  return createAction(id, name, defaultShortcut, MenuWindowsCommandType,
+                      iconSVGName);
 }
 
 //-----------------------------------------------------------------------------
 
 QAction *MainWindow::createMenuPlayAction(const char *id, const QString &name,
-                                          const QString &defaultShortcut) {
-  return createAction(id, name, defaultShortcut, MenuPlayCommandType);
+                                          const QString &defaultShortcut,
+                                          const char *iconSVGName) {
+  return createAction(id, name, defaultShortcut, MenuPlayCommandType,
+                      iconSVGName);
 }
 
 //-----------------------------------------------------------------------------
 
 QAction *MainWindow::createMenuRenderAction(const char *id, const QString &name,
-                                            const QString &defaultShortcut) {
-  return createAction(id, name, defaultShortcut, MenuRenderCommandType);
+                                            const QString &defaultShortcut,
+                                            const char *iconSVGName) {
+  return createAction(id, name, defaultShortcut, MenuRenderCommandType,
+                      iconSVGName);
 }
 
 //-----------------------------------------------------------------------------
 
 QAction *MainWindow::createMenuHelpAction(const char *id, const QString &name,
-                                          const QString &defaultShortcut) {
-  return createAction(id, name, defaultShortcut, MenuHelpCommandType);
+                                          const QString &defaultShortcut,
+                                          const char *iconSVGName) {
+  return createAction(id, name, defaultShortcut, MenuHelpCommandType,
+                      iconSVGName);
 }
 
 //-----------------------------------------------------------------------------
 
 QAction *MainWindow::createRGBAAction(const char *id, const QString &name,
-                                      const QString &defaultShortcut) {
-  return createAction(id, name, defaultShortcut, RGBACommandType);
+                                      const QString &defaultShortcut,
+                                      const char *iconSVGName) {
+  return createAction(id, name, defaultShortcut, RGBACommandType, iconSVGName);
 }
 
 //-----------------------------------------------------------------------------
 
 QAction *MainWindow::createFillAction(const char *id, const QString &name,
-                                      const QString &defaultShortcut) {
-  return createAction(id, name, defaultShortcut, FillCommandType);
+                                      const QString &defaultShortcut,
+                                      const char *iconSVGName) {
+  return createAction(id, name, defaultShortcut, FillCommandType, iconSVGName);
 }
 //-----------------------------------------------------------------------------
 
@@ -1582,15 +1625,18 @@ QAction *MainWindow::createMenuAction(const char *id, const QString &name,
 //-----------------------------------------------------------------------------
 
 QAction *MainWindow::createViewerAction(const char *id, const QString &name,
-                                        const QString &defaultShortcut) {
-  return createAction(id, name, defaultShortcut, ZoomCommandType);
+                                        const QString &defaultShortcut,
+                                        const char *iconSVGName) {
+  return createAction(id, name, defaultShortcut, ZoomCommandType, iconSVGName);
 }
 
 //-----------------------------------------------------------------------------
 
 QAction *MainWindow::createVisualizationButtonAction(const char *id,
-                                                     const QString &name) {
-  return createAction(id, name, "", VisualizationButtonCommandType);
+                                                     const QString &name,
+                                                     const char *iconSVGName) {
+  return createAction(id, name, "", VisualizationButtonCommandType,
+                      iconSVGName);
 }
 
 //-----------------------------------------------------------------------------
@@ -1619,8 +1665,11 @@ QAction *MainWindow::createToolOptionsAction(const char *id,
 
 QAction *MainWindow::createToggle(const char *id, const QString &name,
                                   const QString &defaultShortcut,
-                                  bool startStatus, CommandType type) {
-  QAction *action = createAction(id, name, defaultShortcut, type);
+                                  bool startStatus, CommandType type,
+                                  const char *iconSVGName) {
+  QAction *action = createAction(id, name, defaultShortcut, type, iconSVGName);
+  // Remove if the icon is not set. Checkbox will be drawn by style sheet.
+  if (!iconSVGName || !*iconSVGName) action->setIcon(QIcon());
   action->setCheckable(true);
   if (startStatus == true) action->trigger();
   bool ret =
@@ -1638,7 +1687,6 @@ QAction *MainWindow::createToolAction(const char *id, const char *iconName,
   QAction *action = new DVAction(icon, name, this);
   action->setCheckable(true);
   action->setActionGroup(m_toolsActionGroup);
-  action->setIconVisibleInMenu(true);
 
   // When the viewer is maximized (not fullscreen) the toolbar is hided and the
   // action are disabled,
@@ -1654,27 +1702,23 @@ QAction *MainWindow::createToolAction(const char *id, const char *iconName,
 //-----------------------------------------------------------------------------
 
 void MainWindow::defineActions() {
-  QAction *menuAct =
-      createMenuFileAction(MI_NewScene, tr("&New Scene"), "Ctrl+N");
-  menuAct->setIcon(createQIcon("new_scene"));
-  menuAct = createMenuFileAction(MI_LoadScene, tr("&Load Scene..."), "Ctrl+L");
-  menuAct->setIcon(createQIcon("load_scene"));
-  menuAct =
-      createMenuFileAction(MI_SaveScene, tr("&Save Scene"), "Ctrl+Shift+S");
-  menuAct->setIcon(createQIcon("save_scene"));
-  menuAct = createMenuFileAction(MI_SaveSceneAs, tr("&Save Scene As..."), "");
-  menuAct->setIcon(createQIcon("save_scene_as"));
-  menuAct = createMenuFileAction(MI_SaveAll, tr("&Save All"), "Ctrl+S");
-  menuAct->setIconText(tr("Save All"));
-  menuAct->setIcon(createQIcon("saveall"));
-  menuAct = createMenuFileAction(MI_RevertScene, tr("&Revert Scene"), "");
-  menuAct->setIcon(createQIcon("revert_scene"));
+  QAction *menuAct;
 
-  QAction *act = CommandManager::instance()->getAction(MI_RevertScene);
-  if (act) act->setEnabled(false);
+  // Menu - File
+
+  createMenuFileAction(MI_NewScene, tr("&New Scene"), "Ctrl+N", "new_scene");
+  createMenuFileAction(MI_LoadScene, tr("&Load Scene..."), "Ctrl+L",
+                       "load_scene");
+  createMenuFileAction(MI_SaveScene, tr("&Save Scene"), "Ctrl+Shift+S",
+                       "save_scene");
+  createMenuFileAction(MI_SaveSceneAs, tr("&Save Scene As..."), "",
+                       "save_scene_as");
+  createMenuFileAction(MI_SaveAll, tr("&Save All"), "Ctrl+S", "saveall");
+  menuAct = createMenuFileAction(MI_RevertScene, tr("&Revert Scene"), "",
+                                 "revert_scene");
+  menuAct->setEnabled(false);
   QList<QString> files;
-  menuAct = createMenuFileAction(MI_LoadFolder, tr("&Load Folder..."), "");
-  menuAct->setIcon(createQIcon("load_folder"));
+  createMenuFileAction(MI_LoadFolder, tr("&Load Folder..."), "", "load_folder");
   createMenuFileAction(MI_LoadSubSceneFile, tr("&Load As Sub-xsheet..."), "");
   createMenuAction(MI_OpenRecentScene, tr("&Open Recent Scene File"), files);
   createMenuAction(MI_OpenRecentLevel, tr("&Open Recent Level File"), files);
@@ -1682,92 +1726,27 @@ void MainWindow::defineActions() {
                        "");
   createMenuFileAction(MI_ClearRecentLevel, tr("&Clear Recent level File List"),
                        "");
-
-  menuAct = createMenuLevelAction(MI_NewLevel, tr("&New Level..."), "Alt+N");
-  menuAct->setIcon(createQIcon("new_document"));
-  menuAct =
-      createMenuLevelAction(MI_NewVectorLevel, tr("&New Vector Level"), "");
-  menuAct->setIcon(createQIcon("new_vector_level"));
-  menuAct = createMenuLevelAction(MI_NewToonzRasterLevel,
-                                  tr("&New Toonz Raster Level"), "");
-  menuAct->setIcon(createQIcon("new_toonz_raster_level"));
-  menuAct =
-      createMenuLevelAction(MI_NewRasterLevel, tr("&New Raster Level"), "");
-  menuAct->setIcon(createQIcon("new_raster_level"));
-  menuAct = createMenuLevelAction(MI_LoadLevel, tr("&Load Level..."), "");
-  menuAct->setIcon(createQIcon("load_level"));
-  menuAct = createMenuLevelAction(MI_SaveLevel, tr("&Save Level"), "");
-  menuAct->setIcon(createQIcon("save_level"));
-  menuAct = createMenuLevelAction(MI_SaveAllLevels, tr("&Save All Levels"), "");
-  menuAct->setIcon(createQIcon("save_all_levels"));
-  menuAct = createMenuLevelAction(MI_SaveLevelAs, tr("&Save Level As..."), "");
-  menuAct->setIcon(createQIcon("save_level_as"));
-  menuAct = createMenuLevelAction(MI_ExportLevel, tr("&Export Level..."), "");
-  menuAct->setIcon(createQIcon("export_level"));
-  menuAct =
-      createMenuFileAction(MI_ConvertFileWithInput, tr("&Convert File..."), "");
-  menuAct->setIcon(createQIcon("convert"));
-  createRightClickMenuAction(MI_SavePaletteAs, tr("&Save Palette As..."), "");
-  createRightClickMenuAction(MI_OverwritePalette, tr("&Save Palette"), "");
-  menuAct =
-      createMenuFileAction(MI_LoadColorModel, tr("&Load Color Model..."), "");
-  menuAct->setIcon(createQIcon("load_colormodel"));
+  createMenuFileAction(MI_ConvertFileWithInput, tr("&Convert File..."), "",
+                       "convert");
+  createMenuFileAction(MI_LoadColorModel, tr("&Load Color Model..."), "",
+                       "load_colormodel");
   createMenuFileAction(MI_ImportMagpieFile,
                        tr("&Import Toonz Lip Sync File..."), "");
   createMenuFileAction(MI_NewProject, tr("&New Project..."), "");
   createMenuFileAction(MI_ProjectSettings, tr("&Project Settings..."), "");
   createMenuFileAction(MI_SaveDefaultSettings, tr("&Save Default Settings"),
                        "");
-  menuAct = createMenuRenderAction(MI_OutputSettings, tr("&Output Settings..."),
-                                   "Ctrl+O");
-  menuAct->setIcon(createQIcon("output_settings"));
-  menuAct = createMenuRenderAction(MI_PreviewSettings,
-                                   tr("&Preview Settings..."), "");
-  menuAct->setIcon(createQIcon("preview_settings"));
-  menuAct = createMenuRenderAction(MI_Render, tr("&Render"), "Ctrl+Shift+R");
-  menuAct->setIcon(createQIcon("render"));
-  menuAct =
-      createMenuRenderAction(MI_FastRender, tr("&Fast Render to MP4"), "Alt+R");
-  menuAct->setIcon(createQIcon("fast_render_mp4"));
-  menuAct = createMenuRenderAction(MI_Preview, tr("&Preview"), "Ctrl+R");
-  menuAct->setIcon(createQIcon("preview"));
   createMenuFileAction(MI_SoundTrack, tr("&Export Soundtrack"), "");
-  menuAct = createMenuRenderAction(MI_SavePreviewedFrames,
-                                   tr("&Save Previewed Frames"), "");
-  menuAct->setIcon(createQIcon("save_previewed_frames"));
-  createRightClickMenuAction(MI_RegeneratePreview, tr("&Regenerate Preview"),
-                             "");
-  createRightClickMenuAction(MI_RegenerateFramePr,
-                             tr("&Regenerate Frame Preview"), "");
-  createRightClickMenuAction(MI_ClonePreview, tr("&Clone Preview"), "");
-  createRightClickMenuAction(MI_FreezePreview, tr("&Freeze//Unfreeze Preview"),
-                             "");
-  CommandManager::instance()->setToggleTexts(
-      MI_FreezePreview, tr("Freeze Preview"), tr("Unfreeze Preview"));
-  // createAction(MI_SavePreview,         "&Save Preview",		"");
-  createRightClickMenuAction(MI_SavePreset, tr("&Save As Preset"), "");
-  menuAct =
-      createMenuFileAction(MI_Preferences, tr("&Preferences..."), "Ctrl+U");
-  menuAct->setIcon(createQIcon("gear"));
+  createMenuFileAction(MI_Preferences, tr("&Preferences..."), "Ctrl+U", "gear");
   createMenuFileAction(MI_ShortcutPopup, tr("&Configure Shortcuts..."), "");
-
-  menuAct = createMenuFileAction(MI_PrintXsheet, tr("&Print Xsheet"), "");
-  menuAct->setIcon(createQIcon("printer"));
-
+  createMenuFileAction(MI_PrintXsheet, tr("&Print Xsheet"), "", "printer");
   createMenuFileAction(MI_ExportXDTS,
                        tr("Export Exchange Digital Time Sheet (XDTS)"), "");
-
-  menuAct = createMenuFileAction("MI_RunScript", tr("Run Script..."), "");
-  menuAct->setIcon(createQIcon("run_script"));
-
-  menuAct = createMenuFileAction("MI_OpenScriptConsole",
-                                 tr("Open Script Console..."), "");
-  menuAct->setIcon(createQIcon("console"));
-
-  menuAct =
-      createMenuFileAction(MI_Print, tr("&Print Current Frame..."), "Ctrl+P");
-  menuAct->setIcon(createQIcon("printer"));
-
+  createMenuFileAction("MI_RunScript", tr("Run Script..."), "", "run_script");
+  createMenuFileAction("MI_OpenScriptConsole", tr("Open Script Console..."), "",
+                       "console");
+  createMenuFileAction(MI_Print, tr("&Print Current Frame..."), "Ctrl+P",
+                       "printer");
   createMenuFileAction(MI_Quit, tr("&Quit"), "Ctrl+Q");
 #ifndef NDEBUG
   createMenuFileAction("MI_ReloadStyle", tr("Reload qss"), "");
@@ -1777,289 +1756,202 @@ void MainWindow::defineActions() {
                        tr("&Clear Recent Flipbook Image List"), "");
   createMenuFileAction(MI_ClearCacheFolder, tr("&Clear Cache Folder"), "");
 
-  createRightClickMenuAction(MI_PreviewFx, tr("Preview Fx"), "");
+  // Menu - Edit
 
-  menuAct = createMenuEditAction(MI_SelectAll, tr("&Select All"), "Ctrl+A");
-  menuAct->setIcon(createQIcon("select_all"));
+  createMenuEditAction(MI_SelectAll, tr("&Select All"), "Ctrl+A", "select_all");
+  createMenuEditAction(MI_InvertSelection, tr("&Invert Selection"), "",
+                       "invert_selection");
+  createMenuEditAction(MI_Undo, tr("&Undo"), "Ctrl+Z", "undo");
+  createMenuEditAction(MI_Redo, tr("&Redo"), "Ctrl+Y", "redo");
+  createMenuEditAction(MI_Cut, tr("&Cut"), "Ctrl+X", "cut");
+  createMenuEditAction(MI_Copy, tr("&Copy"), "Ctrl+C", "content_copy");
+  createMenuEditAction(MI_Paste, tr("&Paste Insert"), "Ctrl+V", "paste");
+  createMenuEditAction(MI_PasteAbove, tr("&Paste Insert Above/After"),
+                       "Ctrl+Shift+V", "paste_above_after");
+  createMenuEditAction(MI_PasteDuplicate, tr("&Paste as a Copy"), "",
+                       "paste_duplicate");
+  createMenuEditAction(MI_PasteInto, tr("&Paste Into"), "", "paste_into");
+  createMenuEditAction(MI_Clear, tr("&Delete"), "Del", "delete");
+  createMenuEditAction(MI_Insert, tr("&Insert"), "Ins", "insert");
+  createMenuEditAction(MI_InsertAbove, tr("&Insert Above/After"), "Shift+Ins",
+                       "insert_above_after");
+  createMenuEditAction(MI_Group, tr("&Group"), "Ctrl+G", "group");
+  createMenuEditAction(MI_Ungroup, tr("&Ungroup"), "Ctrl+Shift+G", "ungroup");
+  createMenuEditAction(MI_EnterGroup, tr("&Enter Group"), "", "enter_group");
+  createMenuEditAction(MI_ExitGroup, tr("&Exit Group"), "", "leave_group");
+  createMenuEditAction(MI_SendBack, tr("&Move to Back"), "Ctrl+[",
+                       "move_to_back");
+  createMenuEditAction(MI_SendBackward, tr("&Move Back One"), "[",
+                       "move_back_one");
+  createMenuEditAction(MI_BringForward, tr("&Move Forward One"), "]",
+                       "move_forward_one");
+  createMenuEditAction(MI_BringToFront, tr("&Move to Front"), "Ctrl+]",
+                       "move_to_front");
 
-  menuAct =
-      createMenuEditAction(MI_InvertSelection, tr("&Invert Selection"), "");
-  menuAct->setIcon(createQIcon("invert_selection"));
+  // Menu - Scan & Cleanup
 
-  menuAct = createMenuEditAction(MI_Undo, tr("&Undo"), "Ctrl+Z");
-  menuAct->setIcon(createQIcon("undo"));
-
-  menuAct = createMenuEditAction(MI_Redo, tr("&Redo"), "Ctrl+Y");
-  menuAct->setIcon(createQIcon("redo"));
-
-  menuAct = createMenuEditAction(MI_Cut, tr("&Cut"), "Ctrl+X");
-  menuAct->setIcon(createQIcon("cut"));
-
-  menuAct = createMenuEditAction(MI_Copy, tr("&Copy"), "Ctrl+C");
-  menuAct->setIcon(createQIcon("content_copy"));
-
-  menuAct = createMenuEditAction(MI_Paste, tr("&Paste Insert"), "Ctrl+V");
-  menuAct->setIcon(createQIcon("paste"));
-  menuAct = createMenuEditAction(MI_PasteAbove, tr("&Paste Insert Above/After"),
-                                 "Ctrl+Shift+V");
-  menuAct->setIcon(createQIcon("paste_above_after"));
-  menuAct = createMenuEditAction(MI_PasteDuplicate, tr("&Paste as a Copy"), "");
-  menuAct->setIcon(createQIcon("paste_duplicate"));
-  menuAct = createMenuEditAction(MI_PasteInto, tr("&Paste Into"), "");
-  menuAct->setIcon(createQIcon("paste_into"));
-  createRightClickMenuAction(MI_PasteValues, tr("&Paste Color && Name"), "");
-  createRightClickMenuAction(MI_PasteColors, tr("Paste Color"), "");
-  createRightClickMenuAction(MI_PasteNames, tr("Paste Name"), "");
-  createRightClickMenuAction(MI_GetColorFromStudioPalette,
-                             tr("Get Color from Studio Palette"), "");
-  createRightClickMenuAction(MI_ToggleLinkToStudioPalette,
-                             tr("Toggle Link to Studio Palette"), "");
-  createRightClickMenuAction(MI_RemoveReferenceToStudioPalette,
-                             tr("Remove Reference to Studio Palette"), "");
-  // createMenuEditAction(MI_PasteNew,     tr("&Paste New"),  "");
-  createMenuCellsAction(MI_MergeFrames, tr("&Merge"), "");
-
-  menuAct = createMenuEditAction(MI_Clear, tr("&Delete"), "Del");
-  menuAct->setIcon(createQIcon("delete"));
-  menuAct = createMenuEditAction(MI_Insert, tr("&Insert"), "Ins");
-  menuAct->setIcon(createQIcon("insert"));
-  menuAct = createMenuEditAction(MI_InsertAbove, tr("&Insert Above/After"),
-                                 "Shift+Ins");
-  menuAct->setIcon(createQIcon("insert_above_after"));
-  menuAct = createMenuEditAction(MI_Group, tr("&Group"), "Ctrl+G");
-  menuAct->setIcon(createQIcon("group"));
-  menuAct = createMenuEditAction(MI_Ungroup, tr("&Ungroup"), "Ctrl+Shift+G");
-  menuAct->setIcon(createQIcon("ungroup"));
-  menuAct = createMenuEditAction(MI_EnterGroup, tr("&Enter Group"), "");
-  menuAct->setIcon(createQIcon("enter_group"));
-  menuAct = createMenuEditAction(MI_ExitGroup, tr("&Exit Group"), "");
-  menuAct->setIcon(createQIcon("leave_group"));
-
-  menuAct = createMenuEditAction(MI_SendBack, tr("&Move to Back"), "Ctrl+[");
-  menuAct->setIcon(createQIcon("move_to_back"));
-  menuAct = createMenuEditAction(MI_SendBackward, tr("&Move Back One"), "[");
-  menuAct->setIcon(createQIcon("move_back_one"));
-  menuAct = createMenuEditAction(MI_BringForward, tr("&Move Forward One"), "]");
-  menuAct->setIcon(createQIcon("move_forward_one"));
-  menuAct =
-      createMenuEditAction(MI_BringToFront, tr("&Move to Front"), "Ctrl+]");
-  menuAct->setIcon(createQIcon("move_to_front"));
-
-  menuAct = createMenuLevelAction(MI_RemoveEndpoints,
-                                  tr("&Remove Vector Overflow"), "");
-  menuAct->setIcon(createQIcon("remove_vector_overflow"));
-  QAction *toggle =
-      createToggle(MI_TouchGestureControl, tr("&Touch Gesture Control"), "",
-                   TouchGestureControl ? 1 : 0, MiscCommandType);
-  toggle->setEnabled(true);
-  toggle->setIcon(QIcon(":Resources/touch.svg"));
-
-  menuAct = createMenuScanCleanupAction(MI_DefineScanner,
-                                        tr("&Define Scanner..."), "");
-  menuAct->setIcon(createQIcon("scanner_settings"));
-  menuAct =
-      createMenuScanCleanupAction(MI_ScanSettings, tr("&Scan Settings..."), "");
-  menuAct->setIcon(createQIcon("scanner_settings"));
-
-  menuAct = createMenuScanCleanupAction(MI_Scan, tr("&Scan"), "");
-  menuAct->setIcon(createQIcon("scanner"));
-  menuAct =
-      createMenuScanCleanupAction(MI_Autocenter, tr("&Autocenter..."), "");
-  menuAct->setIcon(createQIcon("autocenter"));
-
-  toggle = createToggle(MI_SetScanCropbox, tr("&Set Cropbox"), "", 0,
-                        MenuScanCleanupCommandType);
-  if (toggle) {
-    SetScanCropboxCheck::instance()->setToggle(toggle);
-    QString scannerType = QSettings().value("CurrentScannerType").toString();
-    if (scannerType == "TWAIN") toggle->setDisabled(true);
-    toggle = createMenuScanCleanupAction(MI_ResetScanCropbox,
-                                         tr("&Reset Cropbox"), "");
-    if (scannerType == "TWAIN") toggle->setDisabled(true);
-  }
-  QAction *cleanupSettingsAction = createMenuScanCleanupAction(
-      MI_CleanupSettings, tr("&Cleanup Settings..."), "");
-  cleanupSettingsAction->setIcon(createQIcon("cleanup_settings"));
-  toggle = createToggle(MI_CleanupPreview, tr("&Preview Cleanup"), "", 0,
-                        MenuScanCleanupCommandType);
-  toggle->setIcon(createQIcon("cleanup_preview"));
-  CleanupPreviewCheck::instance()->setToggle(toggle);
-  toggle = createToggle(MI_CameraTest, tr("&Camera Test"), "", 0,
-                        MenuScanCleanupCommandType);
-  CameraTestCheck::instance()->setToggle(toggle);
-
-  menuAct = createToggle(MI_OpacityCheck, tr("&Opacity Check"), "Alt+1", false,
+  createMenuScanCleanupAction(MI_DefineScanner, tr("&Define Scanner..."), "",
+                              "scanner_settings");
+  createMenuScanCleanupAction(MI_ScanSettings, tr("&Scan Settings..."), "",
+                              "scanner_settings");
+  createMenuScanCleanupAction(MI_Scan, tr("&Scan"), "", "scanner");
+  createMenuScanCleanupAction(MI_Autocenter, tr("&Autocenter..."), "",
+                              "autocenter");
+  menuAct = createToggle(MI_SetScanCropbox, tr("&Set Cropbox"), "", 0,
                          MenuScanCleanupCommandType);
-  menuAct->setIcon(createQIcon("opacity_check"));
+  SetScanCropboxCheck::instance()->setToggle(menuAct);
+  QString scannerType = QSettings().value("CurrentScannerType").toString();
+  if (scannerType == "TWAIN") menuAct->setDisabled(true);
+  menuAct = createMenuScanCleanupAction(MI_ResetScanCropbox,
+                                        tr("&Reset Cropbox"), "");
+  if (scannerType == "TWAIN") menuAct->setDisabled(true);
+  createMenuScanCleanupAction(MI_CleanupSettings, tr("&Cleanup Settings..."),
+                              "", "cleanup_settings");
+  menuAct = createToggle(MI_CleanupPreview, tr("&Preview Cleanup"), "", 0,
+                         MenuScanCleanupCommandType, "cleanup_preview");
+  CleanupPreviewCheck::instance()->setToggle(menuAct);
+  menuAct = createToggle(MI_CameraTest, tr("&Camera Test"), "", 0,
+                         MenuScanCleanupCommandType);
+  CameraTestCheck::instance()->setToggle(menuAct);
+  createToggle(MI_OpacityCheck, tr("&Opacity Check"), "Alt+1", false,
+               MenuScanCleanupCommandType, "opacity_check");
+  createMenuScanCleanupAction(MI_Cleanup, tr("&Cleanup"), "", "cleanup");
+  createMenuScanCleanupAction(MI_PencilTest, tr("&Camera Capture..."), "",
+                              "camera_capture");
 
-  menuAct = createMenuScanCleanupAction(MI_Cleanup, tr("&Cleanup"), "");
-  menuAct->setIcon(createQIcon("cleanup"));
+  // Menu - Level
 
-  menuAct =
-      createMenuScanCleanupAction(MI_PencilTest, tr("&Camera Capture..."), "");
-  menuAct->setIcon(createQIcon("camera_capture"));
-
-  menuAct = createMenuLevelAction(MI_AddFrames, tr("&Add Frames..."), "");
-  menuAct->setIcon(createQIcon("add_cells"));
-
-  menuAct = createMenuLevelAction(MI_Renumber, tr("&Renumber..."), "");
-  menuAct->setIcon(createQIcon("renumber"));
-  menuAct = createMenuLevelAction(MI_ReplaceLevel, tr("&Replace Level..."), "");
-  menuAct->setIcon(createQIcon("replace_level"));
-  menuAct = createMenuLevelAction(MI_RevertToCleanedUp,
-                                  tr("&Revert to Cleaned Up"), "");
-  menuAct->setIcon(createQIcon("revert_level_to_cleanup"));
-  menuAct = createMenuLevelAction(MI_RevertToLastSaved, tr("&Reload"), "");
-  menuAct->setIcon(createQIcon("reload_level"));
+  createMenuLevelAction(MI_NewLevel, tr("&New Level..."), "Alt+N",
+                        "new_document");
+  createMenuLevelAction(MI_NewVectorLevel, tr("&New Vector Level"), "",
+                        "new_vector_level");
+  createMenuLevelAction(MI_NewToonzRasterLevel, tr("&New Toonz Raster Level"),
+                        "", "new_toonz_raster_level");
+  createMenuLevelAction(MI_NewRasterLevel, tr("&New Raster Level"), "",
+                        "new_raster_level");
+  createMenuLevelAction(MI_LoadLevel, tr("&Load Level..."), "", "load_level");
+  createMenuLevelAction(MI_SaveLevel, tr("&Save Level"), "", "save_level");
+  createMenuLevelAction(MI_SaveAllLevels, tr("&Save All Levels"), "",
+                        "save_all_levels");
+  createMenuLevelAction(MI_SaveLevelAs, tr("&Save Level As..."), "",
+                        "save_level_as");
+  createMenuLevelAction(MI_ExportLevel, tr("&Export Level..."), "",
+                        "export_level");
+  createMenuLevelAction(MI_RemoveEndpoints, tr("&Remove Vector Overflow"), "",
+                        "remove_vector_overflow");
+  createMenuLevelAction(MI_AddFrames, tr("&Add Frames..."), "", "add_cells");
+  createMenuLevelAction(MI_Renumber, tr("&Renumber..."), "", "renumber");
+  createMenuLevelAction(MI_ReplaceLevel, tr("&Replace Level..."), "",
+                        "replace_level");
+  createMenuLevelAction(MI_RevertToCleanedUp, tr("&Revert to Cleaned Up"), "",
+                        "revert_level_to_cleanup");
+  createMenuLevelAction(MI_RevertToLastSaved, tr("&Reload"), "",
+                        "reload_level");
   createMenuLevelAction(MI_ExposeResource, tr("&Expose in Xsheet"), "");
   createMenuLevelAction(MI_EditLevel, tr("&Display in Level Strip"), "");
+  createMenuLevelAction(MI_LevelSettings, tr("&Level Settings..."), "",
+                        "level_settings");
+  createMenuLevelAction(MI_AdjustLevels, tr("Adjust Levels..."), "",
+                        "histograms");
+  createMenuLevelAction(MI_AdjustThickness, tr("Adjust Thickness..."), "",
+                        "thickness");
+  createMenuLevelAction(MI_Antialias, tr("&Antialias..."), "", "antialias");
+  createMenuLevelAction(MI_Binarize, tr("&Binarize..."), "", "binarize");
+  createMenuLevelAction(MI_BrightnessAndContrast,
+                        tr("&Brightness and Contrast..."), "",
+                        "brightness_contrast");
+  createMenuLevelAction(MI_LinesFade, tr("&Color Fade..."), "", "colorfade");
   menuAct =
-      createMenuLevelAction(MI_LevelSettings, tr("&Level Settings..."), "");
-  menuAct->setIcon(createQIcon("level_settings"));
-  menuAct = createMenuLevelAction(MI_AdjustLevels, tr("Adjust Levels..."), "");
-  menuAct->setIcon(createQIcon("histograms"));
-  menuAct =
-      createMenuLevelAction(MI_AdjustThickness, tr("Adjust Thickness..."), "");
-  menuAct->setIcon(createQIcon("thickness"));
-  menuAct = createMenuLevelAction(MI_Antialias, tr("&Antialias..."), "");
-  menuAct->setIcon(createQIcon("antialias"));
-  menuAct = createMenuLevelAction(MI_Binarize, tr("&Binarize..."), "");
-  menuAct->setIcon(createQIcon("binarize"));
-  menuAct = createMenuLevelAction(MI_BrightnessAndContrast,
-                                  tr("&Brightness and Contrast..."), "");
-  menuAct->setIcon(createQIcon("brightness_contrast"));
-  menuAct = createMenuLevelAction(MI_LinesFade, tr("&Color Fade..."), "");
-  menuAct->setIcon(createQIcon("colorfade"));
-
-  menuAct = createMenuLevelAction(MI_CanvasSize, tr("&Canvas Size..."), "");
-  if (menuAct) menuAct->setDisabled(true);
-  menuAct->setIcon(createQIcon("resize"));
-
-  menuAct = createMenuLevelAction(MI_FileInfo, tr("&Info..."), "");
-  menuAct->setIcon(createQIcon("level_info"));
-  createRightClickMenuAction(MI_ViewFile, tr("&View..."), "");
-  menuAct = createMenuLevelAction(MI_RemoveUnused,
-                                  tr("&Remove All Unused Levels"), "");
-  menuAct->setIcon(createQIcon("remove_unused_levels"));
+      createMenuLevelAction(MI_CanvasSize, tr("&Canvas Size..."), "", "resize");
+  menuAct->setDisabled(true);
+  createMenuLevelAction(MI_FileInfo, tr("&Info..."), "", "level_info");
+  createMenuLevelAction(MI_RemoveUnused, tr("&Remove All Unused Levels"), "",
+                        "remove_unused_levels");
   createMenuLevelAction(MI_ReplaceParentDirectory,
                         tr("&Replace Parent Directory..."), "");
-  menuAct =
-      createMenuXsheetAction(MI_SceneSettings, tr("&Scene Settings..."), "");
-  menuAct->setIcon(createQIcon("scene_settings"));
-  menuAct =
-      createMenuXsheetAction(MI_CameraSettings, tr("&Camera Settings..."), "");
-  menuAct->setIcon(createQIcon("camera_settings"));
-  createMiscAction(MI_CameraStage, tr("&Camera Settings..."), "");
+  createMenuLevelAction(MI_NewNoteLevel, tr("New Note Level"), "",
+                        "new_note_level");
+  createMenuLevelAction(MI_ConvertToVectors, tr("Convert to Vectors..."), "");
+  createMenuLevelAction(MI_ConvertToToonzRaster, tr("Vectors to Toonz Raster"),
+                        "");
+  createMenuLevelAction(MI_ConvertVectorToVector,
+                        tr("Replace Vectors with Simplified Vectors"), "");
+  createMenuLevelAction(MI_Tracking, tr("Tracking..."), "", "tracking_options");
 
-  menuAct = createMenuXsheetAction(MI_OpenChild, tr("&Open Sub-Xsheet"), "");
-  menuAct->setIcon(createQIcon("sub_enter"));
-  menuAct = createMenuXsheetAction(MI_CloseChild, tr("&Close Sub-Xsheet"), "");
-  menuAct->setIcon(createQIcon("sub_leave"));
-  menuAct =
-      createMenuXsheetAction(MI_ExplodeChild, tr("Explode Sub-Xsheet"), "");
-  menuAct->setIcon(createQIcon("sub_explode"));
-  menuAct = createMenuXsheetAction(MI_Collapse, tr("Collapse"), "");
-  menuAct->setIcon(createQIcon("sub_collapse"));
-  toggle = createToggle(MI_ToggleEditInPlace, tr("&Toggle Edit In Place"), "",
-                        EditInPlaceToggleAction ? 1 : 0, MenuXsheetCommandType);
-  toggle->setIconText(tr("Toggle Edit in Place"));
-  toggle->setIcon(createQIcon("sub_edit_in_place"));
-  menuAct = createMenuXsheetAction(MI_SaveSubxsheetAs,
-                                   tr("&Save Sub-Xsheet As..."), "");
-  menuAct->setIcon(createQIcon("saveas"));
-  menuAct = createMenuXsheetAction(MI_Resequence, tr("Resequence"), "");
-  menuAct->setIcon(createQIcon("resequence"));
-  menuAct = createMenuXsheetAction(MI_CloneChild, tr("Clone Sub-Xsheet"), "");
-  menuAct->setIcon(createQIcon("sub_clone"));
+  // Menu - Xsheet
 
-  menuAct = createMenuXsheetAction(MI_ApplyMatchLines,
-                                   tr("&Apply Match Lines..."), "");
-  menuAct->setIcon(createQIcon("apply_match_lines"));
-  menuAct =
-      createMenuXsheetAction(MI_MergeCmapped, tr("&Merge Tlv Levels..."), "");
-  menuAct->setIcon(createQIcon("merge_levels_tlv"));
-  menuAct = createMenuXsheetAction(MI_DeleteMatchLines,
-                                   tr("&Delete Match Lines"), "");
-  menuAct->setIcon(createQIcon("delete_match_lines"));
-  menuAct = createMenuXsheetAction(MI_DeleteInk, tr("&Delete Lines..."), "");
-  menuAct->setIcon(createQIcon("delete_lines"));
-
-  menuAct = createMenuXsheetAction(MI_MergeColumns, tr("&Merge Levels"), "");
-  menuAct->setIcon(createQIcon("merge_levels"));
-
-  menuAct = createMenuXsheetAction(MI_InsertFx, tr("&New FX..."), "Ctrl+F");
-  menuAct->setIcon(createQIcon("fx_new"));
-
-  menuAct = createMenuXsheetAction(MI_NewOutputFx, tr("&New Output"), "Alt+O");
-  menuAct->setIcon(createQIcon("output"));
-
-  menuAct = createMenuXsheetAction(MI_InsertSceneFrame, tr("Insert Frame"), "");
-  menuAct->setIcon(createQIcon("insert_frame"));
-
-  menuAct = createMenuXsheetAction(MI_RemoveSceneFrame, tr("Remove Frame"), "");
-  menuAct->setIcon(createQIcon("remove_frame"));
-
-  menuAct = createMenuXsheetAction(MI_InsertGlobalKeyframe,
-                                   tr("Insert Multiple Keys"), "");
-  menuAct->setIcon(createQIcon("insert_multiple_keys"));
-
-  menuAct = createMenuXsheetAction(MI_RemoveGlobalKeyframe,
-                                   tr("Remove Multiple Keys"), "");
-  menuAct->setIcon(createQIcon("remove_multiple_keys"));
-
-  menuAct = createMenuLevelAction(MI_NewNoteLevel, tr("New Note Level"), "");
-  menuAct->setIcon(createQIcon("new_note_level"));
-
-  menuAct = createMenuXsheetAction(MI_RemoveEmptyColumns,
-                                   tr("Remove Empty Columns"), "");
-  menuAct->setIcon(createQIcon("clear"));
+  createMenuXsheetAction(MI_SceneSettings, tr("&Scene Settings..."), "",
+                         "scene_settings");
+  createMenuXsheetAction(MI_CameraSettings, tr("&Camera Settings..."), "",
+                         "camera_settings");
+  createMenuXsheetAction(MI_OpenChild, tr("&Open Sub-Xsheet"), "", "sub_enter");
+  createMenuXsheetAction(MI_CloseChild, tr("&Close Sub-Xsheet"), "",
+                         "sub_leave");
+  createMenuXsheetAction(MI_ExplodeChild, tr("Explode Sub-Xsheet"), "",
+                         "sub_explode");
+  createMenuXsheetAction(MI_Collapse, tr("Collapse"), "", "sub_collapse");
+  createToggle(MI_ToggleEditInPlace, tr("&Toggle Edit In Place"), "",
+               EditInPlaceToggleAction ? 1 : 0, MenuXsheetCommandType,
+               "sub_edit_in_place");
+  createMenuXsheetAction(MI_SaveSubxsheetAs, tr("&Save Sub-Xsheet As..."), "",
+                         "saveas");
+  createMenuXsheetAction(MI_Resequence, tr("Resequence"), "", "resequence");
+  createMenuXsheetAction(MI_CloneChild, tr("Clone Sub-Xsheet"), "",
+                         "sub_clone");
+  createMenuXsheetAction(MI_ApplyMatchLines, tr("&Apply Match Lines..."), "",
+                         "apply_match_lines");
+  createMenuXsheetAction(MI_MergeCmapped, tr("&Merge Tlv Levels..."), "",
+                         "merge_levels_tlv");
+  createMenuXsheetAction(MI_DeleteMatchLines, tr("&Delete Match Lines"), "",
+                         "delete_match_lines");
+  createMenuXsheetAction(MI_DeleteInk, tr("&Delete Lines..."), "",
+                         "delete_lines");
+  createMenuXsheetAction(MI_MergeColumns, tr("&Merge Levels"), "",
+                         "merge_levels");
+  createMenuXsheetAction(MI_InsertFx, tr("&New FX..."), "Ctrl+F", "fx_new");
+  createMenuXsheetAction(MI_NewOutputFx, tr("&New Output"), "Alt+O", "output");
+  createMenuXsheetAction(MI_InsertSceneFrame, tr("Insert Frame"), "",
+                         "insert_frame");
+  createMenuXsheetAction(MI_RemoveSceneFrame, tr("Remove Frame"), "",
+                         "remove_frame");
+  createMenuXsheetAction(MI_InsertGlobalKeyframe, tr("Insert Multiple Keys"),
+                         "", "insert_multiple_keys");
+  createMenuXsheetAction(MI_RemoveGlobalKeyframe, tr("Remove Multiple Keys"),
+                         "", "remove_multiple_keys");
+  createMenuXsheetAction(MI_RemoveEmptyColumns, tr("Remove Empty Columns"), "",
+                         "clear");
   createMenuXsheetAction(MI_LipSyncPopup, tr("&Apply Lip Sync Data to Column"),
                          "Alt+L");
-  createRightClickMenuAction(MI_ToggleXSheetToolbar,
-                             tr("Toggle XSheet Toolbar"), "");
-  createRightClickMenuAction(MI_ToggleXsheetCameraColumn,
-                             tr("Show/Hide Xsheet Camera Column"), "");
 
-  menuAct = createMenuCellsAction(MI_Reverse, tr("&Reverse"), "");
-  menuAct->setIcon(createQIcon("reverse"));
-  menuAct = createMenuCellsAction(MI_Swing, tr("&Swing"), "");
-  menuAct->setIcon(createQIcon("swing"));
-  menuAct = createMenuCellsAction(MI_Random, tr("&Random"), "");
-  menuAct->setIcon(createQIcon("random"));
-  menuAct = createMenuCellsAction(MI_Increment, tr("&Autoexpose"), "");
-  menuAct->setIcon(createQIcon("autoexpose"));
-  menuAct = createMenuCellsAction(MI_Dup, tr("&Repeat..."), "");
-  menuAct->setIcon(createQIcon("repeat"));
+  // Menu - Cells
+
+  createMenuCellsAction(MI_MergeFrames, tr("&Merge"), "");
+  createMenuCellsAction(MI_Reverse, tr("&Reverse"), "", "reverse");
+  createMenuCellsAction(MI_Swing, tr("&Swing"), "", "swing");
+  createMenuCellsAction(MI_Random, tr("&Random"), "", "random");
+  createMenuCellsAction(MI_Increment, tr("&Autoexpose"), "", "autoexpose");
+  createMenuCellsAction(MI_Dup, tr("&Repeat..."), "", "repeat");
   createMenuCellsAction(MI_ResetStep, tr("&Reset Step"), "");
-  menuAct = createMenuCellsAction(MI_IncreaseStep, tr("&Increase Step"), "'");
-  menuAct->setIcon(createQIcon("step_plus"));
-  menuAct = createMenuCellsAction(MI_DecreaseStep, tr("&Decrease Step"), ";");
-  menuAct->setIcon(createQIcon("step_minus"));
-  menuAct = createMenuCellsAction(MI_Step2, tr("&Step 2"), "");
-  menuAct->setIcon(createQIcon("step_2"));
-  menuAct = createMenuCellsAction(MI_Step3, tr("&Step 3"), "");
-  menuAct->setIcon(createQIcon("step_3"));
-  menuAct = createMenuCellsAction(MI_Step4, tr("&Step 4"), "");
-  menuAct->setIcon(createQIcon("step_4"));
+  createMenuCellsAction(MI_IncreaseStep, tr("&Increase Step"), "'",
+                        "step_plus");
+  createMenuCellsAction(MI_DecreaseStep, tr("&Decrease Step"), ";",
+                        "step_minus");
+  createMenuCellsAction(MI_Step2, tr("&Step 2"), "", "step_2");
+  createMenuCellsAction(MI_Step3, tr("&Step 3"), "", "step_3");
+  createMenuCellsAction(MI_Step4, tr("&Step 4"), "", "step_4");
   createMenuCellsAction(MI_Each2, tr("&Each 2"), "");
   createMenuCellsAction(MI_Each3, tr("&Each 3"), "");
   createMenuCellsAction(MI_Each4, tr("&Each 4"), "");
-  menuAct = createMenuCellsAction(MI_Rollup, tr("&Roll Up"), "");
-  menuAct->setIcon(createQIcon("rollup"));
-  menuAct = createMenuCellsAction(MI_Rolldown, tr("&Roll Down"), "");
-  menuAct->setIcon(createQIcon("rolldown"));
-  menuAct = createMenuCellsAction(MI_TimeStretch, tr("&Time Stretch..."), "");
-  menuAct->setIcon(createQIcon("time_stretch"));
-  menuAct = createMenuCellsAction(MI_CreateBlankDrawing,
-                                  tr("&Create Blank Drawing"), "Alt+D");
-  menuAct->setIcon(createQIcon("add_cell"));
-  menuAct =
-      createMenuCellsAction(MI_Duplicate, tr("&Duplicate Drawing  "), "D");
-  menuAct->setIcon(createQIcon("duplicate_drawing"));
-  menuAct = createMenuCellsAction(MI_Autorenumber, tr("&Autorenumber"), "");
-  menuAct->setIcon(createQIcon("renumber"));
-  menuAct = createMenuCellsAction(MI_CloneLevel, tr("&Clone Cells"), "");
-  menuAct->setIcon(createQIcon("clone_cells"));
+  createMenuCellsAction(MI_Rollup, tr("&Roll Up"), "", "rollup");
+  createMenuCellsAction(MI_Rolldown, tr("&Roll Down"), "", "rolldown");
+  createMenuCellsAction(MI_TimeStretch, tr("&Time Stretch..."), "",
+                        "time_stretch");
+  createMenuCellsAction(MI_CreateBlankDrawing, tr("&Create Blank Drawing"),
+                        "Alt+D", "add_cell");
+  createMenuCellsAction(MI_Duplicate, tr("&Duplicate Drawing  "), "D",
+                        "duplicate_drawing");
+  createMenuCellsAction(MI_Autorenumber, tr("&Autorenumber"), "", "renumber");
+  createMenuCellsAction(MI_CloneLevel, tr("&Clone Cells"), "", "clone_cells");
   createMenuCellsAction(MI_DrawingSubForward,
                         tr("Drawing Substitution Forward"), "W");
   createMenuCellsAction(MI_DrawingSubBackward,
@@ -2068,34 +1960,58 @@ void MainWindow::defineActions() {
                         tr("Similar Drawing Substitution Forward"), "Alt+W");
   createMenuCellsAction(MI_DrawingSubGroupBackward,
                         tr("Similar Drawing Substitution Backward"), "Alt+Q");
-  menuAct = createMenuCellsAction(MI_Reframe1, tr("Reframe on 1's"), "");
-  menuAct->setIcon(createQIcon("on_1s"));
-  menuAct = createMenuCellsAction(MI_Reframe2, tr("Reframe on 2's"), "");
-  menuAct->setIcon(createQIcon("on_2s"));
-  menuAct = createMenuCellsAction(MI_Reframe3, tr("Reframe on 3's"), "");
-  menuAct->setIcon(createQIcon("on_3s"));
-  menuAct = createMenuCellsAction(MI_Reframe4, tr("Reframe on 4's"), "");
-  menuAct->setIcon(createQIcon("on_4s"));
-  menuAct = createMenuCellsAction(MI_ReframeWithEmptyInbetweens,
-                                  tr("Reframe with Empty Inbetweens..."), "");
-  menuAct->setIcon(createQIcon("on_with_empty"));
-  menuAct = createMenuCellsAction(MI_AutoInputCellNumber,
-                                  tr("Auto Input Cell Number..."), "");
-  menuAct->setIcon(createQIcon("auto_input_cell_number"));
-  menuAct =
-      createMenuCellsAction(MI_FillEmptyCell, tr("&Fill In Empty Cells"), "");
-  menuAct->setIcon(createQIcon("fill_empty_cells"));
+  createMenuCellsAction(MI_Reframe1, tr("Reframe on 1's"), "", "on_1s");
+  createMenuCellsAction(MI_Reframe2, tr("Reframe on 2's"), "", "on_2s");
+  createMenuCellsAction(MI_Reframe3, tr("Reframe on 3's"), "", "on_3s");
+  createMenuCellsAction(MI_Reframe4, tr("Reframe on 4's"), "", "on_4s");
+  createMenuCellsAction(MI_ReframeWithEmptyInbetweens,
+                        tr("Reframe with Empty Inbetweens..."), "",
+                        "on_with_empty");
+  createMenuCellsAction(MI_AutoInputCellNumber, tr("Auto Input Cell Number..."),
+                        "", "auto_input_cell_number");
+  createMenuCellsAction(MI_FillEmptyCell, tr("&Fill In Empty Cells"), "",
+                        "fill_empty_cells");
 
-  menuAct = createRightClickMenuAction(MI_SetKeyframes, tr("&Set Key"), "Z");
-  menuAct->setIcon(createQIcon("set_key"));
-  menuAct = createRightClickMenuAction(MI_ShiftKeyframesDown,
-                                       tr("&Shift Keys Down"), "");
-  menuAct->setIcon(createQIcon("shift_keys_down"));
-  menuAct =
-      createRightClickMenuAction(MI_ShiftKeyframesUp, tr("&Shift Keys Up"), "");
-  menuAct->setIcon(createQIcon("shift_keys_up"));
+  // Menu - Play
 
-  createRightClickMenuAction(MI_PasteNumbers, tr("&Paste Numbers"), "");
+  createToggle(MI_Link, tr("Link Flipbooks"), "", LinkToggleAction ? 1 : 0,
+               MenuPlayCommandType, "flipbook_link");
+  createMenuPlayAction(MI_Play, tr("Play"), "P", "play");
+  createMenuPlayAction(MI_ShortPlay, tr("Short Play"), "Alt+P");
+  createMenuPlayAction(MI_Loop, tr("Loop"), "L", "loop");
+  createMenuPlayAction(MI_Pause, tr("Pause"), "", "pause");
+  createMenuPlayAction(MI_FirstFrame, tr("First Frame"), "Alt+,", "framefirst");
+  createMenuPlayAction(MI_LastFrame, tr("Last Frame"), "Alt+.", "framelast");
+  createMenuPlayAction(MI_PrevFrame, tr("Previous Frame"), "Shift+,",
+                       "frameprev");
+  createMenuPlayAction(MI_NextFrame, tr("Next Frame"), "Shift+.", "framenext");
+  createMenuPlayAction(MI_NextDrawing, tr("Next Drawing"), ".", "next_drawing");
+  createMenuPlayAction(MI_PrevDrawing, tr("Previous Drawing"), ",",
+                       "prev_drawing");
+  createMenuPlayAction(MI_NextStep, tr("Next Step"), "", "nextstep");
+  createMenuPlayAction(MI_PrevStep, tr("Previous Step"), "", "prevstep");
+  createMenuPlayAction(MI_NextKeyframe, tr("Next Key"), "Ctrl+.", "nextkey");
+  createMenuPlayAction(MI_PrevKeyframe, tr("Previous Key"), "Ctrl+,",
+                       "prevkey");
+
+  // Menu - Render
+
+  createMenuRenderAction(MI_OutputSettings, tr("&Output Settings..."), "Ctrl+O",
+                         "output_settings");
+  createMenuRenderAction(MI_PreviewSettings, tr("&Preview Settings..."), "",
+                         "preview_settings");
+  createMenuRenderAction(MI_Render, tr("&Render"), "Ctrl+Shift+R", "render");
+  createMenuRenderAction(MI_FastRender, tr("&Fast Render to MP4"), "Alt+R",
+                         "fast_render_mp4");
+  createMenuRenderAction(MI_Preview, tr("&Preview"), "Ctrl+R", "preview");
+  createMenuRenderAction(MI_SavePreviewedFrames, tr("&Save Previewed Frames"),
+                         "", "save_previewed_frames");
+  createRightClickMenuAction(MI_OpenPltGizmo, tr("&Palette Gizmo"), "",
+                             "palettegizmo");
+  createRightClickMenuAction(MI_EraseUnusedStyles, tr("&Delete Unused Styles"),
+                             "");
+
+  // Menu - View
 
   createToggle(MI_ViewCamera, tr("&Camera Box"), "",
                ViewCameraToggleAction ? 1 : 0, MenuViewCommandType);
@@ -2113,255 +2029,170 @@ void MainWindow::defineActions() {
                MenuViewCommandType);
   createToggle(MI_ViewRuler, tr("&Ruler"), "", ViewRulerToggleAction ? 1 : 0,
                MenuViewCommandType);
-  menuAct = createToggle(MI_TCheck, tr("&Transparency Check  "), "",
-                         TCheckToggleAction ? 1 : 0, MenuViewCommandType);
-  menuAct->setIcon(createQIcon("transparency_check"));
-
-  QAction *inkCheckAction =
+  createToggle(MI_TCheck, tr("&Transparency Check  "), "",
+               TCheckToggleAction ? 1 : 0, MenuViewCommandType,
+               "transparency_check");
+  menuAct =
       createToggle(MI_ICheck, tr("&Ink Check"), "", ICheckToggleAction ? 1 : 0,
-                   MenuViewCommandType);
-  inkCheckAction->setIcon(createQIcon("ink_check"));
-  QAction *ink1CheckAction =
-      createToggle(MI_Ink1Check, tr("&Ink#1 Check"), "",
-                   Ink1CheckToggleAction ? 1 : 0, MenuViewCommandType);
-  ink1CheckAction->setIcon(createQIcon("ink_no1_check"));
-  /*-- Ink Check と Ink1Checkを排他的にする --*/
-  connect(inkCheckAction, SIGNAL(triggered(bool)), this,
+                   MenuViewCommandType, "ink_check");
+  // make InkCheck and Ink1Check exclusive
+  connect(menuAct, SIGNAL(triggered(bool)), this,
           SLOT(onInkCheckTriggered(bool)));
-  connect(ink1CheckAction, SIGNAL(triggered(bool)), this,
+  menuAct = createToggle(MI_Ink1Check, tr("&Ink#1 Check"), "",
+                         Ink1CheckToggleAction ? 1 : 0, MenuViewCommandType,
+                         "ink_no1_check");
+  // make InkCheck and Ink1Check exclusive
+  connect(menuAct, SIGNAL(triggered(bool)), this,
           SLOT(onInk1CheckTriggered(bool)));
-
-  QAction *paintCheckAction =
-      createToggle(MI_PCheck, tr("&Paint Check"), "",
-                   PCheckToggleAction ? 1 : 0, MenuViewCommandType);
-  paintCheckAction->setIcon(createQIcon("paint_check"));
-  QAction *checkModesAction =
-      createToggle(MI_IOnly, tr("Inks &Only"), "", IOnlyToggleAction ? 1 : 0,
-                   MenuViewCommandType);
-  checkModesAction->setIcon(createQIcon("inks_only"));
-  QAction *fillCheckAction =
-      createToggle(MI_GCheck, tr("&Fill Check"), "", GCheckToggleAction ? 1 : 0,
-                   MenuViewCommandType);
-  fillCheckAction->setIcon(createQIcon("fill_check"));
-  QAction *blackBgCheckAction =
-      createToggle(MI_BCheck, tr("&Black BG Check"), "",
-                   BCheckToggleAction ? 1 : 0, MenuViewCommandType);
-  blackBgCheckAction->setIcon(createQIcon("blackbg_check"));
-  QAction *gapCheckAction =
-      createToggle(MI_ACheck, tr("&Gap Check"), "", ACheckToggleAction ? 1 : 0,
-                   MenuViewCommandType);
-  gapCheckAction->setIcon(createQIcon("gap_check"));
-  toggle = createToggle(MI_ShiftTrace, tr("Shift and Trace"), "", false,
-                        MenuViewCommandType);
-  toggle->setIcon(createQIcon("shift_and_trace"));
-
-  toggle = createToggle(MI_EditShift, tr("Edit Shift"), "", false,
-                        MenuViewCommandType);
-  toggle->setIcon(createQIcon("shift_and_trace_edit"));
-  toggle =
-      createToggle(MI_NoShift, tr("No Shift"), "", false, MenuViewCommandType);
-  toggle->setIcon(createQIcon("shift_and_trace_no_shift"));
+  createToggle(MI_PCheck, tr("&Paint Check"), "", PCheckToggleAction ? 1 : 0,
+               MenuViewCommandType, "paint_check");
+  createToggle(MI_IOnly, tr("Inks &Only"), "", IOnlyToggleAction ? 1 : 0,
+               MenuViewCommandType, "inks_only");
+  createToggle(MI_GCheck, tr("&Fill Check"), "", GCheckToggleAction ? 1 : 0,
+               MenuViewCommandType, "fill_check");
+  createToggle(MI_BCheck, tr("&Black BG Check"), "", BCheckToggleAction ? 1 : 0,
+               MenuViewCommandType, "blackbg_check");
+  createToggle(MI_ACheck, tr("&Gap Check"), "", ACheckToggleAction ? 1 : 0,
+               MenuViewCommandType, "gap_check");
+  createToggle(MI_ShiftTrace, tr("Shift and Trace"), "", false,
+               MenuViewCommandType, "shift_and_trace");
+  createToggle(MI_EditShift, tr("Edit Shift"), "", false, MenuViewCommandType,
+               "shift_and_trace_edit");
+  createToggle(MI_NoShift, tr("No Shift"), "", false, MenuViewCommandType,
+               "shift_and_trace_no_shift");
   CommandManager::instance()->enable(MI_EditShift, false);
   CommandManager::instance()->enable(MI_NoShift, false);
-  menuAct =
-      createAction(MI_ResetShift, tr("Reset Shift"), "", MenuViewCommandType);
-  menuAct->setIcon(createQIcon("shift_and_trace_reset"));
-
-  toggle = createToggle(MI_VectorGuidedDrawing, tr("Vector Guided Drawing"), "",
-                        Preferences::instance()->isGuidedDrawingEnabled(),
-                        MenuViewCommandType);
-
+  createAction(MI_ResetShift, tr("Reset Shift"), "", MenuViewCommandType,
+               "shift_and_trace_reset");
+  createToggle(MI_VectorGuidedDrawing, tr("Vector Guided Drawing"), "",
+               Preferences::instance()->isGuidedDrawingEnabled(),
+               MenuViewCommandType);
   if (QGLPixelBuffer::hasOpenGLPbuffers())
     createToggle(MI_RasterizePli, tr("&Visualize Vector As Raster"), "",
                  RasterizePliToggleAction ? 1 : 0, MenuViewCommandType);
   else
     RasterizePliToggleAction = 0;
 
-  createRightClickMenuAction(MI_Histogram, tr("&Histogram"), "");
+  // Menu - Windows
 
-  // createToolOptionsAction("A_ToolOption_Link", tr("Link"), "");
-  menuAct = createToggle(MI_Link, tr("Link Flipbooks"), "",
-                         LinkToggleAction ? 1 : 0, MenuPlayCommandType);
-  menuAct->setIcon(createQIcon("flipbook_link"));
-
-  menuAct = createMenuPlayAction(MI_Play, tr("Play"), "P");
-  menuAct->setIcon(createQIcon("play"));
-  createMenuPlayAction(MI_ShortPlay, tr("Short Play"), "Alt+P");
-  menuAct = createMenuPlayAction(MI_Loop, tr("Loop"), "L");
-  menuAct->setIcon(createQIcon("loop"));
-  menuAct = createMenuPlayAction(MI_Pause, tr("Pause"), "");
-  menuAct->setIcon(createQIcon("pause"));
-  menuAct = createMenuPlayAction(MI_FirstFrame, tr("First Frame"), "Alt+,");
-  menuAct->setIcon(createQIcon("framefirst"));
-  menuAct = createMenuPlayAction(MI_LastFrame, tr("Last Frame"), "Alt+.");
-  menuAct->setIcon(createQIcon("framelast"));
-  menuAct = createMenuPlayAction(MI_PrevFrame, tr("Previous Frame"), "Shift+,");
-  menuAct->setIcon(createQIcon("frameprev"));
-  menuAct = createMenuPlayAction(MI_NextFrame, tr("Next Frame"), "Shift+.");
-  menuAct->setIcon(createQIcon("framenext"));
-  menuAct = createMenuPlayAction(MI_NextDrawing, tr("Next Drawing"), ".");
-  menuAct->setIcon(createQIcon("next_drawing"));
-  menuAct = createMenuPlayAction(MI_PrevDrawing, tr("Previous Drawing"), ",");
-  menuAct->setIcon(createQIcon("prev_drawing"));
-  menuAct = createMenuPlayAction(MI_NextStep, tr("Next Step"), "");
-  menuAct->setIcon(createQIcon("nextstep"));
-  menuAct = createMenuPlayAction(MI_PrevStep, tr("Previous Step"), "");
-  menuAct->setIcon(createQIcon("prevstep"));
-  menuAct = createMenuPlayAction(MI_NextKeyframe, tr("Next Key"), "Ctrl+.");
-  menuAct->setIcon(createQIcon("nextkey"));
-  menuAct = createMenuPlayAction(MI_PrevKeyframe, tr("Previous Key"), "Ctrl+,");
-  menuAct->setIcon(createQIcon("prevkey"));
-
-  createRGBAAction(MI_RedChannel, tr("Red Channel"), "");
-  createRGBAAction(MI_GreenChannel, tr("Green Channel"), "");
-  createRGBAAction(MI_BlueChannel, tr("Blue Channel"), "");
-  createRGBAAction(MI_MatteChannel, tr("Alpha Channel"), "");
-  createRGBAAction(MI_RedChannelGreyscale, tr("Red Channel Greyscale"), "");
-  createRGBAAction(MI_GreenChannelGreyscale, tr("Green Channel Greyscale"), "");
-  createRGBAAction(MI_BlueChannelGreyscale, tr("Blue Channel Greyscale"), "");
-  /*-- Viewer下部のCompareToSnapshotボタンのトグル --*/
-  createViewerAction(MI_CompareToSnapshot, tr("Compare to Snapshot"), "");
-  createFillAction(MI_AutoFillToggle,
-                   tr("Toggle Autofill on Current Palette Color"), "Shift+A");
-  toggle =
-      createToggle(MI_DockingCheck, tr("&Lock Room Panes"), "",
-                   DockingCheckToggleAction ? 1 : 0, MenuWindowsCommandType);
-  DockingCheck::instance()->setToggle(toggle);
-
-  // createRightClickMenuAction(MI_OpenCurrentScene,   tr("&Current Scene"),
-  // "");
-
-  // createMenuWindowsAction(MI_OpenExport, tr("&Export"), "");
-
-  menuAct =
-      createMenuWindowsAction(MI_OpenFileBrowser, tr("&File Browser"), "");
-  menuAct->setIcon(createQIcon("filebrowser"));
-  menuAct = createMenuWindowsAction(MI_OpenFileViewer, tr("&Flipbook"), "");
-  menuAct->setIcon(createQIcon("flipbook"));
-  menuAct = createMenuWindowsAction(MI_OpenFunctionEditor,
-                                    tr("&Function Editor"), "");
-  menuAct->setIcon(createQIcon("function_editor"));
+  createMenuWindowsAction(MI_OpenFileBrowser, tr("&File Browser"), "",
+                          "filebrowser");
+  createMenuWindowsAction(MI_OpenFileViewer, tr("&Flipbook"), "", "flipbook");
+  createMenuWindowsAction(MI_OpenFunctionEditor, tr("&Function Editor"), "",
+                          "function_editor");
   createMenuWindowsAction(MI_OpenFilmStrip, tr("&Level Strip"), "");
-  menuAct = createMenuWindowsAction(MI_OpenPalette, tr("&Palette"), "");
-  menuAct->setIcon(createQIcon("palette"));
-  menuAct =
-      createRightClickMenuAction(MI_OpenPltGizmo, tr("&Palette Gizmo"), "");
-  menuAct->setIcon(createQIcon("palettegizmo"));
-  createRightClickMenuAction(MI_EraseUnusedStyles, tr("&Delete Unused Styles"),
-                             "");
-  menuAct = createMenuWindowsAction(MI_OpenTasks, tr("&Tasks"), "");
-  menuAct->setIcon(createQIcon("tasks"));
-  menuAct =
-      createMenuWindowsAction(MI_OpenBatchServers, tr("&Batch Servers"), "");
-  menuAct->setIcon(createQIcon("batchservers"));
-  menuAct = createMenuWindowsAction(MI_OpenTMessage, tr("&Message Center"), "");
-  menuAct->setIcon(createQIcon("messagecenter"));
-  menuAct = createMenuWindowsAction(MI_OpenColorModel, tr("&Color Model"), "");
-  menuAct->setIcon(createQIcon("colormodel"));
-  menuAct =
-      createMenuWindowsAction(MI_OpenStudioPalette, tr("&Studio Palette"), "");
-  menuAct->setIcon(createQIcon("studiopalette"));
-
-  menuAct = createMenuWindowsAction(MI_OpenSchematic, tr("&Schematic"), "");
-  menuAct->setIcon(createQIcon("schematic"));
-  menuAct =
-      createMenuWindowsAction(MI_FxParamEditor, tr("&FX Editor"), "Ctrl+K");
-  menuAct->setIcon(createQIcon("fx_settings"));
-  menuAct = createMenuWindowsAction(MI_OpenCleanupSettings,
-                                    tr("&Cleanup Settings"), "");
-  menuAct->setIcon(createQIcon("cleanup_settings"));
-
-  menuAct = createMenuWindowsAction(MI_OpenFileBrowser2, tr("&Scene Cast"), "");
-  menuAct->setIcon(createQIcon("scenecast"));
-  menuAct =
-      createMenuWindowsAction(MI_OpenStyleControl, tr("&Style Editor"), "");
-  menuAct->setIcon(createQIcon("styleeditor"));
+  createMenuWindowsAction(MI_OpenPalette, tr("&Palette"), "", "palette");
+  createMenuWindowsAction(MI_OpenTasks, tr("&Tasks"), "", "tasks");
+  createMenuWindowsAction(MI_OpenBatchServers, tr("&Batch Servers"), "",
+                          "batchservers");
+  createMenuWindowsAction(MI_OpenTMessage, tr("&Message Center"), "",
+                          "messagecenter");
+  createMenuWindowsAction(MI_OpenColorModel, tr("&Color Model"), "",
+                          "colormodel");
+  createMenuWindowsAction(MI_OpenStudioPalette, tr("&Studio Palette"), "",
+                          "studiopalette");
+  createMenuWindowsAction(MI_OpenSchematic, tr("&Schematic"), "", "schematic");
+  createMenuWindowsAction(MI_FxParamEditor, tr("&FX Editor"), "Ctrl+K",
+                          "fx_settings");
+  createMenuWindowsAction(MI_OpenCleanupSettings, tr("&Cleanup Settings"), "",
+                          "cleanup_settings");
+  createMenuWindowsAction(MI_OpenFileBrowser2, tr("&Scene Cast"), "",
+                          "scenecast");
+  createMenuWindowsAction(MI_OpenStyleControl, tr("&Style Editor"), "",
+                          "styleeditor");
   createMenuWindowsAction(MI_OpenToolbar, tr("&Toolbar"), "");
   createMenuWindowsAction(MI_OpenToolOptionBar, tr("&Tool Option Bar"), "");
   createMenuWindowsAction(MI_OpenCommandToolbar, tr("&Command Bar"), "");
 #ifdef WITH_STOPMOTION
   createMenuWindowsAction(MI_OpenStopMotionPanel, tr("&Stop Motion Controls"),
                           "");
-
 #endif
-  menuAct = createMenuWindowsAction(MI_OpenLevelView, tr("&Viewer"), "");
-  menuAct->setIcon(createQIcon("viewer"));
-  menuAct = createMenuWindowsAction(MI_OpenXshView, tr("&Xsheet"), "");
-  menuAct->setIcon(createQIcon("xsheet"));
-  menuAct = createMenuWindowsAction(MI_OpenTimelineView, tr("&Timeline"), "");
-  menuAct->setIcon(createQIcon("timeline"));
-  //  createAction(MI_TestAnimation,     "Test Animation",   "Ctrl+Return");
-  //  createAction(MI_Export,            "Export",           "Ctrl+E");
-
-  menuAct = createMenuWindowsAction(MI_OpenComboViewer, tr("&ComboViewer"), "");
-  menuAct->setIcon(createQIcon("viewer"));
-  menuAct =
-      createMenuWindowsAction(MI_OpenHistoryPanel, tr("&History"), "Ctrl+H");
-  menuAct->setIcon(createQIcon("history"));
-  menuAct =
-      createMenuWindowsAction(MI_AudioRecording, tr("Record Audio"), "Alt+A");
-  menuAct->setIcon(createQIcon("recordaudio"));
+  createMenuWindowsAction(MI_OpenLevelView, tr("&Viewer"), "", "viewer");
+  createMenuWindowsAction(MI_OpenXshView, tr("&Xsheet"), "", "xsheet");
+  createMenuWindowsAction(MI_OpenTimelineView, tr("&Timeline"), "", "timeline");
+  createMenuWindowsAction(MI_OpenComboViewer, tr("&ComboViewer"), "", "viewer");
+  createMenuWindowsAction(MI_OpenHistoryPanel, tr("&History"), "Ctrl+H",
+                          "history");
+  createMenuWindowsAction(MI_AudioRecording, tr("Record Audio"), "Alt+A",
+                          "recordaudio");
   createMenuWindowsAction(MI_ResetRoomLayout, tr("&Reset to Default Rooms"),
                           "");
-  menuAct = createMenuWindowsAction(MI_MaximizePanel,
-                                    tr("Toggle Maximize Panel"), "`");
-  menuAct->setIcon(createQIcon("fit_to_window"));
-  menuAct = createMenuWindowsAction(MI_FullScreenWindow,
-                                    tr("Toggle Main Window's Full Screen Mode"),
-                                    "Ctrl+`");
-  menuAct->setIcon(createQIcon("toggle_fullscreen"));
-
-  menuAct = createMenuHelpAction(MI_About, tr("&About OpenToonz..."), "");
-  menuAct->setIconText(tr("About OpenToonz..."));
-  menuAct->setIcon(createQIcon("info"));
-
-  menuAct = createMenuWindowsAction(MI_StartupPopup, tr("&Startup Popup..."),
-                                    "Alt+S");
-  menuAct->setIcon(createQIcon("opentoonz"));
-
-  menuAct =
-      createMenuHelpAction(MI_OpenOnlineManual, tr("&Online Manual..."), "F1");
-  menuAct->setIconText(tr("Online Manual..."));
-  menuAct->setIcon(createQIcon("manual"));
-
-  menuAct = createMenuHelpAction(MI_OpenWhatsNew, tr("&What's New..."), "");
-  menuAct->setIconText(tr("What's New..."));
-  menuAct->setIcon(createQIcon("web"));
-
-  menuAct = createMenuHelpAction(MI_OpenCommunityForum,
-                                 tr("&Community Forum..."), "");
-  menuAct->setIconText(tr("Community Forum..."));
-  menuAct->setIcon(createQIcon("web"));
-
-  menuAct = createMenuHelpAction(MI_OpenReportABug, tr("&Report a Bug..."), "");
-  menuAct->setIconText(tr("Report a Bug..."));
-  menuAct->setIcon(createQIcon("web"));
-
+  createMenuWindowsAction(MI_MaximizePanel, tr("Toggle Maximize Panel"), "`",
+                          "fit_to_window");
+  createMenuWindowsAction(MI_FullScreenWindow,
+                          tr("Toggle Main Window's Full Screen Mode"), "Ctrl+`",
+                          "toggle_fullscreen");
+  createMenuHelpAction(MI_About, tr("&About OpenToonz..."), "", "info");
+  createMenuWindowsAction(MI_StartupPopup, tr("&Startup Popup..."), "Alt+S",
+                          "opentoonz");
   createMenuWindowsAction(MI_OpenGuidedDrawingControls,
                           tr("Guided Drawing Controls"), "");
+  menuAct =
+      createToggle(MI_DockingCheck, tr("&Lock Room Panes"), "",
+                   DockingCheckToggleAction ? 1 : 0, MenuWindowsCommandType);
+  DockingCheck::instance()->setToggle(menuAct);
 
+  // Menu - Help
+
+  createMenuHelpAction(MI_OpenOnlineManual, tr("&Online Manual..."), "F1",
+                       "manual");
+  createMenuHelpAction(MI_OpenWhatsNew, tr("&What's New..."), "", "web");
+  createMenuHelpAction(MI_OpenCommunityForum, tr("&Community Forum..."), "",
+                       "web");
+  createMenuHelpAction(MI_OpenReportABug, tr("&Report a Bug..."), "", "web");
+
+  // Fill
+
+  createFillAction(MI_AutoFillToggle,
+                   tr("Toggle Autofill on Current Palette Color"), "Shift+A");
+
+  // Right Click
+
+  createRightClickMenuAction(MI_SavePaletteAs, tr("&Save Palette As..."), "");
+  createRightClickMenuAction(MI_OverwritePalette, tr("&Save Palette"), "");
+  createRightClickMenuAction(MI_RegeneratePreview, tr("&Regenerate Preview"),
+                             "");
+  createRightClickMenuAction(MI_RegenerateFramePr,
+                             tr("&Regenerate Frame Preview"), "");
+  createRightClickMenuAction(MI_ClonePreview, tr("&Clone Preview"), "");
+  createRightClickMenuAction(MI_FreezePreview, tr("&Freeze//Unfreeze Preview"),
+                             "");
+  CommandManager::instance()->setToggleTexts(
+      MI_FreezePreview, tr("Freeze Preview"), tr("Unfreeze Preview"));
+  createRightClickMenuAction(MI_SavePreset, tr("&Save As Preset"), "");
+  createRightClickMenuAction(MI_PreviewFx, tr("Preview Fx"), "");
+  createRightClickMenuAction(MI_PasteValues, tr("&Paste Color && Name"), "");
+  createRightClickMenuAction(MI_PasteColors, tr("Paste Color"), "");
+  createRightClickMenuAction(MI_PasteNames, tr("Paste Name"), "");
+  createRightClickMenuAction(MI_GetColorFromStudioPalette,
+                             tr("Get Color from Studio Palette"), "");
+  createRightClickMenuAction(MI_ToggleLinkToStudioPalette,
+                             tr("Toggle Link to Studio Palette"), "");
+  createRightClickMenuAction(MI_RemoveReferenceToStudioPalette,
+                             tr("Remove Reference to Studio Palette"), "");
+  createRightClickMenuAction(MI_ViewFile, tr("&View..."), "");
+  createRightClickMenuAction(MI_ToggleXSheetToolbar,
+                             tr("Toggle XSheet Toolbar"), "");
+  createRightClickMenuAction(MI_ToggleXsheetCameraColumn,
+                             tr("Show/Hide Xsheet Camera Column"), "");
+  createRightClickMenuAction(MI_SetKeyframes, tr("&Set Key"), "Z", "set_key");
+  createRightClickMenuAction(MI_ShiftKeyframesDown, tr("&Shift Keys Down"), "",
+                             "shift_keys_down");
+  createRightClickMenuAction(MI_ShiftKeyframesUp, tr("&Shift Keys Up"), "",
+                             "shift_keys_up");
+  createRightClickMenuAction(MI_PasteNumbers, tr("&Paste Numbers"), "");
+  createRightClickMenuAction(MI_Histogram, tr("&Histogram"), "");
   createRightClickMenuAction(MI_BlendColors, tr("&Blend colors"), "");
-
-  toggle = createToggle(MI_OnionSkin, tr("Onion Skin Toggle"), "/", false,
-                        RightClickMenuCommandType);
-  toggle->setIcon(createQIcon("onionskin_toggle"));
-
+  createToggle(MI_OnionSkin, tr("Onion Skin Toggle"), "/", false,
+               RightClickMenuCommandType, "onionskin_toggle");
   createToggle(MI_ZeroThick, tr("Zero Thick Lines"), "Shift+/", false,
                RightClickMenuCommandType);
   createToggle(MI_CursorOutline, tr("Toggle Cursor Size Outline"), "", false,
                RightClickMenuCommandType);
-
   createRightClickMenuAction(MI_ToggleCurrentTimeIndicator,
                              tr("Toggle Current Time Indicator"), "");
-
-  // createRightClickMenuAction(MI_LoadSubSceneFile,     tr("Load As
-  // Sub-xsheet"),   "");
-  // createRightClickMenuAction(MI_LoadResourceFile,     tr("Load"),
-  // "");
-
-  menuAct = createRightClickMenuAction(MI_DuplicateFile, tr("Duplicate"), "");
-  menuAct->setIcon(createQIcon("duplicate"));
-
+  createRightClickMenuAction(MI_DuplicateFile, tr("Duplicate"), "",
+                             "duplicate");
   createRightClickMenuAction(MI_ShowFolderContents, tr("Show Folder Contents"),
                              "");
   createRightClickMenuAction(MI_ConvertFiles, tr("Convert..."), "");
@@ -2369,27 +2200,12 @@ void MainWindow::defineActions() {
   createRightClickMenuAction(MI_ImportScenes, tr("Import Scene"), "");
   createRightClickMenuAction(MI_ExportScenes, tr("Export Scene..."), "");
 
-  // createRightClickMenuAction(MI_PremultiplyFile,      tr("Premultiply"),
-  // "");
-  createMenuLevelAction(MI_ConvertToVectors, tr("Convert to Vectors..."), "");
-  createMenuLevelAction(MI_ConvertToToonzRaster, tr("Vectors to Toonz Raster"),
-                        "");
-  createMenuLevelAction(MI_ConvertVectorToVector,
-                        tr("Replace Vectors with Simplified Vectors"), "");
-
-  menuAct = createMenuLevelAction(MI_Tracking, tr("Tracking..."), "");
-  menuAct->setIcon(createQIcon("tracking_options"));
-
-  menuAct = createRightClickMenuAction(MI_RemoveLevel, tr("Remove Level"), "");
-  menuAct->setIcon(createQIcon("remove_level"));
-
-  menuAct = createRightClickMenuAction(MI_AddToBatchRenderList,
-                                       tr("Add As Render Task"), "");
-  menuAct->setIcon(createQIcon("render_add"));
-  menuAct = createRightClickMenuAction(MI_AddToBatchCleanupList,
-                                       tr("Add As Cleanup Task"), "");
-  menuAct->setIcon(createQIcon("cleanup_add"));
-
+  createRightClickMenuAction(MI_RemoveLevel, tr("Remove Level"), "",
+                             "remove_level");
+  createRightClickMenuAction(MI_AddToBatchRenderList, tr("Add As Render Task"),
+                             "", "render_add");
+  createRightClickMenuAction(MI_AddToBatchCleanupList,
+                             tr("Add As Cleanup Task"), "", "cleanup_add");
   createRightClickMenuAction(MI_SelectRowKeyframes,
                              tr("Select All Keys in this Frame"), "");
   createRightClickMenuAction(MI_SelectColumnKeyframes,
@@ -2409,13 +2225,11 @@ void MainWindow::defineActions() {
                              tr("Select Following Keys in this Frame"), "");
   createRightClickMenuAction(MI_InvertKeyframeSelection,
                              tr("Invert Key Selection"), "");
-
   createRightClickMenuAction(MI_SetAcceleration, tr("Set Acceleration"), "");
   createRightClickMenuAction(MI_SetDeceleration, tr("Set Deceleration"), "");
   createRightClickMenuAction(MI_SetConstantSpeed, tr("Set Constant Speed"), "");
   createRightClickMenuAction(MI_ResetInterpolation, tr("Reset Interpolation"),
                              "");
-
   createRightClickMenuAction(MI_UseLinearInterpolation,
                              tr("Linear Interpolation"), "");
   createRightClickMenuAction(MI_UseSpeedInOutInterpolation,
@@ -2432,10 +2246,8 @@ void MainWindow::defineActions() {
                              "");
   createRightClickMenuAction(MI_UseConstantInterpolation,
                              tr("Constant Interpolation"), "");
-
-  menuAct = createRightClickMenuAction(MI_FoldColumns, tr("Fold Column"), "");
-  menuAct->setIcon(createQIcon("fold_column"));
-
+  createRightClickMenuAction(MI_FoldColumns, tr("Fold Column"), "",
+                             "fold_column");
   createRightClickMenuAction(MI_ActivateThisColumnOnly, tr("Show This Only"),
                              "");
   createRightClickMenuAction(MI_ActivateSelectedColumns, tr("Show Selected"),
@@ -2463,11 +2275,11 @@ void MainWindow::defineActions() {
   createRightClickMenuAction(MI_UnlockAllColumns, tr("Unlock All"),
                              "Ctrl+Alt+Shift+U");
   createRightClickMenuAction(MI_ToggleColumnLocks, tr("Swap Lock/Unlock"), "");
-  /*-- カレントカラムの右側のカラムを全て非表示にするコマンド --*/
   createRightClickMenuAction(MI_DeactivateUpperColumns,
                              tr("Hide Upper Columns"), "");
-
   createRightClickMenuAction(MI_SeparateColors, tr("Separate Colors..."), "");
+
+  // Tools
 
   createToolAction(T_Edit, "animate", tr("Animate Tool"), "A");
   createToolAction(T_Selection, "selection", tr("Selection Tool"), "S");
@@ -2499,22 +2311,150 @@ void MainWindow::defineActions() {
   createToolAction(T_Ruler, "ruler", tr("Ruler Tool"), "");
   createToolAction(T_Finger, "finger", tr("Finger Tool"), "");
 
-  createViewerAction(V_ZoomIn, tr("Zoom In"), "+");
-  createViewerAction(V_ZoomOut, tr("Zoom Out"), "-");
-  createViewerAction(V_ViewReset, tr("Reset View"), "Alt+0");
-  createViewerAction(V_ZoomFit, tr("Fit to Window"), "Alt+9");
-  createViewerAction(V_ZoomReset, tr("Reset Zoom"), "");
-  createViewerAction(V_RotateReset, tr("Reset Rotation"), "");
-  createViewerAction(V_PositionReset, tr("Reset Position"), "");
+  /*-- Animate tool + mode switching shortcuts --*/
+  createAction(MI_EditNextMode, tr("Animate Tool - Next Mode"), "",
+               ToolCommandType);
+  createAction(MI_EditPosition, tr("Animate Tool - Position"), "",
+               ToolCommandType);
+  createAction(MI_EditRotation, tr("Animate Tool - Rotation"), "",
+               ToolCommandType);
+  createAction(MI_EditScale, tr("Animate Tool - Scale"), "", ToolCommandType);
+  createAction(MI_EditShear, tr("Animate Tool - Shear"), "", ToolCommandType);
+  createAction(MI_EditCenter, tr("Animate Tool - Center"), "", ToolCommandType);
+  createAction(MI_EditAll, tr("Animate Tool - All"), "", ToolCommandType);
 
-  createViewerAction(V_ActualPixelSize, tr("Actual Pixel Size"), "N");
-  createViewerAction(V_FlipX, tr("Flip Viewer Horizontally"), "");
-  createViewerAction(V_FlipY, tr("Flip Viewer Vertically"), "");
-  createViewerAction(V_ShowHideFullScreen, tr("Show//Hide Full Screen"),
-                     "Alt+F");
-  CommandManager::instance()->setToggleTexts(V_ShowHideFullScreen,
-                                             tr("Full Screen Mode"),
-                                             tr("Exit Full Screen Mode"));
+  /*-- Selection tool + type switching shortcuts --*/
+  createAction(MI_SelectionNextType, tr("Selection Tool - Next Type"), "",
+               ToolCommandType);
+  createAction(MI_SelectionRectangular, tr("Selection Tool - Rectangular"), "",
+               ToolCommandType);
+  createAction(MI_SelectionFreehand, tr("Selection Tool - Freehand"), "",
+               ToolCommandType);
+  createAction(MI_SelectionPolyline, tr("Selection Tool - Polyline"), "",
+               ToolCommandType);
+
+  /*-- Geometric tool + shape switching shortcuts --*/
+  createAction(MI_GeometricNextShape, tr("Geometric Tool - Next Shape"), "",
+               ToolCommandType);
+  createAction(MI_GeometricRectangle, tr("Geometric Tool - Rectangle"), "",
+               ToolCommandType);
+  createAction(MI_GeometricCircle, tr("Geometric Tool - Circle"), "",
+               ToolCommandType);
+  createAction(MI_GeometricEllipse, tr("Geometric Tool - Ellipse"), "",
+               ToolCommandType);
+  createAction(MI_GeometricLine, tr("Geometric Tool - Line"), "",
+               ToolCommandType);
+  createAction(MI_GeometricPolyline, tr("Geometric Tool - Polyline"), "",
+               ToolCommandType);
+  createAction(MI_GeometricArc, tr("Geometric Tool - Arc"), "",
+               ToolCommandType);
+  createAction(MI_GeometricMultiArc, tr("Geometric Tool - MultiArc"), "",
+               ToolCommandType);
+  createAction(MI_GeometricPolygon, tr("Geometric Tool - Polygon"), "",
+               ToolCommandType);
+
+  /*-- Type tool + style switching shortcuts --*/
+  createAction(MI_TypeNextStyle, tr("Type Tool - Next Style"), "",
+               ToolCommandType);
+  createAction(MI_TypeOblique, tr("Type Tool - Oblique"), "", ToolCommandType);
+  createAction(MI_TypeRegular, tr("Type Tool - Regular"), "", ToolCommandType);
+  createAction(MI_TypeBoldOblique, tr("Type Tool - Bold Oblique"), "",
+               ToolCommandType);
+  createAction(MI_TypeBold, tr("Type Tool - Bold"), "", ToolCommandType);
+
+  /*-- Fill tool + type/mode switching shortcuts --*/
+  createAction(MI_FillNextType, tr("Fill Tool - Next Type"), "",
+               ToolCommandType);
+  createAction(MI_FillNormal, tr("Fill Tool - Normal"), "", ToolCommandType,
+               "fill_normal");
+  createAction(MI_FillRectangular, tr("Fill Tool - Rectangular"), "",
+               ToolCommandType, "fill_rectangular");
+  createAction(MI_FillFreehand, tr("Fill Tool - Freehand"), "", ToolCommandType,
+               "fill_freehand");
+  createAction(MI_FillPolyline, tr("Fill Tool - Polyline"), "", ToolCommandType,
+               "fill_polyline");
+  createAction(MI_FillNextMode, tr("Fill Tool - Next Mode"), "",
+               ToolCommandType);
+  createAction(MI_FillAreas, tr("Fill Tool - Areas"), "", ToolCommandType);
+  createAction(MI_FillLines, tr("Fill Tool - Lines"), "", ToolCommandType);
+  createAction(MI_FillLinesAndAreas, tr("Fill Tool - Lines & Areas"), "",
+               ToolCommandType);
+
+  /*-- Eraser tool + type switching shortcuts --*/
+  createAction(MI_EraserNextType, tr("Eraser Tool - Next Type"), "",
+               ToolCommandType);
+  createAction(MI_EraserNormal, tr("Eraser Tool - Normal"), "",
+               ToolCommandType);
+  createAction(MI_EraserRectangular, tr("Eraser Tool - Rectangular"), "",
+               ToolCommandType);
+  createAction(MI_EraserFreehand, tr("Eraser Tool - Freehand"), "",
+               ToolCommandType);
+  createAction(MI_EraserPolyline, tr("Eraser Tool - Polyline"), "",
+               ToolCommandType);
+  createAction(MI_EraserSegment, tr("Eraser Tool - Segment"), "",
+               ToolCommandType);
+
+  /*-- Tape tool + type/mode switching shortcuts --*/
+  createAction(MI_TapeNextType, tr("Tape Tool - Next Type"), "",
+               ToolCommandType);
+  createAction(MI_TapeNormal, tr("Tape Tool - Normal"), "", ToolCommandType);
+  createAction(MI_TapeRectangular, tr("Tape Tool - Rectangular"), "",
+               ToolCommandType);
+  createAction(MI_TapeNextMode, tr("Tape Tool - Next Mode"), "",
+               ToolCommandType);
+  createAction(MI_TapeEndpointToEndpoint,
+               tr("Tape Tool - Endpoint to Endpoint"), "", ToolCommandType);
+  createAction(MI_TapeEndpointToLine, tr("Tape Tool - Endpoint to Line"), "",
+               ToolCommandType);
+  createAction(MI_TapeLineToLine, tr("Tape Tool - Line to Line"), "",
+               ToolCommandType);
+
+  /*-- Style Picker tool + mode switching shortcuts --*/
+  createAction(MI_PickStyleNextMode, tr("Style Picker Tool - Next Mode"), "",
+               ToolCommandType);
+  createAction(MI_PickStyleAreas, tr("Style Picker Tool - Areas"), "",
+               ToolCommandType);
+  createAction(MI_PickStyleLines, tr("Style Picker Tool - Lines"), "",
+               ToolCommandType);
+  createAction(MI_PickStyleLinesAndAreas,
+               tr("Style Picker Tool - Lines & Areas"), "", ToolCommandType);
+
+  /*-- RGB Picker tool + type switching shortcuts --*/
+  createAction(MI_RGBPickerNextType, tr("RGB Picker Tool - Next Type"), "",
+               ToolCommandType);
+  createAction(MI_RGBPickerNormal, tr("RGB Picker Tool - Normal"), "",
+               ToolCommandType);
+  createAction(MI_RGBPickerRectangular, tr("RGB Picker Tool - Rectangular"), "",
+               ToolCommandType);
+  createAction(MI_RGBPickerFreehand, tr("RGB Picker Tool - Freehand"), "",
+               ToolCommandType);
+  createAction(MI_RGBPickerPolyline, tr("RGB Picker Tool - Polyline"), "",
+               ToolCommandType);
+
+  /*-- Skeleton tool + mode switching shortcuts --*/
+  createAction(MI_SkeletonNextMode, tr("Skeleton Tool - Next Mode"), "",
+               ToolCommandType);
+  createAction(MI_SkeletonBuildSkeleton, tr("Skeleton Tool - Build Skeleton"),
+               "", ToolCommandType);
+  createAction(MI_SkeletonAnimate, tr("Skeleton Tool - Animate"), "",
+               ToolCommandType);
+  createAction(MI_SkeletonInverseKinematics,
+               tr("Skeleton Tool - Inverse Kinematics"), "", ToolCommandType);
+
+  /*-- Plastic tool + mode switching shortcuts --*/
+  createAction(MI_PlasticNextMode, tr("Plastic Tool - Next Mode"), "",
+               ToolCommandType);
+  createAction(MI_PlasticEditMesh, tr("Plastic Tool - Edit Mesh"), "",
+               ToolCommandType);
+  createAction(MI_PlasticPaintRigid, tr("Plastic Tool - Paint Rigid"), "",
+               ToolCommandType);
+  createAction(MI_PlasticBuildSkeleton, tr("Plastic Tool - Build Skeleton"), "",
+               ToolCommandType);
+  createAction(MI_PlasticAnimate, tr("Plastic Tool - Animate"), "",
+               ToolCommandType);
+
+  // Tool Modifiers
+
   createToolOptionsAction(MI_SelectNextGuideStroke,
                           tr("Select Next Frame Guide Stroke"), "");
   createToolOptionsAction(MI_SelectPrevGuideStroke,
@@ -2533,39 +2473,6 @@ void MainWindow::defineActions() {
                           tr("Flip Next Guide Stroke Direction"), "");
   createToolOptionsAction(MI_FlipPrevGuideStroke,
                           tr("Flip Previous Guide Stroke Direction"), "");
-
-  // Following actions are for adding "Visualization" menu items to the command
-  // bar. They are separated from the original actions in order to avoid
-  // assigning shortcut keys. They must be triggered only from pressing buttons
-  // in the command bar. Assinging shortcut keys and registering as MenuItem
-  // will break a logic of ShortcutZoomer. So here we register separate items
-  // and bypass the command.
-  menuAct = createVisualizationButtonAction(VB_ViewReset, tr("Reset View"));
-  menuAct->setIcon(createQIcon("reset"));
-
-  menuAct = createVisualizationButtonAction(VB_ZoomFit, tr("Fit to Window"));
-  menuAct->setIcon(createQIcon("fit_to_window"));
-
-  createVisualizationButtonAction(VB_ZoomReset, tr("Reset Zoom"));
-  createVisualizationButtonAction(VB_RotateReset, tr("Reset Rotation"));
-  createVisualizationButtonAction(VB_PositionReset, tr("Reset Position"));
-
-  menuAct = createVisualizationButtonAction(VB_ActualPixelSize,
-                                            tr("Actual Pixel Size"));
-  menuAct->setIcon(createQIcon("actual_pixel_size"));
-
-  menuAct =
-      createVisualizationButtonAction(VB_FlipX, tr("Flip Viewer Horizontally"));
-  menuAct->setIcon(createQIcon("fliphoriz_off"));
-
-  menuAct =
-      createVisualizationButtonAction(VB_FlipY, tr("Flip Viewer Vertically"));
-  menuAct->setIcon(createQIcon("flipvert_off"));
-
-  menuAct = createMiscAction(MI_RefreshTree, tr("Refresh Folder Tree"), "");
-  menuAct->setIconText(tr("Refresh"));
-  menuAct->setIcon(createQIcon("refresh"));
-
   createToolOptionsAction("A_ToolOption_GlobalKey", tr("Global Key"), "");
 
   createToolOptionsAction("A_IncreaseMaxBrushThickness",
@@ -2612,8 +2519,6 @@ void MainWindow::defineActions() {
                           tr("Brush Tool - Eraser (Raster option)"), "");
   createToolOptionsAction("A_ToolOption_LockAlpha",
                           tr("Brush Tool - Lock Alpha"), "");
-
-  // Option Menu
   createToolOptionsAction("A_ToolOption_BrushPreset", tr("Brush Preset"), "");
   createToolOptionsAction("A_ToolOption_GeometricShape", tr("Geometric Shape"),
                           "");
@@ -2725,153 +2630,68 @@ void MainWindow::defineActions() {
                                     tr("Fill Tool - Autopaint Lines"), "");
   menuAct->setIcon(createQIcon("fill_auto"));
 
-  /*-- Animate tool + mode switching shortcuts --*/
-  createAction(MI_EditNextMode, tr("Animate Tool - Next Mode"), "",
-               ToolCommandType);
-  createAction(MI_EditPosition, tr("Animate Tool - Position"), "",
-               ToolCommandType);
-  createAction(MI_EditRotation, tr("Animate Tool - Rotation"), "",
-               ToolCommandType);
-  createAction(MI_EditScale, tr("Animate Tool - Scale"), "", ToolCommandType);
-  createAction(MI_EditShear, tr("Animate Tool - Shear"), "", ToolCommandType);
-  createAction(MI_EditCenter, tr("Animate Tool - Center"), "", ToolCommandType);
-  createAction(MI_EditAll, tr("Animate Tool - All"), "", ToolCommandType);
+  // Visualization
 
-  /*-- Selection tool + type switching shortcuts --*/
-  createAction(MI_SelectionNextType, tr("Selection Tool - Next Type"), "",
-               ToolCommandType);
-  createAction(MI_SelectionRectangular, tr("Selection Tool - Rectangular"), "",
-               ToolCommandType);
-  createAction(MI_SelectionFreehand, tr("Selection Tool - Freehand"), "",
-               ToolCommandType);
-  createAction(MI_SelectionPolyline, tr("Selection Tool - Polyline"), "",
-               ToolCommandType);
+  createViewerAction(V_ZoomIn, tr("Zoom In"), "+");
+  createViewerAction(V_ZoomOut, tr("Zoom Out"), "-");
+  createViewerAction(V_ViewReset, tr("Reset View"), "Alt+0");
+  createViewerAction(V_ZoomFit, tr("Fit to Window"), "Alt+9");
+  createViewerAction(V_ZoomReset, tr("Reset Zoom"), "");
+  createViewerAction(V_RotateReset, tr("Reset Rotation"), "");
+  createViewerAction(V_PositionReset, tr("Reset Position"), "");
 
-  /*-- Geometric tool + shape switching shortcuts --*/
-  createAction(MI_GeometricNextShape, tr("Geometric Tool - Next Shape"), "",
-               ToolCommandType);
-  createAction(MI_GeometricRectangle, tr("Geometric Tool - Rectangle"), "",
-               ToolCommandType);
-  createAction(MI_GeometricCircle, tr("Geometric Tool - Circle"), "",
-               ToolCommandType);
-  createAction(MI_GeometricEllipse, tr("Geometric Tool - Ellipse"), "",
-               ToolCommandType);
-  createAction(MI_GeometricLine, tr("Geometric Tool - Line"), "",
-               ToolCommandType);
-  createAction(MI_GeometricPolyline, tr("Geometric Tool - Polyline"), "",
-               ToolCommandType);
-  createAction(MI_GeometricArc, tr("Geometric Tool - Arc"), "",
-               ToolCommandType);
-  createAction(MI_GeometricMultiArc, tr("Geometric Tool - MultiArc"), "",
-               ToolCommandType);
-  createAction(MI_GeometricPolygon, tr("Geometric Tool - Polygon"), "",
-               ToolCommandType);
+  createViewerAction(V_ActualPixelSize, tr("Actual Pixel Size"), "N");
+  createViewerAction(V_FlipX, tr("Flip Viewer Horizontally"), "");
+  createViewerAction(V_FlipY, tr("Flip Viewer Vertically"), "");
+  createViewerAction(V_ShowHideFullScreen, tr("Show//Hide Full Screen"),
+                     "Alt+F");
+  CommandManager::instance()->setToggleTexts(V_ShowHideFullScreen,
+                                             tr("Full Screen Mode"),
+                                             tr("Exit Full Screen Mode"));
+  createViewerAction(MI_CompareToSnapshot, tr("Compare to Snapshot"), "");
 
-  /*-- Type tool + style switching shortcuts --*/
-  createAction(MI_TypeNextStyle, tr("Type Tool - Next Style"), "",
-               ToolCommandType);
-  createAction(MI_TypeOblique, tr("Type Tool - Oblique"), "", ToolCommandType);
-  createAction(MI_TypeRegular, tr("Type Tool - Regular"), "", ToolCommandType);
-  createAction(MI_TypeBoldOblique, tr("Type Tool - Bold Oblique"), "",
-               ToolCommandType);
-  createAction(MI_TypeBold, tr("Type Tool - Bold"), "", ToolCommandType);
+  // Following actions are for adding "Visualization" menu items to the command
+  // bar. They are separated from the original actions in order to avoid
+  // assigning shortcut keys. They must be triggered only from pressing buttons
+  // in the command bar. Assinging shortcut keys and registering as MenuItem
+  // will break a logic of ShortcutZoomer. So here we register separate items
+  // and bypass the command.
+  createVisualizationButtonAction(VB_ViewReset, tr("Reset View"), "reset");
+  createVisualizationButtonAction(VB_ZoomFit, tr("Fit to Window"),
+                                  "fit_to_window");
+  createVisualizationButtonAction(VB_ZoomReset, tr("Reset Zoom"));
+  createVisualizationButtonAction(VB_RotateReset, tr("Reset Rotation"));
+  createVisualizationButtonAction(VB_PositionReset, tr("Reset Position"));
+  createVisualizationButtonAction(VB_ActualPixelSize, tr("Actual Pixel Size"),
+                                  "actual_pixel_size");
+  createVisualizationButtonAction(VB_FlipX, tr("Flip Viewer Horizontally"),
+                                  "fliphoriz_off");
+  createVisualizationButtonAction(VB_FlipY, tr("Flip Viewer Vertically"),
+                                  "flipvert_off");
 
-  /*-- Fill tool + type/mode switching shortcuts --*/
-  createAction(MI_FillNextType, tr("Fill Tool - Next Type"), "",
-               ToolCommandType);
-  menuAct = createAction(MI_FillNormal, tr("Fill Tool - Normal"), "",
-                         ToolCommandType);
-  menuAct->setIcon(createQIcon("fill_normal"));
-  menuAct = createAction(MI_FillRectangular, tr("Fill Tool - Rectangular"), "",
-                         ToolCommandType);
-  menuAct->setIcon(createQIcon("fill_rectangular"));
-  menuAct = createAction(MI_FillFreehand, tr("Fill Tool - Freehand"), "",
-                         ToolCommandType);
-  menuAct->setIcon(createQIcon("fill_freehand"));
-  menuAct = createAction(MI_FillPolyline, tr("Fill Tool - Polyline"), "",
-                         ToolCommandType);
-  menuAct->setIcon(createQIcon("fill_polyline"));
-  createAction(MI_FillNextMode, tr("Fill Tool - Next Mode"), "",
-               ToolCommandType);
-  createAction(MI_FillAreas, tr("Fill Tool - Areas"), "", ToolCommandType);
-  createAction(MI_FillLines, tr("Fill Tool - Lines"), "", ToolCommandType);
-  createAction(MI_FillLinesAndAreas, tr("Fill Tool - Lines & Areas"), "",
-               ToolCommandType);
+  // Misc
 
-  /*-- Eraser tool + type switching shortcuts --*/
-  createAction(MI_EraserNextType, tr("Eraser Tool - Next Type"), "",
-               ToolCommandType);
-  createAction(MI_EraserNormal, tr("Eraser Tool - Normal"), "",
-               ToolCommandType);
-  createAction(MI_EraserRectangular, tr("Eraser Tool - Rectangular"), "",
-               ToolCommandType);
-  createAction(MI_EraserFreehand, tr("Eraser Tool - Freehand"), "",
-               ToolCommandType);
-  createAction(MI_EraserPolyline, tr("Eraser Tool - Polyline"), "",
-               ToolCommandType);
-  createAction(MI_EraserSegment, tr("Eraser Tool - Segment"), "",
-               ToolCommandType);
-
-  /*-- Tape tool + type/mode switching shortcuts --*/
-  createAction(MI_TapeNextType, tr("Tape Tool - Next Type"), "",
-               ToolCommandType);
-  createAction(MI_TapeNormal, tr("Tape Tool - Normal"), "", ToolCommandType);
-  createAction(MI_TapeRectangular, tr("Tape Tool - Rectangular"), "",
-               ToolCommandType);
-  createAction(MI_TapeNextMode, tr("Tape Tool - Next Mode"), "",
-               ToolCommandType);
-  createAction(MI_TapeEndpointToEndpoint,
-               tr("Tape Tool - Endpoint to Endpoint"), "", ToolCommandType);
-  createAction(MI_TapeEndpointToLine, tr("Tape Tool - Endpoint to Line"), "",
-               ToolCommandType);
-  createAction(MI_TapeLineToLine, tr("Tape Tool - Line to Line"), "",
-               ToolCommandType);
-
-  /*-- Style Picker tool + mode switching shortcuts --*/
-  createAction(MI_PickStyleNextMode, tr("Style Picker Tool - Next Mode"), "",
-               ToolCommandType);
-  createAction(MI_PickStyleAreas, tr("Style Picker Tool - Areas"), "",
-               ToolCommandType);
-  createAction(MI_PickStyleLines, tr("Style Picker Tool - Lines"), "",
-               ToolCommandType);
-  createAction(MI_PickStyleLinesAndAreas,
-               tr("Style Picker Tool - Lines & Areas"), "", ToolCommandType);
-
-  /*-- RGB Picker tool + type switching shortcuts --*/
-  createAction(MI_RGBPickerNextType, tr("RGB Picker Tool - Next Type"), "",
-               ToolCommandType);
-  createAction(MI_RGBPickerNormal, tr("RGB Picker Tool - Normal"), "",
-               ToolCommandType);
-  createAction(MI_RGBPickerRectangular, tr("RGB Picker Tool - Rectangular"), "",
-               ToolCommandType);
-  createAction(MI_RGBPickerFreehand, tr("RGB Picker Tool - Freehand"), "",
-               ToolCommandType);
-  createAction(MI_RGBPickerPolyline, tr("RGB Picker Tool - Polyline"), "",
-               ToolCommandType);
-
-  /*-- Skeleton tool + mode switching shortcuts --*/
-  createAction(MI_SkeletonNextMode, tr("Skeleton Tool - Next Mode"), "",
-               ToolCommandType);
-  createAction(MI_SkeletonBuildSkeleton, tr("Skeleton Tool - Build Skeleton"),
-               "", ToolCommandType);
-  createAction(MI_SkeletonAnimate, tr("Skeleton Tool - Animate"), "",
-               ToolCommandType);
-  createAction(MI_SkeletonInverseKinematics,
-               tr("Skeleton Tool - Inverse Kinematics"), "", ToolCommandType);
-
-  /*-- Plastic tool + mode switching shortcuts --*/
-  createAction(MI_PlasticNextMode, tr("Plastic Tool - Next Mode"), "",
-               ToolCommandType);
-  createAction(MI_PlasticEditMesh, tr("Plastic Tool - Edit Mesh"), "",
-               ToolCommandType);
-  createAction(MI_PlasticPaintRigid, tr("Plastic Tool - Paint Rigid"), "",
-               ToolCommandType);
-  createAction(MI_PlasticBuildSkeleton, tr("Plastic Tool - Build Skeleton"), "",
-               ToolCommandType);
-  createAction(MI_PlasticAnimate, tr("Plastic Tool - Animate"), "",
-               ToolCommandType);
-
+  menuAct =
+      createToggle(MI_TouchGestureControl, tr("&Touch Gesture Control"), "",
+                   TouchGestureControl ? 1 : 0, MiscCommandType, "touch");
+  menuAct->setEnabled(true);
+  ;
+  createMiscAction(MI_CameraStage, tr("&Camera Settings..."), "");
+  menuAct = createMiscAction(MI_RefreshTree, tr("Refresh Folder Tree"), "");
+  menuAct->setIconText(tr("Refresh"));
+  menuAct->setIcon(createQIcon("refresh"));
   createMiscAction("A_FxSchematicToggle", tr("Toggle FX/Stage schematic"), "");
+
+  // RGBA
+
+  createRGBAAction(MI_RedChannel, tr("Red Channel"), "");
+  createRGBAAction(MI_GreenChannel, tr("Green Channel"), "");
+  createRGBAAction(MI_BlueChannel, tr("Blue Channel"), "");
+  createRGBAAction(MI_MatteChannel, tr("Alpha Channel"), "");
+  createRGBAAction(MI_RedChannelGreyscale, tr("Red Channel Greyscale"), "");
+  createRGBAAction(MI_GreenChannelGreyscale, tr("Green Channel Greyscale"), "");
+  createRGBAAction(MI_BlueChannelGreyscale, tr("Blue Channel Greyscale"), "");
+
 #ifdef WITH_STOPMOTION
   createAction(MI_StopMotionCapture, tr("Capture Stop Motion Frame"), "");
   createAction(MI_StopMotionRaiseOpacity, tr("Raise Stop Motion Opacity"), "");

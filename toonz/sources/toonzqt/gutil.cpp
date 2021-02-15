@@ -339,6 +339,76 @@ QIcon createQIconOnOffPNG(const char *iconPNGName, bool withOver) {
 
 //-----------------------------------------------------------------------------
 
+QIcon createTemporaryIconFromName(const char *idName) {
+  const int visibleIconSize = 20;
+  const int menubarIconSize = 16;
+  QString name(idName);
+  if (name.startsWith("A_") || name.startsWith("V_"))
+    name.remove(0, 2);
+  else if (name.startsWith("MI_") || name.startsWith("VB_"))
+    name.remove(0, 3);
+  if (name.startsWith("Open")) name.remove(0, 4);
+
+  QList<QChar> iconChar;
+
+  for (int i = 0; i < name.length(); i++) {
+    QChar c = name.at(i);
+    if (c.isUpper() && iconChar.size() < 2)
+      iconChar.append(c);
+    else if (c.isDigit()) {
+      if (iconChar.isEmpty())
+        iconChar.append(c);
+      else if (iconChar.size() <= 2) {
+        if (iconChar.size() == 2) iconChar.removeLast();
+        iconChar.append(c);
+        break;
+      }
+    }
+  }
+
+  if (iconChar.isEmpty()) iconChar.append(name.at(0));
+
+  QString iconStr;
+  for (auto c : iconChar) iconStr.append(c);
+
+  QIcon icon;
+  // prepare for both normal and high dpi
+  for (int devPixelRatio = 1; devPixelRatio <= 2; devPixelRatio++) {
+    QPixmap transparentPm(menubarIconSize * devPixelRatio,
+                          menubarIconSize * devPixelRatio);
+    transparentPm.fill(Qt::transparent);
+
+    int pxSize = visibleIconSize * devPixelRatio;
+
+    QPixmap pixmap(pxSize, pxSize);
+    QPainter painter;
+    pixmap.fill(Qt::transparent);
+    painter.begin(&pixmap);
+
+    painter.setPen(Preferences::instance()->getIconTheme() ? Qt::black
+                                                           : Qt::white);
+
+    QRect rect(0, -2, pxSize, pxSize);
+    if (iconStr.size() == 2) {
+      painter.scale(0.6, 1.0);
+      rect.setRight(pxSize / 0.6);
+    }
+    QFont font = painter.font();
+    font.setPixelSize(pxSize);
+    painter.setFont(font);
+
+    painter.drawText(rect, Qt::AlignCenter, iconStr);
+
+    painter.end();
+
+    icon.addPixmap(transparentPm);
+    icon.addPixmap(pixmap);
+  }
+  return icon;
+}
+
+//-----------------------------------------------------------------------------
+
 QString toQString(const TFilePath &path) {
   return QString::fromStdWString(path.getWideString());
 }
