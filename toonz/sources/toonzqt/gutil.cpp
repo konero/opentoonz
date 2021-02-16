@@ -403,6 +403,7 @@ QIcon createTemporaryIconFromName(const char *idName) {
 
     icon.addPixmap(transparentPm);
     icon.addPixmap(pixmap);
+    icon.addPixmap(setOpacity(pixmap, 0.15), QIcon::Disabled);
   }
   return icon;
 }
