@@ -116,7 +116,7 @@ QPixmap DVAPI recolorPixmap(
 QIcon DVAPI createQIcon(const char *iconSVGName, bool useFullOpacity = false);
 QIcon DVAPI createQIconPNG(const char *iconPNGName);
 QIcon DVAPI createQIconOnOffPNG(const char *iconPNGName, bool withOver = true);
-QIcon DVAPI createTemporaryIconFromName(const char *idName);
+QIcon DVAPI createTemporaryIconFromName(const char *commandName);
 
 inline QSize dimension2QSize(const TDimension &sz) {
   return QSize(sz.lx, sz.ly);

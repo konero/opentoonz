@@ -339,16 +339,10 @@ QIcon createQIconOnOffPNG(const char *iconPNGName, bool withOver) {
 
 //-----------------------------------------------------------------------------
 
-QIcon createTemporaryIconFromName(const char *idName) {
+QIcon createTemporaryIconFromName(const char *commandName) {
   const int visibleIconSize = 20;
   const int menubarIconSize = 16;
-  QString name(idName);
-  if (name.startsWith("A_") || name.startsWith("V_"))
-    name.remove(0, 2);
-  else if (name.startsWith("MI_") || name.startsWith("VB_"))
-    name.remove(0, 3);
-  if (name.startsWith("Open")) name.remove(0, 4);
-
+  QString name(commandName);
   QList<QChar> iconChar;
 
   for (int i = 0; i < name.length(); i++) {
