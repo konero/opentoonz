@@ -1168,7 +1168,8 @@ QMenu *FileBrowser::getContextMenu(QWidget *parent, int index) {
       title = tr("Load As Sub-xsheet");
     else
       title         = tr("Load");
-    QAction *action = new QAction(title, menu);
+    QAction *action = new QAction(QIcon(createQIcon("import")), title,
+                      menu);
     ret             = ret &&
           connect(action, SIGNAL(triggered()), this, SLOT(loadResources()));
     menu->addAction(action);
@@ -1217,7 +1218,8 @@ QMenu *FileBrowser::getContextMenu(QWidget *parent, int index) {
     if (!areFullcolor) menu->addSeparator();
   }
   if (files.size() == 1 && files[0].getType() != "tnz") {
-    QAction *action = new QAction(tr("Rename"), menu);
+    QAction *action = new QAction(QIcon(createQIcon("rename")),
+                      tr("Rename"), menu);
     ret             = ret && connect(action, SIGNAL(triggered()), this,
                          SLOT(renameAsToonzLevel()));
     menu->addAction(action);
