@@ -331,7 +331,7 @@
 		<file>icons/dark/actions/16/sub_edit_in_place.svg</file>
 		<file>icons/dark/actions/16/sub_clone.svg</file>
 		<file>icons/dark/actions/16/duplicate.svg</file>
-		<file>icons/dark/actions/16/onionskin_toggle.svg</file>
+		<file>icons/dark/actions/20/onionskin_toggle.svg</file>
 		<file>icons/dark/actions/16/insert_frame.svg</file>
 		<file>icons/dark/actions/16/remove_frame.svg</file>
 		<file>icons/dark/actions/16/add_cell.svg</file>
@@ -416,7 +416,7 @@
 		<file>icons/dark/actions/16/palette.svg</file>
 		<file>icons/dark/actions/16/palette_tab.svg</file>add_cell
 		<file>icons/dark/actions/20/dragpalette.svg</file>
-		<file>icons/dark/actions/20/palettegizmo.svg</file>
+		<file>icons/dark/actions/16/palettegizmo.svg</file>
 
 		<!-- Titlebars -->
 		<file>icons/dark/actions/20/pane_table.svg</file>
