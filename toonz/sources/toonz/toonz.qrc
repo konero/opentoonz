@@ -197,6 +197,7 @@
 		<file>icons/dark/actions/16/apply_match_lines.svg</file>
 		<file>icons/dark/actions/16/level_settings.svg</file>
 		<file>icons/dark/actions/16/level_info.svg</file>
+		<file>icons/dark/actions/16/replace_parent_directory.svg</file>
 
 		<!-- Console, Channel and Play Controls -->
 		<file>icons/dark/actions/16/play.svg</file>
@@ -298,6 +299,8 @@
 		<file>icons/dark/actions/16/renumber.svg</file>
 		<file>icons/dark/actions/16/rollup.svg</file>
 		<file>icons/dark/actions/16/rolldown.svg</file>
+		<file>icons/dark/actions/16/remove_empty_columns.svg</file>
+		<file>icons/dark/actions/16/merge.svg</file>
 
 		<file>icons/dark/actions/16/new_document.svg</file>
 		<file>icons/dark/actions/16/new_raster_level.svg</file>
@@ -316,6 +319,7 @@
 		<file>icons/dark/actions/16/on_4s.svg</file>
 		<file>icons/dark/actions/16/on_with_empty.svg</file>
 		<file>icons/dark/actions/16/step_plus.svg</file>
+		<file>icons/dark/actions/16/step_reset.svg</file>
 		<file>icons/dark/actions/16/step_minus.svg</file>
 		<file>icons/dark/actions/16/step_2.svg</file>
 		<file>icons/dark/actions/16/step_3.svg</file>
@@ -457,6 +461,7 @@
 		<file>icons/dark/actions/16/toggle_fullscreen.svg</file>
 		<file>icons/dark/actions/16/schematic.svg</file>
 		<file>icons/dark/actions/16/viewer.svg</file>
+		<file>icons/dark/actions/16/comboviewer.svg</file>
 		<file>icons/dark/actions/16/guided_drawing.svg</file>
 		<file>icons/dark/actions/16/studiopalette.svg</file>
 		<file>icons/dark/actions/16/colormodel.svg</file>
@@ -498,7 +503,7 @@
 		<file>icons/dark/actions/16/tool.svg</file>
 		<file>icons/dark/actions/16/tool_options.svg</file>
 		<file>icons/dark/actions/16/view_file.svg</file>
-
+		<file>icons/dark/actions/16/level_strip.svg</file>
 
 		<!-- Keyframe -->
 		<file>icons/dark/actions/20/key_off.svg</file>

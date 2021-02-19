@@ -1721,7 +1721,8 @@ void MainWindow::defineActions() {
   createMenuFileAction(MI_LoadFolder, QT_TR_NOOP("&Load Folder..."), "",
                        "load_folder");
   createMenuFileAction(MI_LoadSubSceneFile,
-                       QT_TR_NOOP("&Load As Sub-xsheet..."), "");
+                       QT_TR_NOOP("&Load As Sub-xsheet..."), "",
+                       "load_as_sub_xsheet");
   createMenuAction(MI_OpenRecentScene, QT_TR_NOOP("&Open Recent Scene File"),
                    files);
   createMenuAction(MI_OpenRecentLevel, QT_TR_NOOP("&Open Recent Level File"),
@@ -1979,14 +1980,15 @@ void MainWindow::defineActions() {
 
   // Menu - Cells
 
-  createMenuCellsAction(MI_MergeFrames, QT_TR_NOOP("&Merge"), "");
+  createMenuCellsAction(MI_MergeFrames, QT_TR_NOOP("&Merge"), "", "merge");
   createMenuCellsAction(MI_Reverse, QT_TR_NOOP("&Reverse"), "", "reverse");
   createMenuCellsAction(MI_Swing, QT_TR_NOOP("&Swing"), "", "swing");
   createMenuCellsAction(MI_Random, QT_TR_NOOP("&Random"), "", "random");
   createMenuCellsAction(MI_Increment, QT_TR_NOOP("&Autoexpose"), "",
                         "autoexpose");
   createMenuCellsAction(MI_Dup, QT_TR_NOOP("&Repeat..."), "", "repeat");
-  createMenuCellsAction(MI_ResetStep, QT_TR_NOOP("&Reset Step"), "");
+  createMenuCellsAction(MI_ResetStep, QT_TR_NOOP("&Reset Step"), "",
+                        "step_reset");
   createMenuCellsAction(MI_IncreaseStep, QT_TR_NOOP("&Increase Step"), "'",
                         "step_plus");
   createMenuCellsAction(MI_DecreaseStep, QT_TR_NOOP("&Decrease Step"), ";",
@@ -2192,7 +2194,7 @@ void MainWindow::defineActions() {
   createMenuWindowsAction(MI_OpenTimelineView, QT_TR_NOOP("&Timeline"), "",
                           "timeline");
   createMenuWindowsAction(MI_OpenComboViewer, QT_TR_NOOP("&ComboViewer"), "",
-                          "viewer");
+                          "comboviewer");
   createMenuWindowsAction(MI_OpenHistoryPanel, QT_TR_NOOP("&History"), "Ctrl+H",
                           "history");
   createMenuWindowsAction(MI_AudioRecording, QT_TR_NOOP("Record Audio"),
