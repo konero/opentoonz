@@ -199,15 +199,15 @@
 		<file>icons/dark/actions/16/level_info.svg</file>
 
 		<!-- Console, Channel and Play Controls -->
-		<file>icons/dark/console/16/play.svg</file>
-		<file>icons/dark/console/16/pause.svg</file>
-		<file>icons/dark/console/16/stop.svg</file>
-		<file>icons/dark/console/16/record.svg</file>
-		<file>icons/dark/console/16/loop.svg</file>
-		<file>icons/dark/console/16/framefirst.svg</file>
-		<file>icons/dark/console/16/framelast.svg</file>
-		<file>icons/dark/console/16/frameprev.svg</file>
-		<file>icons/dark/console/16/framenext.svg</file>
+		<file>icons/dark/actions/16/play.svg</file>
+		<file>icons/dark/actions/16/pause.svg</file>
+		<file>icons/dark/actions/16/stop.svg</file>
+		<file>icons/dark/actions/16/record.svg</file>
+		<file>icons/dark/actions/16/loop.svg</file>
+		<file>icons/dark/actions/16/framefirst.svg</file>
+		<file>icons/dark/actions/16/framelast.svg</file>
+		<file>icons/dark/actions/16/frameprev.svg</file>
+		<file>icons/dark/actions/16/framenext.svg</file>
 		<file>icons/dark/actions/16/prev_drawing.svg</file>
 		<file>icons/dark/actions/16/next_drawing.svg</file>
 		<file>icons/dark/actions/16/nextstep.svg</file>
@@ -215,18 +215,18 @@
 		<file>icons/dark/actions/16/nextkey.svg</file>
 		<file>icons/dark/actions/16/prevkey.svg</file>
 
-		<file>icons/dark/console/16/snapshot.svg</file>
-		<file>icons/dark/console/16/compare.svg</file>
-		<file>icons/dark/console/16/histograms.svg</file>
-		<file>icons/dark/console/16/sound.svg</file>
-		<file>icons/dark/console/16/sound_on.svg</file>
-		<file>icons/dark/console/16/preview_black.svg</file>
-		<file>icons/dark/console/16/preview_checkboard.svg</file>
-		<file>icons/dark/console/16/preview_white.svg</file>
-		<file>icons/dark/console/16/locator.svg</file>
-		<file>icons/dark/console/16/define_subcamera_preview.svg</file>
-		<file>icons/dark/console/16/use_subcamera_preview.svg</file>
-		<file>icons/dark/console/16/use_subcamera_preview_on.svg</file>
+		<file>icons/dark/actions/16/snapshot.svg</file>
+		<file>icons/dark/actions/16/compare.svg</file>
+		<file>icons/dark/actions/16/histograms.svg</file>
+		<file>icons/dark/actions/16/sound.svg</file>
+		<file>icons/dark/actions/16/sound_on.svg</file>
+		<file>icons/dark/actions/16/preview_black.svg</file>
+		<file>icons/dark/actions/16/preview_checkboard.svg</file>
+		<file>icons/dark/actions/16/preview_white.svg</file>
+		<file>icons/dark/actions/16/locator.svg</file>
+		<file>icons/dark/actions/16/define_subcamera_preview.svg</file>
+		<file>icons/dark/actions/16/use_subcamera_preview.svg</file>
+		<file>icons/dark/actions/16/use_subcamera_preview_on.svg</file>
 
 		<file>icons/dark/console/20/half_R.svg</file>
 		<file>icons/dark/console/20/half_R_on.svg</file>
@@ -439,10 +439,10 @@
 		<file>icons/dark/actions/16/align_center.svg</file>
 
 		<!-- Devices -->
-		<file>icons/dark/devices/16/printer.svg</file>
-		<file>icons/dark/devices/16/scanner.svg</file>
-		<file>icons/dark/devices/16/scanner_settings.svg</file>
-		<file>icons/dark/devices/16/define_scanner.svg</file>
+		<file>icons/dark/actions/16/printer.svg</file>
+		<file>icons/dark/actions/16/scanner.svg</file>
+		<file>icons/dark/actions/16/scanner_settings.svg</file>
+		<file>icons/dark/actions/16/define_scanner.svg</file>
 
 		<!-- Misc -->
 		<file>icons/dark/actions/16/minus.svg</file>
