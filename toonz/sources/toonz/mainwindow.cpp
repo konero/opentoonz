@@ -1971,7 +1971,7 @@ void MainWindow::defineActions() {
                          QT_TR_NOOP("Remove Multiple Keys"), "",
                          "remove_multiple_keys");
   createMenuXsheetAction(MI_RemoveEmptyColumns,
-                         QT_TR_NOOP("Remove Empty Columns"), "", "clear",
+                         QT_TR_NOOP("Remove Empty Columns"), "",
                          "remove_empty_columns");
   createMenuXsheetAction(MI_LipSyncPopup,
                          QT_TR_NOOP("&Apply Lip Sync Data to Column"), "Alt+L",
