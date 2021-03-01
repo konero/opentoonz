@@ -7,23 +7,23 @@ Directories=actions/11,actions/15,actions/16,actions/18,actions/20,actions/30,ac
 
 [actions/11]
 Size=11
-Type=Scalable
+Type=Fixed
 
 [actions/15]
 Size=15
-Type=Scalable
+Type=Fixed
 
 [actions/16]
 Size=16
-Type=Scalable
+Type=Fixed
 
 [actions/18]
 Size=18
-Type=Scalable
+Type=Fixed
 
 [actions/20]
 Size=20
-Type=Scalable
+Type=Fixed
 
 [actions/30]
 Size=30
@@ -35,28 +35,28 @@ Type=Scalable
 
 [actions/48]
 Size=48
-Type=Scalable
+Type=Fixed
 
 [actions/60]
 Size=60
-Type=Scalable
+Type=Fixed
 
 [actions/74]
 Size=74
-Type=Scalable
+Type=Fixed
 
 [console/20]
 Size=20
-Type=Scalable
+Type=Fixed
 
 [tools/18]
 Size=18
-Type=Scalabe
+Type=Fixed
 
 [tools/20]
 Size=20
-Type=Scalabe
+Type=Fixed
 
 [devices/20]
 Size=20
-Type=Scalable
+Type=Fixed
