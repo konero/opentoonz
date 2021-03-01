@@ -38,7 +38,7 @@ CommandBar::CommandBar(QWidget *parent, Qt::WFlags flags)
   setObjectName("cornerWidget");
   setObjectName("CommandBar");
   fillToolbar(this, isXsheetToolbar);
-  setIconSize(QSize(20, 20));
+  setIconSize(QSize(16, 16));
 }
 
 //-----------------------------------------------------------------------------
