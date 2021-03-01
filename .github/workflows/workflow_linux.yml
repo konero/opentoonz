@@ -7,14 +7,11 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        compiler: [gcc, clang]
+        compiler: [gcc]
         include:
           - compiler: gcc
             cc: gcc
             cxx: g++
-          - compiler: clang
-            cc: clang
-            cxx: clang++
     steps:
     - uses: actions/checkout@v2
     - name: Install libraries
