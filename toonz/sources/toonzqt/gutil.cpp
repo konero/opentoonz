@@ -251,7 +251,8 @@ QPixmap setOpacity(QPixmap pixmap, const qreal &opacity) {
 
 QPixmap recolorPixmap(QPixmap pixmap, QColor color) {
   // Change black pixels to any chosen color
-  QImage img = pixmap.toImage().convertToFormat(QImage::Format_ARGB32);
+  QImage img =
+      pixmap.toImage().convertToFormat(QImage::Format_ARGB32);
   for (int y = 0; y < img.height(); y++) {
     QRgb *pixel = reinterpret_cast<QRgb *>(img.scanLine(y));
     QRgb *end   = pixel + img.width();
@@ -276,15 +277,15 @@ QPixmap compositePixmap(QPixmap pixmap, qreal opacity, int canvasWidth,
    * size, whereas pixmap is the image to be composited ontop. You can control
    * the position of pixmap by setting an offset (top-left), default is 0. */
 
-  //static int devPixRatio = getDevPixRatio();
+  // static int devPixRatio = getDevPixRatio();
 
   QPixmap canvas(canvasWidth, canvasHeight);
   canvas.fill(Qt::transparent);  // set this to a color to debug
-  QPixmap combined(canvasWidth, canvasHeight);
-  combined.fill(Qt::transparent);
+  // QPixmap combined(canvasWidth, canvasHeight);
+  // combined.fill(Qt::transparent);
   if (!pixmap.isNull()) {
-    QPainter painter(&combined);
-    //painter.setRenderHint(QPainter::HighQualityAntialiasing, true);
+    QPainter painter;
+    painter.begin(&canvas);
     QRect canvasRect(0, 0, canvasWidth, canvasHeight);
     painter.drawPixmap(canvasRect, canvas);
     painter.setOpacity(opacity);
@@ -293,7 +294,7 @@ QPixmap compositePixmap(QPixmap pixmap, qreal opacity, int canvasWidth,
     painter.end();
   }
 
-  return combined;
+  return canvas;
 }
 
 //-----------------------------------------------------------------------------
@@ -301,25 +302,18 @@ QPixmap compositePixmap(QPixmap pixmap, qreal opacity, int canvasWidth,
 QIcon createQIcon(const char *iconSVGName, bool useFullOpacity) {
   static int dpr = getDevPixRatio();
 
-  // Create a theme icon so we can extract data from it
-  QIcon themeIcon = QIcon::fromTheme(iconSVGName);
+  QString path = QString(":/icons/dark/actions/16/") + iconSVGName + ".svg";
+  QIcon getIcon(path);
 
-  // We need icon size
-  QSize iconSize(0, 0);
-  for (QList<QSize> sizes = themeIcon.availableSizes(); !sizes.isEmpty();
-       sizes.removeFirst())
-    if (sizes.first().width() > iconSize.width())
-      iconSize = sizes.first() * dpr;
-  qDebug() << iconSize;
-
-  // Convert to pixmap with correct icon size
-  QPixmap normalPixmap = compositePixmap(
-      themeIcon.pixmap(iconSize), 1, 20 * dpr, 20 * dpr,
-      iconSize.width(), iconSize.height(), 2 * dpr);
-  // QPixmap normalPixmap = recolorPixmap(themeIcon.pixmap(iconSize));
+  // Size of icon file
+  QImageReader reader(path);
+  QSize sizeOfIcon = reader.size();
+  int width        = sizeOfIcon.width();
+  int height       = sizeOfIcon.height();
+  qDebug() << QString("ICON SIZE:") << width << QString("X") << height;
 
   QIcon icon;
-  icon.addPixmap(normalPixmap);
+  icon.addPixmap(recolorPixmap(getIcon.pixmap(iconSize)));
 
   return icon;
 }
