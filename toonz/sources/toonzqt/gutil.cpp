@@ -292,70 +292,45 @@ QPixmap recolorPixmap(QPixmap pixmap, QColor color) {
 
 //-----------------------------------------------------------------------------
 
-QPixmap compositePixmap(QPixmap pixmap, qreal opacity, int canvasWidth,
-                        int canvasHeight, int iconWidth, int iconHeight,
-                        int offset) {
-  /* Creates a composite pixmap from two pixmaps. The canvas controls the final
-   * size, whereas pixmap is the image to be composited ontop. You can control
-   * the position of pixmap by setting an offset (top-left), default is 0. */
-
-  QScreen *screen = QApplication::primaryScreen();
-  const qreal dpr = screen->devicePixelRatio();
-
-  // QPixmap canvas(canvasWidth, canvasHeight);
-  // canvas.setDevicePixelRatio(dpr);
-  // canvas.fill(Qt::transparent);  // set this to a color to debug
-  // qDebug() << QString("SIZE OF CANVAS FROM COMPOSITE:") << canvas.size();
-  QPixmap combined(canvasWidth, canvasHeight);
-  combined.setDevicePixelRatio(dpr);
-  combined.fill(Qt::transparent);
-  if (!pixmap.isNull()) {
-    QPainter painter;
-    painter.begin(&combined);
-    // QRect canvasRect(0, 0, canvasWidth, canvasHeight);
-    // painter.drawPixmap(canvasRect, canvas);
-    painter.setOpacity(opacity);
-    QRect iconRect(offset, offset, iconWidth, iconHeight);
-    // qDebug() << QString("ICON RECT SIZE:") << iconRect.size();
-    painter.drawPixmap(iconRect, pixmap);
-    painter.end();
-  }
-
-  return combined;
-}
-
-//-----------------------------------------------------------------------------
-
 QIcon createQIcon(const char *iconSVGName, bool useFullOpacity) {
   QScreen *screen = QApplication::primaryScreen();
   const qreal dpr = screen->devicePixelRatio();
 
-  QString str = QString(":/icons/dark/actions/16/") + iconSVGName + ".svg";
+  QIcon normalIcon = QIcon::fromTheme(iconSVGName);
 
-  // Make icon
-  QSvgRenderer renderer(str);
-  QImage img(16 * dpr, 16 * dpr, QImage::Format_ARGB32_Premultiplied);
-  img.fill(Qt::transparent);
-  QPainter painter(&img);
-  painter.setRenderHints(QPainter::Antialiasing, true);
-  renderer.render(&painter);
-  painter.end();
+  QSize iconSize(0, 0);  // Get largest
+  for (QList<QSize> sizes = normalIcon.availableSizes(); !sizes.isEmpty();
+       sizes.removeFirst())
+    if (sizes.first().width() > iconSize.width()) iconSize = sizes.first();
 
-  QImage combined(20 * dpr, 20 * dpr, QImage::Format_ARGB32_Premultiplied);
-  combined.fill(Qt::transparent);
-
-  const qreal offsetH = (combined.width() - img.width()) / 2;
-  const qreal offsetV = (combined.height() - img.height()) / 2;
-
-  painter.begin(&combined);
-  QRect rect(2, 2, img.width(), img.height());
-  painter.drawImage(QPoint(2, 2), img, rect);
-  painter.end();
-
-  QPixmap pm = QPixmap::fromImage(combined);
-
+  const qreal offOpacity      = 0.8;
+  const qreal disabledOpacity = 0.15;
+  QString overStr             = QString(iconSVGName) + "_over";
+  QString onStr               = QString(iconSVGName) + "_on";
+  QPixmap normalPm            = recolorPixmap(normalIcon.pixmap(iconSize));
+  QPixmap overPm = recolorPixmap(QIcon::fromTheme(overStr).pixmap(iconSize));
+  QPixmap onPm   = recolorPixmap(QIcon::fromTheme(onStr).pixmap(iconSize));
   QIcon icon;
-  icon.addPixmap(pm);
+
+  // Off
+  icon.addPixmap(useFullOpacity ? normalPm : setOpacity(normalPm, offOpacity),
+                 QIcon::Normal, QIcon::Off);
+  icon.addPixmap(setOpacity(normalPm, disabledOpacity), QIcon::Disabled);
+
+  // Over
+  icon.addPixmap(!overPm.isNull() ? overPm : normalPm, QIcon::Active);
+
+  // On
+  if (!onPm.isNull()) {
+    icon.addPixmap(onPm, QIcon::Normal, QIcon::On);
+    icon.addPixmap(setOpacity(onPm, disabledOpacity), QIcon::Disabled,
+                   QIcon::On);
+  } else {
+    // If file doesn't exist, let's add an opaque normal pixmap
+    icon.addPixmap(normalPm, QIcon::Normal, QIcon::On);
+    icon.addPixmap(setOpacity(normalPm, disabledOpacity), QIcon::Disabled,
+                   QIcon::On);
+  }
   return icon;
 }
 //
