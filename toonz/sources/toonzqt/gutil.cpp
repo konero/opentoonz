@@ -332,6 +332,7 @@ QIcon createQIcon(const char *iconSVGName, bool useFullOpacity) {
 
   QString str = QString(":/icons/dark/actions/16/") + iconSVGName + ".svg";
 
+  // Make icon
   QSvgRenderer renderer(str);
   QImage img(16 * dpr, 16 * dpr, QImage::Format_ARGB32_Premultiplied);
   img.fill(Qt::transparent);
@@ -347,8 +348,8 @@ QIcon createQIcon(const char *iconSVGName, bool useFullOpacity) {
   const qreal offsetV = (combined.height() - img.height()) / 2;
 
   painter.begin(&combined);
-  painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-  painter.drawImage(offsetH, offsetV, img);
+  QRect rect(2, 2, img.width(), img.height());
+  painter.drawImage(QPoint(2, 2), img, rect);
   painter.end();
 
   QPixmap pm = QPixmap::fromImage(combined);
