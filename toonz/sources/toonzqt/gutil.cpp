@@ -31,6 +31,8 @@
 #include <QFileInfo>
 #include <QDesktopWidget>
 #include <QSvgRenderer>
+#include <QScreen>
+#include <QDebug>
 
 using namespace DVGui;
 
@@ -223,6 +225,28 @@ QString getIconThemePath(const QString &fileSVGPath) {
 //-----------------------------------------------------------------------------
 
 QPixmap setOpacity(QPixmap pixmap, const qreal &opacity) {
+  //static int devPixRatio = getDevPixRatio();
+  // get float of device pixel ratio
+  const qreal devPixRatio = QApplication::desktop()->devicePixelRatioF();
+
+  QPixmap opacityPixmap(pixmap.size());
+  opacityPixmap.setDevicePixelRatio(devPixRatio);
+  opacityPixmap.fill(Qt::transparent);
+
+  if (!pixmap.isNull()) {
+    QPainter p(&opacityPixmap);
+    QPixmap normalPixmap(pixmap.size());
+    normalPixmap.setDevicePixelRatio(devPixRatio);
+    p.setBackgroundMode(Qt::TransparentMode);
+    p.setBackground(QBrush(Qt::transparent));
+    p.eraseRect(normalPixmap.rect());
+    p.setOpacity(opacity);
+    p.drawPixmap(0, 0, normalPixmap);
+  }
+
+  return opacityPixmap;
+
+  /*
   static int devPixRatio = getDevPixRatio();
   const QSize pixmapSize(pixmap.width() * devPixRatio,
                          pixmap.height() * devPixRatio);
@@ -242,6 +266,7 @@ QPixmap setOpacity(QPixmap pixmap, const qreal &opacity) {
     p.drawPixmap(0, 0, normalPixmap);
   }
   return opacityPixmap;
+  */
 }
 
 //-----------------------------------------------------------------------------
@@ -277,8 +302,10 @@ QPixmap compositePixmap(QPixmap pixmap, qreal opacity, int canvasWidth,
 
   QPixmap canvas(canvasWidth, canvasHeight);
   canvas.fill(Qt::transparent);  // set this to a color to debug
+  canvas.setDevicePixelRatio(devPixRatio);
   QPixmap combined(canvasWidth, canvasHeight);
   combined.fill(Qt::transparent);
+  combined.setDevicePixelRatio(devPixRatio);
   if (!pixmap.isNull()) {
     QPainter painter;
     painter.begin(&combined);
@@ -297,24 +324,34 @@ QPixmap compositePixmap(QPixmap pixmap, qreal opacity, int canvasWidth,
 
 QIcon createQIcon(const char *iconSVGName, bool useFullOpacity) {
   static int devPixRatio = getDevPixRatio();
+  QScreen *screen        = QApplication::primaryScreen();
+  //p.setDevicePixelRatio(screen->devicePixelRatio());
+
+
+  qDebug() << QString("DPR:") << devPixRatio;
+  int temp               = 0;
+  if (devPixRatio > 1) temp = 2;
 
   // get icon size
   QIcon themeIcon = QIcon::fromTheme(iconSVGName);
   QSize iconSize(0, 0);
   for (QList<QSize> sizes = themeIcon.availableSizes(); !sizes.isEmpty();
        sizes.removeFirst())
-    if (sizes.first().width() > iconSize.width()) iconSize = sizes.first();
+    if (sizes.first().width() > iconSize.width()) iconSize = sizes.first() * devPixRatio;
+  qDebug() << QString("ICON SIZE FROM FILE:") << iconSize;
 
   QString overStr         = QString(iconSVGName) + "_over";
   QString onStr           = QString(iconSVGName) + "_on";
+
   QPixmap themeIconPixmap = recolorPixmap(themeIcon.pixmap(iconSize));
+  themeIconPixmap.setDevicePixelRatio(screen->devicePixelRatio());
+  qDebug() << QString("ICON SIZE:") << themeIconPixmap.size();
   QPixmap overPixmap =
       recolorPixmap(QIcon::fromTheme(overStr).pixmap(iconSize));
   QPixmap onPixmap = recolorPixmap(QIcon::fromTheme(onStr).pixmap(iconSize));
   QIcon icon;
 
   // build icon
-  for (int devPixRatio = 1; devPixRatio <= 2; devPixRatio++) {
     int iconW                   = themeIconPixmap.width();
     int iconH                   = themeIconPixmap.height();
     int canvasW                 = iconW;
@@ -325,11 +362,9 @@ QIcon createQIcon(const char *iconSVGName, bool useFullOpacity) {
     const qreal onOpacity       = 1;
 
     // off
-    icon.addPixmap(compositePixmap(themeIconPixmap, normalOpacity, canvasW,
-                                   canvasH, iconW, iconH),
+    icon.addPixmap(themeIconPixmap,
                    QIcon::Normal, QIcon::Off);
-    icon.addPixmap(compositePixmap(themeIconPixmap, disabledOpacity, canvasW,
-                                   canvasH, iconW, iconH),
+    icon.addPixmap(setOpacity(themeIconPixmap, disabledOpacity),
                    QIcon::Disabled);
 
     // over
@@ -362,42 +397,43 @@ QIcon createQIcon(const char *iconSVGName, bool useFullOpacity) {
      * two sets loaded into the icon (16x16 and 20x20) and is dynamically used
      * depending on iconSize for toolbars.
      */
-    if (iconSize == (QSize(16, 16))) {
-      canvasW = 20 * devPixRatio;
-      canvasH = 20 * devPixRatio;
-      offset  = 2 * devPixRatio;
 
-      // off
-      icon.addPixmap(compositePixmap(themeIconPixmap, normalOpacity, canvasW,
-                                     canvasH, iconW, iconH, offset),
-                     QIcon::Normal, QIcon::Off);
-      icon.addPixmap(compositePixmap(themeIconPixmap, disabledOpacity, canvasW,
-                                     canvasH, iconW, iconH, offset),
-                     QIcon::Disabled);
-      // over
-      icon.addPixmap(
-          compositePixmap(!overPixmap.isNull() ? overPixmap : themeIconPixmap,
-                          onOpacity, canvasW, canvasH, iconW, iconH, offset),
-          QIcon::Active);
+    //if (iconSize == (QSize(16, 16))) {
+    //  canvasW = 20 * devPixRatio;
+    //  canvasH = 20 * devPixRatio;
+    //  offset  = 2 * devPixRatio;
 
-      // on
-      if (!onPixmap.isNull()) {
-        icon.addPixmap(compositePixmap(onPixmap, onOpacity, canvasW, canvasH,
-                                       iconW, iconH, offset),
-                       QIcon::Normal, QIcon::On);
-        icon.addPixmap(compositePixmap(onPixmap, disabledOpacity, canvasW,
-                                       canvasH, iconW, iconH, offset),
-                       QIcon::Disabled, QIcon::On);
-      } else {
-        icon.addPixmap(compositePixmap(themeIconPixmap, onOpacity, canvasW,
-                                       canvasH, iconW, iconH, offset),
-                       QIcon::Normal, QIcon::On);
-        icon.addPixmap(compositePixmap(themeIconPixmap, disabledOpacity,
-                                       canvasW, canvasH, iconW, iconH, offset),
-                       QIcon::Disabled, QIcon::On);
-      }
-    }
-  }
+    //  // off
+    //  icon.addPixmap(compositePixmap(themeIconPixmap, normalOpacity, canvasW,
+    //                                 canvasH, iconW, iconH, offset),
+    //                 QIcon::Normal, QIcon::Off);
+    //  icon.addPixmap(compositePixmap(themeIconPixmap, disabledOpacity, canvasW,
+    //                                 canvasH, iconW, iconH, offset),
+    //                 QIcon::Disabled);
+    //  // over
+    //  icon.addPixmap(
+    //      compositePixmap(!overPixmap.isNull() ? overPixmap : themeIconPixmap,
+    //                      onOpacity, canvasW, canvasH, iconW, iconH, offset),
+    //      QIcon::Active);
+
+    //  // on
+    //  if (!onPixmap.isNull()) {
+    //    icon.addPixmap(compositePixmap(onPixmap, onOpacity, canvasW, canvasH,
+    //                                   iconW, iconH, offset),
+    //                   QIcon::Normal, QIcon::On);
+    //    icon.addPixmap(compositePixmap(onPixmap, disabledOpacity, canvasW,
+    //                                   canvasH, iconW, iconH, offset),
+    //                   QIcon::Disabled, QIcon::On);
+    //  } else {
+    //    icon.addPixmap(compositePixmap(themeIconPixmap, onOpacity, canvasW,
+    //                                   canvasH, iconW, iconH, offset),
+    //                   QIcon::Normal, QIcon::On);
+    //    icon.addPixmap(compositePixmap(themeIconPixmap, disabledOpacity,
+    //                                   canvasW, canvasH, iconW, iconH, offset),
+    //                   QIcon::Disabled, QIcon::On);
+    //  }
+    //}
+  
   return icon;
 }
 
