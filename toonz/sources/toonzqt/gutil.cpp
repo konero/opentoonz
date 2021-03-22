@@ -363,8 +363,8 @@ QIcon createQIcon(const char *iconSVGName, bool useFullOpacity) {
      * depending on iconSize for toolbars.
      */
     if (iconSize == (QSize(16, 16))) {
-      canvasW = 20 * devPixRatio;
-      canvasH = 20 * devPixRatio;
+      canvasW = iconW + (4 * devPixRatio);
+      canvasH = iconH + (4 * devPixRatio);
       offset  = 2 * devPixRatio;
 
       // off
