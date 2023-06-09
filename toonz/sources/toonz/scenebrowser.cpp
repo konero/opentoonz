@@ -565,7 +565,7 @@ void SceneBrowser::refreshCurrentFolderItems() {
         QFileInfo fileInfo(QString::fromStdWString(it->getWideString()));
         // Update level infos
         if (levelItem.m_creationDate.isNull() ||
-            (fileInfo.created() < levelItem.m_creationDate))
+            (fileInfo.birthTime() < levelItem.m_creationDate))
           levelItem.m_creationDate = fileInfo.birthTime();
         if (levelItem.m_modifiedDate.isNull() ||
             (fileInfo.lastModified() > levelItem.m_modifiedDate))

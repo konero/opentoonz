@@ -828,7 +828,7 @@ void FileBrowser::readInfo(Item &item) {
   TFilePath fp = item.m_path;
   QFileInfo info(toQString(fp));
   if (info.exists()) {
-    item.m_creationDate = info.created();
+    item.m_creationDate = info.birthTime();
     item.m_modifiedDate = info.lastModified();
     item.m_fileType     = info.suffix();
     item.m_fileSize     = info.size();

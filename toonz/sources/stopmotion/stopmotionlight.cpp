@@ -6,6 +6,7 @@
 #include <QDialog>
 #include <QApplication>
 #include <QDesktopWidget>
+#include <QScreen>
 #include <QWindow>
 
 TEnv::IntVar StopMotionBlackCapture("StopMotionBlackCapture", 0);
@@ -19,7 +20,10 @@ StopMotionLight::StopMotionLight() {
   m_fullScreen1 = new QDialog();
   m_fullScreen1->setModal(false);
   m_fullScreen1->setStyleSheet("background-color:black;");
-  m_screenCount = QApplication::desktop()->screenCount();
+
+  QList<QScreen *> screens = QGuiApplication::screens();
+  m_screenCount            = screens.size();
+
   if (m_screenCount > 1) {
     m_fullScreen2 = new QDialog();
     m_fullScreen2->setModal(false);
@@ -115,24 +119,29 @@ void StopMotionLight::showOverlays() {
       m_fullScreen3->setStyleSheet(style3);
     }
   }
+
   bool shown       = false;
   bool isTimeLapse = StopMotion::instance()->m_isTimeLapse;
-  if ((getBlackCapture() || m_useScreen1Overlay) && !isTimeLapse) {
-    m_fullScreen1->showFullScreen();
-    m_fullScreen1->setGeometry(QApplication::desktop()->screenGeometry(0));
-    shown = true;
-  }
-  if (m_screenCount > 1 && (getBlackCapture() || m_useScreen2Overlay) &&
-      !isTimeLapse) {
-    m_fullScreen2->showFullScreen();
-    m_fullScreen2->setGeometry(QApplication::desktop()->screenGeometry(1));
-    shown = true;
-  }
-  if (m_screenCount > 2 && (getBlackCapture() || m_useScreen3Overlay) &&
-      !isTimeLapse) {
-    m_fullScreen3->showFullScreen();
-    m_fullScreen3->setGeometry(QApplication::desktop()->screenGeometry(2));
-    shown = true;
+
+  QList<QScreen *> screens = QGuiApplication::screens();
+  for (int i = 0; i < screens.size(); ++i) {
+    QScreen *screen = screens.at(i);
+
+    if (i == 0 && (getBlackCapture() || m_useScreen1Overlay) && !isTimeLapse) {
+      m_fullScreen1->showFullScreen();
+      m_fullScreen1->setGeometry(screen->geometry());
+      shown = true;
+    } else if (i == 1 && (getBlackCapture() || m_useScreen2Overlay) &&
+               !isTimeLapse) {
+      m_fullScreen2->showFullScreen();
+      m_fullScreen2->setGeometry(screen->geometry());
+      shown = true;
+    } else if (i == 2 && (getBlackCapture() || m_useScreen3Overlay) &&
+               !isTimeLapse) {
+      m_fullScreen3->showFullScreen();
+      m_fullScreen3->setGeometry(screen->geometry());
+      shown = true;
+    }
   }
 
   if (shown) {
@@ -140,6 +149,7 @@ void StopMotionLight::showOverlays() {
     // taking a photo
     qApp->processEvents(QEventLoop::AllEvents, 1500);
   }
+
   m_overlaysReady = true;
 }
 

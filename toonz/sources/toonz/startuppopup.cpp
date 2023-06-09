@@ -47,6 +47,7 @@
 #include <QPainter>
 #include <QScrollBar>
 #include <QMouseEvent>
+#include <QScreen>
 #include <QDesktopServices>
 
 using namespace std;
@@ -297,19 +298,19 @@ StartupPopup::StartupPopup()
   //---- signal-slot connections
   bool ret = true;
   ret      = ret && connect(sceneHandle, SIGNAL(sceneChanged()), this,
-                       SLOT(onSceneChanged()));
+                            SLOT(onSceneChanged()));
   ret      = ret && connect(sceneHandle, SIGNAL(sceneSwitched()), this,
-                       SLOT(onSceneChanged()));
+                            SLOT(onSceneChanged()));
   ret      = ret && connect(newProjectButton, SIGNAL(clicked()), this,
-                       SLOT(onNewProjectButtonPressed()));
+                            SLOT(onNewProjectButtonPressed()));
   ret      = ret && connect(openProjectButton, SIGNAL(clicked()), this,
-                       SLOT(onOpenProjectButtonPressed()));
+                            SLOT(onOpenProjectButtonPressed()));
   ret      = ret && connect(exploreProjectButton, SIGNAL(clicked()), this,
-                       SLOT(onExploreProjectButtonPressed()));
+                            SLOT(onExploreProjectButtonPressed()));
   ret      = ret && connect(loadOtherSceneButton, SIGNAL(clicked()), this,
-                       SLOT(onLoadSceneButtonPressed()));
+                            SLOT(onLoadSceneButtonPressed()));
   ret      = ret && connect(m_projectsCB, SIGNAL(currentIndexChanged(int)),
-                       SLOT(onProjectChanged(int)));
+                            SLOT(onProjectChanged(int)));
   ret      = ret &&
         connect(createButton, SIGNAL(clicked()), this, SLOT(onCreateButton()));
   ret = ret && connect(m_showAtStartCB, SIGNAL(stateChanged(int)), this,
@@ -416,10 +417,11 @@ void StartupPopup::showEvent(QShowEvent *) {
   refreshRecentScenes();
   refreshExistingScenes();
   // center window
-  int currentScreen =
-      QApplication::desktop()->screenNumber(TApp::instance()->getMainWindow());
-  QPoint activeMonitorCenter =
-      QApplication::desktop()->availableGeometry(currentScreen).center();
+  QScreen *screen = QGuiApplication::screenAt(QCursor::pos());
+  if (!screen) {
+    screen = QGuiApplication::primaryScreen();
+  }
+  QPoint activeMonitorCenter     = screen->availableGeometry().center();
   QPoint thisPopupCenter         = this->rect().center();
   QPoint centeredOnActiveMonitor = activeMonitorCenter - thisPopupCenter;
   this->move(centeredOnActiveMonitor);
@@ -441,7 +443,7 @@ void StartupPopup::refreshRecentScenes() {
   } else {
     int i = 0;
     for (QString name : m_sceneNames) {
-      if (i > 9) break;  // box can hold 10 scenes
+      if (i > 9) break;                           // box can hold 10 scenes
       QString fileName =
           name.remove(0, name.indexOf(" ") + 1);  // remove "#. " prefix
       QString projectName = RecentFiles::instance()->getFileProject(fileName);
@@ -851,7 +853,7 @@ bool StartupPopup::parsePresetString(const QString &str, QString &name,
   in order to keep compatibility with default (Harlequin's) reslist.txt
   */
 
-  QStringList tokens = str.split(",", QString::SkipEmptyParts);
+  QStringList tokens = str.split(',', Qt::SkipEmptyParts);
 
   if (!(tokens.count() == 3 ||
         (!forCleanup && tokens.count() == 4) || /*- with "fx x fy" token -*/
@@ -974,7 +976,7 @@ void StartupPopup::onOpenProjectButtonPressed() {
 
 void StartupPopup::onExploreProjectButtonPressed() {
   TProjectManager *pm = TProjectManager::instance();
-  TFilePath cfp = pm->getCurrentProject()->getProjectFolder();
+  TFilePath cfp       = pm->getCurrentProject()->getProjectFolder();
 
   QDesktopServices::openUrl(QUrl("file:///" + cfp.getQString()));
 }
@@ -1038,11 +1040,11 @@ void StartupPopup::onRecentSceneClicked(int index) {
     IoCmd::loadScene(TFilePath(path.toStdWString()), false, true);
     QString origProjectName = RecentFiles::instance()->getFileProject(index);
     QString projectName     = QString::fromStdString(TApp::instance()
-                                                     ->getCurrentScene()
-                                                     ->getScene()
-                                                     ->getProject()
-                                                     ->getName()
-                                                     .getName());
+                                                         ->getCurrentScene()
+                                                         ->getScene()
+                                                         ->getProject()
+                                                         ->getName()
+                                                         .getName());
     if (origProjectName == "-" || origProjectName != projectName) {
       QString fileName =
           RecentFiles::instance()->getFilePath(index, RecentFiles::Scene);
@@ -1222,8 +1224,7 @@ QPixmap StartupScenesList::createScenePreview(const QString &name,
       painter.setPen(pen);
       painter.drawRect((m_iconSize.width() - scaledPixmap.width()) / 2,
                        (m_iconSize.height() - scaledPixmap.height()) / 2,
-                       scaledPixmap.width() - 1,
-                       scaledPixmap.height() - 1);
+                       scaledPixmap.width() - 1, scaledPixmap.height() - 1);
       return pixmap;
     }
   }
@@ -1232,15 +1233,13 @@ QPixmap StartupScenesList::createScenePreview(const QString &name,
   return pixmap;
 }
 
-void StartupScenesList::clearScenes() {
-    clear();
-}
+void StartupScenesList::clearScenes() { clear(); }
 
 void StartupScenesList::addScene(const QString &name, const QString &path) {
   QPixmap pixmap;
   if (path == ":")
-    pixmap =
-        svgToPixmap(getIconThemePath("actions/16/new_scene.svg"), m_iconSize, Qt::KeepAspectRatio);
+    pixmap = svgToPixmap(getIconThemePath("actions/16/new_scene.svg"),
+                         m_iconSize, Qt::KeepAspectRatio);
   else
     pixmap = createScenePreview(name, TFilePath(path));
   QIcon icon(pixmap);

@@ -1018,7 +1018,7 @@ void SceneViewer::wheelEvent(QWheelEvent *event) {
     else if ((m_gestureActive == true &&
               m_touchDevice == QTouchDevice::TouchScreen) ||
              m_gestureActive == false) {
-      zoomQt(event->pos() * getDevPixRatio(), exp(0.001 * delta));
+      zoomQt(event->position() * getDevPixRatio(), exp(0.001 * delta));
       m_panning = false;
     }
   }
@@ -1280,7 +1280,8 @@ bool SceneViewer::event(QEvent *e) {
   }
 
   // discard too frequent move events
-  static QTime clock;
+  // discard too frequent move events
+  static QElapsedTimer clock;  // changed from QTime to QElapsedTimer
   if (e->type() == QEvent::MouseButtonPress)
     clock.start();
   else if (e->type() == QEvent::MouseMove) {

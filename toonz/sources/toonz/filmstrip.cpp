@@ -1179,7 +1179,7 @@ void FilmstripFrames::keyPressEvent(QKeyEvent *event) {
 //-----------------------------------------------------------------------------
 
 void FilmstripFrames::wheelEvent(QWheelEvent *event) {
-  scroll(-event->delta());
+  scroll(-event->angleDelta().y());
 }
 
 //-----------------------------------------------------------------------------

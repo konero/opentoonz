@@ -361,7 +361,7 @@ protected:
   void panQt(const QPointF &delta);
 
   // center: window coordinate, pixels, topleft origin
-  void zoomQt(const QPoint &center, double scaleFactor);
+  void zoomQt(const QPointF &center, double scaleFactor);
 
   // overridden from TTool::Viewer
   void pan(const TPointD &delta) override { panQt(QPointF(delta.x, delta.y)); }

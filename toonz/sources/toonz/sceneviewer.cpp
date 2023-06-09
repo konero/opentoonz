@@ -101,7 +101,7 @@ TEnv::IntVar EnvViewerPreviewBehavior("ViewerPreviewBehavior", 0);
 namespace {
 
 int l_mainDisplayListsSpaceId =
-    -1;  //!< Display lists space id associated with SceneViewers
+    -1;          //!< Display lists space id associated with SceneViewers
 std::set<TGlContext>
     l_contexts;  //!< Stores every SceneViewer context (see ~SceneViewer)
 
@@ -1452,7 +1452,7 @@ static bool check_framebuffer_status() {
   GLenum s = reinterpret_cast<PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC>(proc)(
       GL_FRAMEBUFFER);
 #else
-  GLenum s = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+  GLenum s      = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 #endif
   if (s == GL_FRAMEBUFFER_UNDEFINED)
     printf("Warning: FB undefined: %d\n", s);
@@ -2134,7 +2134,7 @@ void SceneViewer::drawScene() {
           //                      smPlayer);
         }
       }
-      if (  //! m_stopMotion->m_drawBeneathLevels &&
+      if (   //! m_stopMotion->m_drawBeneathLevels &&
           m_stopMotion->m_liveViewStatus == 2 &&
           (  //! frameHandle->isPlaying() ||
               frame == m_stopMotion->getXSheetFrameNumber() - 1)) {
@@ -2541,7 +2541,7 @@ double SceneViewer::getZoomScaleFittingWithScreen() {
 //-----------------------------------------------------------------------------
 
 // center: window coordinate, pixels, topleft origin
-void SceneViewer::zoomQt(const QPoint &center, double factor) {
+void SceneViewer::zoomQt(const QPointF &center, double factor) {
   if (factor == 1.0) return;
   TPointD delta(center.x() - width() / 2, -center.y() + height() / 2);
   double oldZoomScale = m_zoomScale3D;

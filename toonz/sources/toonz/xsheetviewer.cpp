@@ -233,7 +233,7 @@ XsheetViewer::XsheetViewer(QWidget *parent, Qt::WindowFlags flags)
     , m_isCurrentColumnSwitched(false)
     , m_isComputingSize(false)
     , m_currentNoteIndex(0)
-    , m_qtModifiers(0)
+    , m_qtModifiers({})
     , m_frameDisplayStyle(to_enum(FrameDisplayStyleInXsheetRowArea))
     , m_orientation(nullptr)
     , m_xsheetLayout("Classic")
@@ -253,7 +253,7 @@ XsheetViewer::XsheetViewer(QWidget *parent, Qt::WindowFlags flags)
   m_toolbarScrollArea = new XsheetScrollArea(this);
   m_toolbarScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   m_toolbarScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  m_toolbar = new XsheetGUI::XSheetToolbar(this, 0, true);
+  m_toolbar = new XsheetGUI::XSheetToolbar(this, {}, true);
   m_toolbarScrollArea->setWidget(m_toolbar);
 
   m_noteArea       = new XsheetGUI::NoteArea(this);
@@ -587,7 +587,7 @@ void XsheetViewer::scroll(QPoint delta) {
 
   bool notUpdateSizeH = maxValueH > valueH && x >= 0;
   bool notUpdateSizeV = maxValueV > valueV && y >= 0;
-  if (!notUpdateSizeH && !notUpdateSizeV)  // Resize orizzontale e verticale
+  if (!notUpdateSizeH && !notUpdateSizeV)      // Resize orizzontale e verticale
     refreshContentSize(x, y);
   else if (notUpdateSizeH && !notUpdateSizeV)  // Resize verticale
     refreshContentSize(0, y);
@@ -697,7 +697,7 @@ void XsheetViewer::timerEvent(QTimerEvent *) {
   scroll(m_autoPanSpeed);
   if (!m_dragTool) return;
   QMouseEvent mouseEvent(QEvent::MouseMove, m_lastAutoPanPos - m_autoPanSpeed,
-                         Qt::NoButton, 0, m_qtModifiers);
+                         Qt::NoButton, {}, m_qtModifiers);
   m_dragTool->onDrag(&mouseEvent);
   m_lastAutoPanPos += m_autoPanSpeed;
 }
@@ -1168,9 +1168,9 @@ void XsheetViewer::wheelEvent(QWheelEvent *event) {
   case Qt::MouseEventNotSynthesized: {
     if (0 != (event->modifiers() & Qt::ControlModifier) &&
         event->angleDelta().y() != 0) {
-      QPoint pos(event->pos().x() - m_columnArea->geometry().width() +
+      QPoint pos(event->position().x() - m_columnArea->geometry().width() +
                      m_cellArea->visibleRegion().boundingRect().left(),
-                 event->pos().y());
+                 event->position().y());
       int targetFrame = xyToPosition(pos).frame();
 
       int newFactor =

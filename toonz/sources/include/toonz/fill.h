@@ -4,7 +4,7 @@
 #define T_FILL_INCLUDED
 
 class TPalette;
-
+//
 #undef DVAPI
 #undef DVVAR
 #ifdef TOONZLIB_EXPORTS
