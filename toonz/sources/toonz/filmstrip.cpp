@@ -1146,30 +1146,25 @@ void FilmstripFrames::keyPressEvent(QKeyEvent *event) {
     fh->firstFrame();
   else if (event->key() == Qt::Key_End)
     fh->lastFrame();
-  else if (event->key() == Qt::Key_PageDown) {
-    if (m_isVertical) {
-      int frameHeight   = m_iconSize.height();
-      int visibleHeight = visibleRegion().rects()[0].height();
-      int visibleFrames = double(visibleHeight) / double(frameHeight);
-      scroll(visibleFrames * frameHeight);
-    } else {
-      int frameWidth    = m_iconSize.width();
-      int visibleWidth  = visibleRegion().rects()[0].width();
-      int visibleFrames = double(visibleWidth) / double(frameWidth);
-      scroll(visibleFrames * frameWidth);
+  else if (event->key() == Qt::Key_PageDown || event->key() == Qt::Key_PageUp) {
+    QRect visibleRect;
+    for (const auto &rect : visibleRegion()) {
+      visibleRect = rect;
+      break;
     }
-    return;
-  } else if (event->key() == Qt::Key_PageUp) {
+
     if (m_isVertical) {
       int frameHeight   = m_iconSize.height();
-      int visibleHeight = visibleRegion().rects()[0].height();
+      int visibleHeight = visibleRect.height();
       int visibleFrames = double(visibleHeight) / double(frameHeight);
-      scroll(-visibleFrames * frameHeight);
+      scroll(event->key() == Qt::Key_PageDown ? visibleFrames * frameHeight
+                                              : -visibleFrames * frameHeight);
     } else {
       int frameWidth    = m_iconSize.width();
-      int visibleWidth  = visibleRegion().rects()[0].width();
+      int visibleWidth  = visibleRect.width();
       int visibleFrames = double(visibleWidth) / double(frameWidth);
-      scroll(-visibleFrames * frameWidth);
+      scroll(event->key() == Qt::Key_PageDown ? visibleFrames * frameWidth
+                                              : -visibleFrames * frameWidth);
     }
     return;
   } else

@@ -23,6 +23,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QApplication>
+#include <QScreen>
 #include <QStyle>
 #include <QButtonGroup>
 #include <QPainter>
@@ -125,7 +126,7 @@ void Separator::paintEvent(QPaintEvent *) {
 
   QRect contents(contentsRect());
 
-  int textWidth = p.fontMetrics().width(m_name);
+  int textWidth = p.fontMetrics().horizontalAdvance(m_name);
 
   p.drawText(contents.left(), 10, m_name);
 
@@ -301,12 +302,22 @@ Dialog::Dialog(QWidget *parent, bool hasButton, bool hasFixedSize,
     // The following position adjustment will also prevent such behavior.
 
     // try and get active screen
+    QRect screen;
     if (parent != NULL) {
-      m_currentScreen = QApplication::desktop()->screenNumber(parent);
+      QScreen *currentScreen =
+          QGuiApplication::screenAt(parent->mapToGlobal(QPoint(0, 0)));
+      if (currentScreen) {
+        screen = currentScreen->availableGeometry();
+      }
+    } else {
+      QScreen *primaryScreen = QGuiApplication::primaryScreen();
+      if (primaryScreen) {
+        screen = primaryScreen->availableGeometry();
+      }
     }
-    QRect screen = QApplication::desktop()->availableGeometry(m_currentScreen);
-    int x        = values.at(0).toInt();
-    int y        = values.at(1).toInt();
+
+    int x = values.at(0).toInt();
+    int y = values.at(1).toInt();
 
     // make sure that the window is visible on the screen
     // all popups will popup on the active window the first time
@@ -360,23 +371,25 @@ void Dialog::hideEvent(QHideEvent *event) {
   int x = pos().rx();
   int y = pos().ry();
   // make sure the dialog is actually visible on a screen
-  int screenCount = QApplication::desktop()->screenCount();
-  int currentScreen;
-  for (int i = 0; i < screenCount; i++) {
-    if (QApplication::desktop()->screenGeometry(i).contains(pos())) {
-      currentScreen = i;
+  QScreen *currentScreen = nullptr;
+  for (QScreen *screen : QGuiApplication::screens()) {
+    if (screen->geometry().contains(pos())) {
+      currentScreen = screen;
       break;
-    } else {
-      // if not - put it back on the main window
-      currentScreen = m_currentScreen;
     }
   }
-  QRect screen = QApplication::desktop()->availableGeometry(currentScreen);
 
-  if (x > screen.right() - 50) x = screen.right() - 50;
-  if (x < screen.left()) x = screen.left();
-  if (y > screen.bottom() - 90) y = screen.bottom() - 90;
-  if (y < screen.top()) y = screen.top();
+  QRect screenGeometry;
+  if (currentScreen) {
+    screenGeometry = currentScreen->availableGeometry();
+  } else if (!QGuiApplication::screens().isEmpty()) {
+    screenGeometry = QGuiApplication::screens().first()->availableGeometry();
+  }
+
+  if (x > screenGeometry.right() - 50) x = screenGeometry.right() - 50;
+  if (x < screenGeometry.left()) x = screenGeometry.left();
+  if (y > screenGeometry.bottom() - 90) y = screenGeometry.bottom() - 90;
+  if (y < screenGeometry.top()) y = screenGeometry.top();
   move(QPoint(x, y));
   resize(size());
   QRect r = geometry();

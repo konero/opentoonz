@@ -33,7 +33,8 @@ class HistoryPane final : public QWidget {
   QScrollArea *m_frameArea;
 
 public:
-  HistoryPane(QWidget *parent = 0, Qt::WindowFlags flags = 0);
+  HistoryPane(QWidget *parent       = nullptr,
+              Qt::WindowFlags flags = Qt::WindowFlags());
   ~HistoryPane(){};
 
 protected:

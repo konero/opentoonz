@@ -512,7 +512,7 @@ void ChangeObjectParent::refresh() {
   for (i = 0; i < pegbarListID.size(); i++)
     addText(pegbarListID.at(i), pegbarListTr.at(i), pegbarListColor.at(i));
 
-  m_width = fontMetrics().width(theLongestTxt) + 32;
+  m_width = fontMetrics().horizontalAdvance(theLongestTxt) + 32;
   selectCurrent(currentId);
 }
 
@@ -915,7 +915,7 @@ void ColumnArea::DrawHeader::drawEye() const {
   QRect eyeRect      = o->rect(PredefinedRect::EYE).translated(orig);
   // preview visible toggle
   if (o->isVerticalTimeline())
-    p.setPen(m_viewer->getColumnIconLineColor());  // Preview border color
+    p.setPen(m_viewer->getColumnIconLineColor());    // Preview border color
   else
     p.setPen(m_viewer->getTimelineIconLineColor());  // Preview border color
 
@@ -954,7 +954,7 @@ void ColumnArea::DrawHeader::drawPreviewToggle(int opacity) const {
       o->rect(PredefinedRect::PREVIEW_LAYER).translated(orig);
 
   if (o->isVerticalTimeline())
-    p.setPen(m_viewer->getColumnIconLineColor());  // Camstand border color
+    p.setPen(m_viewer->getColumnIconLineColor());    // Camstand border color
   else
     p.setPen(m_viewer->getTimelineIconLineColor());  // Camstand border color
 
@@ -996,7 +996,7 @@ void ColumnArea::DrawHeader::drawUnifiedViewToggle(int opacity) const {
       o->rect(PredefinedRect::UNIFIEDVIEW_LAYER).translated(orig);
 
   if (o->isVerticalTimeline())
-    p.setPen(m_viewer->getColumnIconLineColor());  // border color
+    p.setPen(m_viewer->getColumnIconLineColor());    // border color
   else
     p.setPen(m_viewer->getTimelineIconLineColor());  // border color
 
@@ -1034,7 +1034,7 @@ void ColumnArea::DrawHeader::drawLock() const {
 
   // lock button
   if (o->isVerticalTimeline())
-    p.setPen(m_viewer->getColumnIconLineColor());  // Lock border color
+    p.setPen(m_viewer->getColumnIconLineColor());    // Lock border color
   else
     p.setPen(m_viewer->getTimelineIconLineColor());  // Lock border color
 
@@ -1292,11 +1292,11 @@ void ColumnArea::DrawHeader::drawPegbarName() const {
   std::string handle = xsh->getStageObject(columnId)->getParentHandle();
   if (handle == "B") handleWidth = 0;  // Default handle
 
-  int width = QFontMetrics(font).width(name);
+  int width = QFontMetrics(font).horizontalAdvance(name);
 
   while (width > o->rect(PredefinedRect::PEGBAR_NAME).width() - handleWidth) {
     name.remove(-1, 1000);
-    width = QFontMetrics(font).width(name);
+    width = QFontMetrics(font).horizontalAdvance(name);
   }
 
   // pegbar name
@@ -2765,7 +2765,7 @@ void ColumnArea::mouseReleaseEvent(QMouseEvent *event) {
 
   if (m_transparencyPopupTimer) m_transparencyPopupTimer->stop();
 
-  m_viewer->setQtModifiers(0);
+  m_viewer->setQtModifiers(Qt::NoModifier);
   m_viewer->dragToolRelease(event);
   m_isPanning = false;
   m_viewer->stopAutoPan();

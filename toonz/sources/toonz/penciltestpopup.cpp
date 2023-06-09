@@ -1158,11 +1158,11 @@ QString formatString(QString inStr, int charNum) {
   // find the first non-digit character
   int index = inStr.indexOf(QRegExp("[^0-9]"), 0);
 
-  if (index == -1)  // only digits
+  if (index == -1)      // only digits
     numStr = inStr;
   else if (index == 0)  // only post strings
     return inStr;
-  else {  // contains both
+  else {                // contains both
     numStr  = inStr.left(index);
     postStr = inStr.right(inStr.length() - index);
   }
@@ -1642,7 +1642,8 @@ PencilTestPopup::PencilTestPopup()
   m_dpiMenuWidget = createDpiMenuWidget();
   //----
 
-  m_resolutionCombo->setMaximumWidth(fontMetrics().width("0000 x 0000") + 25);
+  m_resolutionCombo->setMaximumWidth(
+      fontMetrics().horizontalAdvance("0000 x 0000") + 25);
   m_fileTypeCombo->addItems({"jpg", "png", "tga", "tif"});
   m_fileTypeCombo->setCurrentText(QString::fromStdString(CamCapFileType));
 
@@ -1727,7 +1728,7 @@ PencilTestPopup::PencilTestPopup()
   m_calibration.label->hide();
   m_calibration.exportBtn->setEnabled(false);
 
-  int subCameraFieldWidth = fontMetrics().width("00000") + 5;
+  int subCameraFieldWidth = fontMetrics().horizontalAdvance("00000") + 5;
   m_subWidthFld->setFixedWidth(subCameraFieldWidth);
   m_subHeightFld->setFixedWidth(subCameraFieldWidth);
   m_subXPosFld->setFixedWidth(subCameraFieldWidth);
@@ -2157,7 +2158,8 @@ void PencilTestPopup::refreshCameraList() {
   for (int c = 0; c < cameras.size(); c++) {
     QString camDesc = cameras.at(c).description();
     m_cameraListCombo->addItem(camDesc);
-    maxTextLength = std::max(maxTextLength, fontMetrics().width(camDesc));
+    maxTextLength =
+        std::max(maxTextLength, fontMetrics().horizontalAdvance(camDesc));
   }
   m_cameraListCombo->setMaximumWidth(maxTextLength + 25);
   m_cameraListCombo->setEnabled(true);
@@ -2535,7 +2537,7 @@ void PencilTestPopup::getWebcamImage() {
   if (!blnFrameReadSuccessfully ||
       imgOriginal.empty()) {  // if frame not read successfully
     std::cout << "error: frame not read from webcam\n";
-    error = true;  // print error message to std out
+    error = true;             // print error message to std out
   }
 
   if (!error) {
@@ -2581,7 +2583,7 @@ void PencilTestPopup::onFrameCaptured(cv::Mat& image) {
         int f        = fId.getNumber();
         if (f % 10 == 0)  // next number
           m_frameNumberEdit->setValue(TFrameId(((int)(f / 10) + 1) * 10));
-        else  // next alphabet
+        else              // next alphabet
           m_frameNumberEdit->setValue(TFrameId(f + 1));
       } else {
         TFrameId fId = m_frameNumberEdit->getValue();
@@ -2589,7 +2591,7 @@ void PencilTestPopup::onFrameCaptured(cv::Mat& image) {
         if (fId.getLetter().isEmpty() || fId.getLetter() == "Z" ||
             fId.getLetter() == "z")  // next number
           m_frameNumberEdit->setValue(TFrameId(fId.getNumber() + 1));
-        else {  // next alphabet
+        else {                       // next alphabet
           QByteArray byteArray = fId.getLetter().toUtf8();
           // return incrementing the last letter
           byteArray.data()[byteArray.size() - 1]++;

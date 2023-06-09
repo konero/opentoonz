@@ -31,8 +31,9 @@ class XSheetToolbar final : public CommandBar {
   XsheetViewer *m_viewer;
 
 public:
-  XSheetToolbar(XsheetViewer *parent = 0, Qt::WindowFlags flags = 0,
-                bool isCollapsible = false);
+  XSheetToolbar(XsheetViewer *parent  = nullptr,
+                Qt::WindowFlags flags = Qt::WindowFlags(),
+                bool isCollapsible    = false);
   static void toggleXSheetToolbar();
   void showToolbar(bool show);
 

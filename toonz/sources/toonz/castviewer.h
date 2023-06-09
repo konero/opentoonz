@@ -78,7 +78,8 @@ class CastBrowser final : public QSplitter, public DvItemListModel {
   std::unique_ptr<CastItems> m_castItems;
 
 public:
-  CastBrowser(QWidget *parent = 0, Qt::WindowFlags flags = 0);
+  CastBrowser(QWidget *parent       = nullptr,
+              Qt::WindowFlags flags = Qt::WindowFlags());
   ~CastBrowser();
 
   CastItems const &getCastItems() const { return *m_castItems; }

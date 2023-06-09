@@ -566,7 +566,7 @@ void SceneBrowser::refreshCurrentFolderItems() {
         // Update level infos
         if (levelItem.m_creationDate.isNull() ||
             (fileInfo.created() < levelItem.m_creationDate))
-          levelItem.m_creationDate = fileInfo.created();
+          levelItem.m_creationDate = fileInfo.birthTime();
         if (levelItem.m_modifiedDate.isNull() ||
             (fileInfo.lastModified() > levelItem.m_modifiedDate))
           levelItem.m_modifiedDate = fileInfo.lastModified();
@@ -759,7 +759,7 @@ void SceneBrowser::readInfo(Item &item) {
   TFilePath fp = item.m_path;
   QFileInfo info(toQString(fp));
   if (info.exists()) {
-    item.m_creationDate = info.created();
+    item.m_creationDate = info.birthTime();
     item.m_modifiedDate = info.lastModified();
     item.m_fileType     = info.suffix();
     item.m_fileSize     = info.size();

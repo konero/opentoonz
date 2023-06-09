@@ -66,9 +66,9 @@
 class AutoLipSyncUndo final : public TUndo {
 public:
   AutoLipSyncUndo(int col, TXshSimpleLevel *sl, TXshLevelP cl,
-              std::vector<TFrameId> activeFrameIds, QStringList textLines,
-              int size, std::vector<TFrameId> previousFrameIds,
-              std::vector<TXshLevelP> previousLevels, int startFrame);
+                  std::vector<TFrameId> activeFrameIds, QStringList textLines,
+                  int size, std::vector<TFrameId> previousFrameIds,
+                  std::vector<TXshLevelP> previousLevels, int startFrame);
   void undo() const override;
   void redo() const override;
   int getSize() const override { return sizeof(*this); }
@@ -184,13 +184,14 @@ void AutoLipSyncUndo::redo() const {
 }
 
 AutoLipSyncPopup::AutoLipSyncPopup()
-    : Dialog(TApp::instance()->getMainWindow(), true, true, "AutoLipSyncPopup") {
+    : Dialog(TApp::instance()->getMainWindow(), true, true,
+             "AutoLipSyncPopup") {
   setWindowTitle(tr("Auto Lip Sync"));
   setFixedWidth(860);
   setFixedHeight(400);
 
-  m_audioFrame      = new QFrame(this);
-  m_audioFrame->setContentsMargins(0,0,0,0);
+  m_audioFrame = new QFrame(this);
+  m_audioFrame->setContentsMargins(0, 0, 0, 0);
 
   m_applyButton = new QPushButton(tr("Apply"), this);
   m_aiLabel     = new QLabel(tr("A I Drawing"));
@@ -214,7 +215,7 @@ AutoLipSyncPopup::AutoLipSyncPopup()
   m_progressDialog =
       new DVGui::ProgressDialog("Analyzing audio...", "", 1, 100, this);
   m_progressDialog->hide();
-  
+
   m_soundLevels = new QComboBox(this);
   m_playButton  = new QPushButton(tr(""), this);
   m_playIcon    = createQIcon("play");
@@ -433,8 +434,8 @@ AutoLipSyncPopup::AutoLipSyncPopup()
                        &AutoLipSyncPopup::playSound);
   ret = ret && connect(m_soundLevels, SIGNAL(currentIndexChanged(int)), this,
                        SLOT(onLevelChanged(int)));
-  ret = ret &&
-        connect(&m_audioTimeout, SIGNAL(timeout()), this, SLOT(onAudioTimeout()));
+  ret = ret && connect(&m_audioTimeout, SIGNAL(timeout()), this,
+                       SLOT(onAudioTimeout()));
 
   assert(ret);
 
@@ -504,9 +505,7 @@ void AutoLipSyncPopup::showEvent(QShowEvent *) {
 
 //-----------------------------------------------------------------------------
 
-void AutoLipSyncPopup::hideEvent(QHideEvent *) {
-  stopAllSound();
-}
+void AutoLipSyncPopup::hideEvent(QHideEvent *) { stopAllSound(); }
 
 //-----------------------------------------------------------------------------
 
@@ -536,12 +535,11 @@ void AutoLipSyncPopup::refreshSoundLevels() {
   if (currentIndex < m_soundLevels->count())
     m_soundLevels->setCurrentIndex(currentIndex);
   if (m_soundLevels->currentIndex() < m_soundLevels->count() - 1) {
-      m_insertAtLabel->hide();
-      m_startAt->hide();
-  }
-  else {
-      m_insertAtLabel->show();
-      m_startAt->show();
+    m_insertAtLabel->hide();
+    m_startAt->hide();
+  } else {
+    m_insertAtLabel->show();
+    m_startAt->show();
   }
 }
 
@@ -600,7 +598,7 @@ void AutoLipSyncPopup::stopAllSound() {
   TXsheet *xsh = TApp::instance()->getCurrentXsheet()->getXsheet();
   int colCount = xsh->getColumnCount();
   for (int i = 0; i < colCount; i++) {
-    TXshColumn *col = xsh->getColumn(i);
+    TXshColumn *col     = xsh->getColumn(i);
     TXshSoundColumn *sc = col->getSoundColumn();
     if (sc && sc->isPlaying()) sc->stop();
   }
@@ -655,9 +653,9 @@ void AutoLipSyncPopup::saveAudio() {
   TFilePath audioPath     = TFilePath(cacheRoot + "/rhubarb/temp.wav");
   std::string tempSString = audioPath.getQString().toStdString();
 
-  int level           = m_soundLevels->currentData().toInt();
-  TXsheet *xsh        = TApp::instance()->getCurrentXsheet()->getXsheet();
-  TXshColumn *col     = xsh->getColumn(level);
+  int level       = m_soundLevels->currentData().toInt();
+  TXsheet *xsh    = TApp::instance()->getCurrentXsheet()->getXsheet();
+  TXshColumn *col = xsh->getColumn(level);
   if (col) {
     TXshSoundColumn *sc = col->getSoundColumn();
     if (sc) {
@@ -726,7 +724,7 @@ void AutoLipSyncPopup::onOutputReady() {
                .replace("\\\"", "")
                .replace("\"", "");
   QStringList outputList =
-      output.mid(2, (output.size() - 4)).split(", ", QString::SkipEmptyParts);
+      output.mid(2, (output.size() - 4)).split(',', Qt::SkipEmptyParts);
   if (outputList.size()) {
     QStringList outputType = outputList.at(0).split(": ");
     if (outputType.at(1) == "progress") {
@@ -759,12 +757,11 @@ void AutoLipSyncPopup::onLevelChanged(int index) {
   }
   int level = m_soundLevels->currentData().toInt();
   if (level >= 0) {
-      m_insertAtLabel->hide();
-      m_startAt->hide();
-  }
-  else {
-      m_insertAtLabel->show();
-      m_startAt->show();
+    m_insertAtLabel->hide();
+    m_startAt->hide();
+  } else {
+    m_insertAtLabel->show();
+    m_startAt->show();
   }
   stopAllSound();
 }
@@ -883,8 +880,8 @@ void AutoLipSyncPopup::onApplyButton() {
   }
 
   AutoLipSyncUndo *undo = new AutoLipSyncUndo(
-      m_col, m_sl, m_childLevel, m_activeFrameIds, m_textLines,
-                      lastFrame, previousFrameIds, previousLevels, startFrame);
+      m_col, m_sl, m_childLevel, m_activeFrameIds, m_textLines, lastFrame,
+      previousFrameIds, previousLevels, startFrame);
   TUndoManager::manager()->add(undo);
   undo->redo();
   hide();
@@ -907,7 +904,7 @@ void AutoLipSyncPopup::imageNavClicked(int id) {
   else if (frameIndex == 0 && direction == -1)
     newIndex = m_levelFrameIds.size() - 1;
   else
-    newIndex                    = frameIndex + direction;
+    newIndex = frameIndex + direction;
   m_activeFrameIds[frameNumber] = m_levelFrameIds.at(newIndex);
   TXshCell newCell =
       TApp::instance()->getCurrentScene()->getScene()->getXsheet()->getCell(
@@ -967,4 +964,5 @@ void AutoLipSyncPopup::onStartValueChanged() {
   if (value < 1) m_startAt->setValue(1);
 }
 
-OpenPopupCommandHandler<AutoLipSyncPopup> openAutoLipSyncPopup(MI_AutoLipSyncPopup);
+OpenPopupCommandHandler<AutoLipSyncPopup> openAutoLipSyncPopup(
+    MI_AutoLipSyncPopup);

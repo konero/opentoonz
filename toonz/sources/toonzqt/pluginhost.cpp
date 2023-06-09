@@ -809,11 +809,11 @@ bool RasterFxPluginHost::setParamStructure(int n, toonz_param_page_t *p,
 
           deep_copy_base(dst_desc.base, src_desc.base);  // base
 
-          dst_desc.key  = patch_string(src_desc.key);   // key
-          dst_desc.note = patch_string(src_desc.note);  // note
+          dst_desc.key  = patch_string(src_desc.key);    // key
+          dst_desc.note = patch_string(src_desc.note);   // note
           memcpy(dst_desc.reserved_, src_desc.reserved_,
-                 sizeof(src_desc.reserved_));         // reserved fields
-          dst_desc.traits_tag = src_desc.traits_tag;  // tag
+                 sizeof(src_desc.reserved_));            // reserved fields
+          dst_desc.traits_tag = src_desc.traits_tag;     // tag
 
           // traits
           if (dst_desc.traits_tag == TOONZ_PARAM_TYPE_ENUM) {

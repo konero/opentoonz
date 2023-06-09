@@ -795,8 +795,8 @@ TStroke getIntersectedStroke(TStroke &stroke, TRectD bbox) {
       // Devo trovare l'intersezione
       int chunkIndex = (i % 2 == 0) ? (i * 0.5) - 1 : i * 0.5;
       TThickPoint p  = getIntersectionPoint(bbox, stroke.getChunk(chunkIndex),
-                                           currentSegmentIndex,
-                                           chunkIndex == precChunkIndex);
+                                            currentSegmentIndex,
+                                            chunkIndex == precChunkIndex);
 
       // exactly match the position with the edge of bbox
       // or the pasted raster may offset by 1pixel due to truncation in

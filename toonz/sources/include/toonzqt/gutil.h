@@ -2,7 +2,7 @@
 
 #ifndef GUTIL_H
 #define GUTIL_H
-
+// blaaa
 #include "tcommon.h"
 #include <QImage>
 #include <QFrame>

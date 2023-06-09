@@ -200,7 +200,8 @@ StopMotionController::StopMotionController(QWidget *parent) : QWidget(parent) {
   m_saveInFolderPopup = new PencilTestSaveInFolderPopup(this);
   m_cameraListCombo   = new QComboBox(this);
   m_resolutionCombo   = new QComboBox(this);
-  m_resolutionCombo->setFixedWidth(fontMetrics().width("0000 x 0000") + 25);
+  m_resolutionCombo->setFixedWidth(
+      fontMetrics().horizontalAdvance("0000 x 0000") + 25);
   m_resolutionLabel                 = new QLabel(tr("Resolution: "), this);
   m_cameraStatusLabel               = new QLabel(tr("Camera Status"), this);
   QPushButton *refreshCamListButton = new QPushButton(tr("Refresh"), this);
@@ -496,7 +497,8 @@ StopMotionController::StopMotionController(QWidget *parent) : QWidget(parent) {
     m_pictureStyleCombo   = new QComboBox(this);
     m_cameraSettingsLabel = new QLabel(tr("Camera Model"), this);
     m_cameraModeLabel     = new QLabel(tr("Camera Mode"), this);
-    m_exposureCombo->setFixedWidth(fontMetrics().width("000000") + 25);
+    m_exposureCombo->setFixedWidth(fontMetrics().horizontalAdvance("000000") +
+                                   25);
     QVBoxLayout *settingsLayout = new QVBoxLayout;
     settingsLayout->setSpacing(0);
     settingsLayout->setMargin(5);
@@ -681,10 +683,10 @@ StopMotionController::StopMotionController(QWidget *parent) : QWidget(parent) {
     m_cameraSettingsPage->setLayout(innerSettingsLayout);
 
     // Make Options Page
-    QGroupBox *webcamBox  = new QGroupBox(tr("Webcam Options"), this);
-    QGroupBox *dslrBox    = new QGroupBox(tr("DSLR Options"), this);
-    m_timerCB             = new QGroupBox(tr("Use Time Lapse"), this);
-    m_timerIntervalFld    = new DVGui::DoubleField(this, true, 1);
+    QGroupBox *webcamBox = new QGroupBox(tr("Webcam Options"), this);
+    QGroupBox *dslrBox   = new QGroupBox(tr("DSLR Options"), this);
+    m_timerCB            = new QGroupBox(tr("Use Time Lapse"), this);
+    m_timerIntervalFld   = new DVGui::DoubleField(this, true, 1);
     m_timerCB->setCheckable(true);
     m_timerCB->setObjectName("CleanupSettingsFrame");
     m_timerCB->setChecked(false);
@@ -923,8 +925,8 @@ StopMotionController::StopMotionController(QWidget *parent) : QWidget(parent) {
       }
       m_tabBarContainer->setLayout(hLayout);
 
-      mainLayout->addWidget(m_tabBarContainer, 0, 0);
-      mainLayout->addWidget(m_stackedChooser, 1, 0);
+      mainLayout->addWidget(m_tabBarContainer);
+      mainLayout->addWidget(m_stackedChooser, 1);
       mainLayout->addWidget(opacityFrame, 0);
       mainLayout->addWidget(controlButtonFrame, 0);
       setLayout(mainLayout);
@@ -1619,7 +1621,8 @@ void StopMotionController::refreshCameraList(QString activeCamera) {
         std::string name = webcams.at(c).deviceName().toStdString();
         QString camDesc  = webcams.at(c).description();
         m_cameraListCombo->addItem(camDesc);
-        maxTextLength = std::max(maxTextLength, fontMetrics().width(camDesc));
+        maxTextLength =
+            std::max(maxTextLength, fontMetrics().horizontalAdvance(camDesc));
       }
     }
 #ifdef WITH_CANON
@@ -1632,7 +1635,8 @@ void StopMotionController::refreshCameraList(QString activeCamera) {
       if (!open) m_stopMotion->m_canon->closeCameraSession();
       m_cameraSettingsLabel->setText(name);
       m_cameraListCombo->addItem(name);
-      maxTextLength = std::max(maxTextLength, fontMetrics().width(name));
+      maxTextLength =
+          std::max(maxTextLength, fontMetrics().horizontalAdvance(name));
     }
 #endif
     m_cameraListCombo->setMaximumWidth(maxTextLength + 25);
@@ -1794,12 +1798,14 @@ void StopMotionController::refreshExposureList() {
   m_exposureCombo->addItems(options);
   int maxTextLength = 0;
   for (int i = 0; i < options.size(); i++) {
-    maxTextLength = std::max(maxTextLength, fontMetrics().width(options.at(i)));
+    maxTextLength =
+        std::max(maxTextLength, fontMetrics().horizontalAdvance(options.at(i)));
   }
   if (m_exposureCombo->count() == 0) {
     m_exposureCombo->addItem(tr("Disabled"));
     m_exposureCombo->setDisabled(true);
-    m_exposureCombo->setMaximumWidth(fontMetrics().width(tr("Disabled")) + 25);
+    m_exposureCombo->setMaximumWidth(
+        fontMetrics().horizontalAdvance(tr("Disabled")) + 25);
   } else {
     m_exposureCombo->setEnabled(true);
     m_exposureCombo->setCurrentText(
@@ -1821,13 +1827,14 @@ void StopMotionController::refreshWhiteBalanceList() {
   m_whiteBalanceCombo->addItems(options);
   int maxTextLength = 0;
   for (int i = 0; i < options.size(); i++) {
-    maxTextLength = std::max(maxTextLength, fontMetrics().width(options.at(i)));
+    maxTextLength =
+        std::max(maxTextLength, fontMetrics().horizontalAdvance(options.at(i)));
   }
   if (m_whiteBalanceCombo->count() == 0) {
     m_whiteBalanceCombo->addItem(tr("Disabled"));
     m_whiteBalanceCombo->setDisabled(true);
-    m_whiteBalanceCombo->setMaximumWidth(fontMetrics().width(tr("Disabled")) +
-                                         25);
+    m_whiteBalanceCombo->setMaximumWidth(
+        fontMetrics().horizontalAdvance(tr("Disabled")) + 25);
   } else {
     m_whiteBalanceCombo->setEnabled(true);
     m_whiteBalanceCombo->setCurrentText(
@@ -1877,13 +1884,14 @@ void StopMotionController::refreshImageQualityList() {
   m_imageQualityCombo->addItems(options);
   int maxTextLength = 0;
   for (int i = 0; i < options.size(); i++) {
-    maxTextLength = std::max(maxTextLength, fontMetrics().width(options.at(i)));
+    maxTextLength =
+        std::max(maxTextLength, fontMetrics().horizontalAdvance(options.at(i)));
   }
   if (m_imageQualityCombo->count() == 0) {
     m_imageQualityCombo->addItem(tr("Disabled"));
     m_imageQualityCombo->setDisabled(true);
-    m_imageQualityCombo->setMaximumWidth(fontMetrics().width(tr("Disabled")) +
-                                         25);
+    m_imageQualityCombo->setMaximumWidth(
+        fontMetrics().horizontalAdvance(tr("Disabled")) + 25);
   } else {
     m_imageQualityCombo->setEnabled(true);
     m_imageQualityCombo->setCurrentText(
@@ -1906,13 +1914,14 @@ void StopMotionController::refreshPictureStyleList() {
       m_stopMotion->m_canon->getPictureStyleOptions());
   int maxTextLength = 0;
   for (int i = 0; i < options.size(); i++) {
-    maxTextLength = std::max(maxTextLength, fontMetrics().width(options.at(i)));
+    maxTextLength =
+        std::max(maxTextLength, fontMetrics().horizontalAdvance(options.at(i)));
   }
   if (m_pictureStyleCombo->count() == 0) {
     m_pictureStyleCombo->addItem(tr("Disabled"));
     m_pictureStyleCombo->setDisabled(true);
-    m_pictureStyleCombo->setMaximumWidth(fontMetrics().width(tr("Disabled")) +
-                                         25);
+    m_pictureStyleCombo->setMaximumWidth(
+        fontMetrics().horizontalAdvance(tr("Disabled")) + 25);
   } else {
     m_pictureStyleCombo->setEnabled(true);
     m_pictureStyleCombo->setCurrentText(

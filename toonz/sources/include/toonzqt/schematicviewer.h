@@ -59,10 +59,9 @@ class FxSelection;
 class StageObjectSelection;
 class SnapTargetItem;
 
-//====================================================
-namespace {
+//==================================================================
+
 enum CursorMode { Select, Zoom, Hand };
-}
 
 //==================================================================
 //

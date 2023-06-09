@@ -29,8 +29,8 @@ private:
   XsheetViewer *m_viewer;
 
 public:
-  LayerHeaderPanel(XsheetViewer *viewer, QWidget *parent = 0,
-                   Qt::WindowFlags flags = 0);
+  LayerHeaderPanel(XsheetViewer *viewer, QWidget *parent = nullptr,
+                   Qt::WindowFlags flags = Qt::WindowFlags());
   ~LayerHeaderPanel();
 
   void showOrHide(const Orientation *o);

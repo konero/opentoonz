@@ -86,11 +86,13 @@ FileBrowserPopup::FileBrowserPopup(const QString &title, Options options,
   setWindowTitle(title);
   setModal(false);
 
-  m_browser        = new FileBrowser(this, 0, false, m_multiSelectionEnabled);
+  m_browser =
+      new FileBrowser(this, Qt::WindowFlags(), false, m_multiSelectionEnabled);
   m_nameFieldLabel = new QLabel(tr("File name:"));
   m_nameField      = new DVGui::LineEdit(this);
   m_okButton       = new QPushButton(tr("OK"), this);
   m_cancelButton   = new QPushButton(tr("Cancel"), this);
+
   QPushButton *applyButton = 0;
   if (options & WITH_APPLY_BUTTON)
     applyButton = new QPushButton(
@@ -796,7 +798,8 @@ LoadLevelPopup::LoadLevelPopup()
     QHBoxLayout *subsequenceHeadLay = createHBoxLayout(0, 5);
     {
       QFontMetrics metrics(font());
-      subsequenceHeadLay->addSpacing(metrics.width("File name:") + 3);
+      subsequenceHeadLay->addSpacing(metrics.horizontalAdvance("File name:") +
+                                     3);
       subsequenceHeadLay->addWidget(m_notExistLabel, 0);
       subsequenceHeadLay->addStretch(1);
 

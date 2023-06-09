@@ -474,7 +474,7 @@ bool CameraSettingsWidget::parsePresetString(const QString &str, QString &name,
   in order to keep compatibility with default (Harlequin's) reslist.txt
   */
 
-  QStringList tokens = str.split(",", QString::SkipEmptyParts);
+  QStringList tokens = str.split(',', Qt::SkipEmptyParts);
 
   if (!(tokens.count() == 3 ||
         (!forCleanup && tokens.count() == 4) || /*- with "fx x fy" token -*/
@@ -528,9 +528,9 @@ void CameraSettingsWidget::setPresetListFile(const TFilePath &fp) {
 
 bool CameraSettingsWidget::eventFilter(QObject *obj, QEvent *e) {
   if (e->type() == QEvent::FocusIn) {
-    if (m_xPrev->isChecked() && obj == m_lxFld)  // x-prev, fld=lx
+    if (m_xPrev->isChecked() && obj == m_lxFld)        // x-prev, fld=lx
       m_yPrev->setChecked(true);
-    else if (m_yPrev->isChecked() && obj == m_lyFld)  // y-prev, fld=ly
+    else if (m_yPrev->isChecked() && obj == m_lyFld)   // y-prev, fld=ly
       m_xPrev->setChecked(true);
     else if (m_arPrev->isChecked() && obj == m_arFld)  // ar-prev, fld=ar
       m_xPrev->setChecked(true);

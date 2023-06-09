@@ -164,7 +164,8 @@ class XsheetScrollArea final : public QScrollArea {
   Q_OBJECT
 
 public:
-  XsheetScrollArea(QWidget *parent = 0, Qt::WindowFlags flags = 0)
+  XsheetScrollArea(QWidget *parent       = nullptr,
+                   Qt::WindowFlags flags = Qt::WindowFlags())
       : QScrollArea(parent) {
     setObjectName("xsheetScrollArea");
     setFrameStyle(QFrame::StyledPanel);
@@ -188,7 +189,7 @@ class XsheetViewer final : public QFrame, public SaveLoadQSettings {
 
   QColor m_lightLightBgColor;
   QColor m_lightBgColor;
-  QColor m_bgColor;  // row area background
+  QColor m_bgColor;         // row area background
   QColor m_darkBgColor;
   QColor m_lightLineColor;  // horizontal lines (146,144,146)
   QColor m_darkLineColor;
@@ -209,17 +210,17 @@ class XsheetViewer final : public QFrame, public SaveLoadQSettings {
                  setTimelineIconLineColor)
 
   // Row
-  QColor m_currentRowBgColor;        // current frame / column (210,210,210)
-  QColor m_markerLineColor;          // marker lines (0, 255, 246)
-  QColor m_secMarkerLineColor;       // second marker lines
-  QColor m_selectedMarkerLineColor;  // marker lines in selected cells
-  QColor m_verticalLineColor;        // vertical lines
-  QColor m_verticalLineHeadColor;    // vertical lines in column head
-  QColor m_textColor;                // text color (black)
-  QColor m_errorTextColor;           // error text color (red, probably)
-  QColor m_selectedTextColor;        // text color for the selected cells
-  QColor m_currentFrameTextColor;    // text color for the current frame row
-  QColor m_previewFrameTextColor;    // frame number in preview range (blue)
+  QColor m_currentRowBgColor;          // current frame / column (210,210,210)
+  QColor m_markerLineColor;            // marker lines (0, 255, 246)
+  QColor m_secMarkerLineColor;         // second marker lines
+  QColor m_selectedMarkerLineColor;    // marker lines in selected cells
+  QColor m_verticalLineColor;          // vertical lines
+  QColor m_verticalLineHeadColor;      // vertical lines in column head
+  QColor m_textColor;                  // text color (black)
+  QColor m_errorTextColor;             // error text color (red, probably)
+  QColor m_selectedTextColor;          // text color for the selected cells
+  QColor m_currentFrameTextColor;      // text color for the current frame row
+  QColor m_previewFrameTextColor;      // frame number in preview range (blue)
   QColor m_onionSkinAreaBgColor;
   QColor m_frameRangeMarkerLineColor;  // timeline frame markers
   QColor m_currentTimeIndicatorColor;  // current time indicator
@@ -644,7 +645,8 @@ private:
   }
 
 public:
-  XsheetViewer(QWidget *parent = 0, Qt::WindowFlags flags = 0);
+  XsheetViewer(QWidget *parent       = nullptr,
+               Qt::WindowFlags flags = Qt::WindowFlags());
   ~XsheetViewer();
 
   TColumnSelection *getColumnSelection() const { return m_columnSelection; }
@@ -671,7 +673,7 @@ public:
   void dragToolDrag(QMouseEvent *);
   void dragToolRelease(QMouseEvent *);  // n.b. cancella il dragtool
 
-  void dragToolLeave(QEvent *);  // n.b. cancella il dragtool
+  void dragToolLeave(QEvent *);         // n.b. cancella il dragtool
 
   void dragToolClick(QDropEvent *);
   void dragToolDrag(QDropEvent *);
