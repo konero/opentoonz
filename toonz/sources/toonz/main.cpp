@@ -81,6 +81,8 @@
 #include <QSettings>
 #include <QLibraryInfo>
 #include <QHash>
+#include <QElapsedTimer>
+#include <QDebug>
 
 #ifdef _WIN32
 #ifndef x64
@@ -435,11 +437,6 @@ int main(int argc, char *argv[]) {
   }
 #endif
 
-  // Set icon theme search paths
-  QStringList themeSearchPathsList = {":/icons"};
-  QIcon::setThemeSearchPaths(themeSearchPathsList);
-  // qDebug() << "All icon theme search paths:" << QIcon::themeSearchPaths();
-
   // Set show icons in menus flag (use iconVisibleInMenu to disable selectively)
   QApplication::instance()->setAttribute(Qt::AA_DontShowIconsInMenus, false);
 
@@ -549,6 +546,28 @@ int main(int argc, char *argv[]) {
 
 #endif
 
+  // Set icon theme search paths
+  QStringList themeSearchPathsList = {":/icons"};
+  QIcon::setThemeSearchPaths(themeSearchPathsList);
+  // qDebug() << "All icon theme search paths:" << QIcon::themeSearchPaths();
+
+  // Set default start icon theme
+  QIcon::setThemeName(Preferences::instance()->getIconTheme() ? "dark"
+                                                              : "light");
+  // qDebug() << "Icon theme name:" << QIcon::themeName();
+
+  QElapsedTimer timer;
+  timer.start();
+
+  try {
+    IconManagerGUI::getInstance().loadIcons(":/icons");
+  } catch (const std::runtime_error &e) {
+    std::cerr << "Failed to load icons: " << e.what() << std::endl;
+  }
+
+  qint64 elapsed = timer.elapsed();
+  qDebug() << "Elapsed timer for loadIcons:" << elapsed << "ms";
+
   // DVDirModel must be instantiated after Version Control initialization...
   FolderListenerManager::instance()->addListener(DvDirModel::instance());
 
@@ -620,11 +639,6 @@ int main(int argc, char *argv[]) {
   splash.showMessage(offsetStr + "Loading styles ...", Qt::AlignCenter,
                      Qt::white);
   a.processEvents();
-
-  // Set default start icon theme
-  QIcon::setThemeName(Preferences::instance()->getIconTheme() ? "dark"
-                                                              : "light");
-  // qDebug() << "Icon theme name:" << QIcon::themeName();
 
   // stile
   QApplication::setStyle("windows");

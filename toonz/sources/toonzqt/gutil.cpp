@@ -17,6 +17,7 @@
 #include "tmsgcore.h"
 
 // Qt includes
+#include <QDirIterator>
 #include <QPixmap>
 #include <QImage>
 #include <QPainter>
@@ -33,6 +34,7 @@
 #include <QSvgRenderer>
 #include <QScreen>
 #include <QWindow>
+#include <QDebug>
 
 using namespace DVGui;
 
@@ -185,43 +187,117 @@ QPixmap scalePixmapKeepingAspectRatio(QPixmap pixmap, QSize size,
 
 //-----------------------------------------------------------------------------
 
-QPixmap svgToPixmap(const QString &svgFilePath, const QSize &size,
-                    Qt::AspectRatioMode aspectRatioMode, QColor bgColor) {
-  static int devPixRatio = getHighestDevicePixelRatio();
-  QSvgRenderer svgRenderer(svgFilePath);
-  QSize pixmapSize;
-  QRectF renderRect;
-  if (size.isEmpty()) {
-    pixmapSize = svgRenderer.defaultSize() * devPixRatio;
-    renderRect = QRectF(QPointF(), QSizeF(pixmapSize));
+SvgRenderParams calculateSvgRenderParams(const QSize &desiredSize,
+                                         QSize &imageSize,
+                                         Qt::AspectRatioMode aspectRatioMode) {
+  SvgRenderParams params;
+  if (desiredSize.isEmpty()) {
+    params.size = imageSize;
+    params.rect = QRectF(QPointF(), QSizeF(params.size));
   } else {
-    pixmapSize = size * devPixRatio;
+    params.size = desiredSize;
     if (aspectRatioMode == Qt::KeepAspectRatio ||
         aspectRatioMode == Qt::KeepAspectRatioByExpanding) {
-      QSize imgSize = svgRenderer.defaultSize();
-      QPointF scaleFactor((float)pixmapSize.width() / (float)imgSize.width(),
-                          (float)pixmapSize.height() / (float)imgSize.height());
+      QPointF scaleFactor(
+          (float)params.size.width() / (float)imageSize.width(),
+          (float)params.size.height() / (float)imageSize.height());
       float factor = (aspectRatioMode == Qt::KeepAspectRatio)
                          ? std::min(scaleFactor.x(), scaleFactor.y())
                          : std::max(scaleFactor.x(), scaleFactor.y());
-      QSizeF renderSize(factor * (float)imgSize.width(),
-                        factor * (float)imgSize.height());
+      QSizeF renderSize(factor * (float)imageSize.width(),
+                        factor * (float)imageSize.height());
       QPointF topLeft(
-          ((float)pixmapSize.width() - renderSize.width()) * 0.5f,
-          ((float)pixmapSize.height() - renderSize.height()) * 0.5f);
-      renderRect = QRectF(topLeft, renderSize);
+          ((float)params.size.width() - renderSize.width()) * 0.5f,
+          ((float)params.size.height() - renderSize.height()) * 0.5f);
+      params.rect = QRectF(topLeft, renderSize);
     } else {  // Qt::IgnoreAspectRatio:
-      renderRect = QRectF(QPointF(), QSizeF(pixmapSize));
+      params.rect = QRectF(QPointF(), QSizeF(params.size));
     }
   }
-  QPixmap pixmap(pixmapSize);
+  return params;
+}
+
+//-----------------------------------------------------------------------------
+
+QImage svgToImage(const QString &svgFilePath, const QSize &size,
+                  Qt::AspectRatioMode aspectRatioMode, QColor bgColor) {
+  QSvgRenderer svgRenderer(svgFilePath);
+
+  // Check if SVG file was loaded correctly
+  if (!svgRenderer.isValid()) {
+    qWarning() << "Invalid SVG file:" << svgFilePath;
+    return QImage();
+  }
+
+  static int devPixRatio = getHighestDevicePixelRatio();
+
+  QSize imageSize = svgRenderer.defaultSize() * devPixRatio;
+  SvgRenderParams params =
+      calculateSvgRenderParams(size, imageSize, aspectRatioMode);
+  QImage image(params.size, QImage::Format_ARGB32_Premultiplied);
+  QPainter painter;
+  image.fill(bgColor);
+
+  if (!painter.begin(&image)) {
+    qWarning() << "Failed to begin QPainter on image";
+    return QImage();
+  }
+
+  svgRenderer.render(&painter, params.rect);
+  painter.end();
+  return image;
+}
+
+//-----------------------------------------------------------------------------
+
+QPixmap svgToPixmap(const QString &svgFilePath, const QSize &size,
+                    Qt::AspectRatioMode aspectRatioMode, QColor bgColor) {
+  QSvgRenderer svgRenderer(svgFilePath);
+
+  // Check if SVG file was loaded correctly
+  if (!svgRenderer.isValid()) {
+    qWarning() << "Invalid SVG file:" << svgFilePath;
+    return QPixmap();
+  }
+
+  static int devPixRatio = getHighestDevicePixelRatio();
+
+  QSize imageSize = svgRenderer.defaultSize() * devPixRatio;
+  SvgRenderParams params =
+      calculateSvgRenderParams(size, imageSize, aspectRatioMode);
+  QPixmap pixmap(params.size);
   QPainter painter;
   pixmap.fill(bgColor);
-  painter.begin(&pixmap);
-  svgRenderer.render(&painter, renderRect);
+
+  if (!painter.begin(&pixmap)) {
+    qWarning() << "Failed to begin QPainter on pixmap";
+    return QPixmap();
+  }
+
+  svgRenderer.render(&painter, params.rect);
   painter.end();
   pixmap.setDevicePixelRatio(devPixRatio);
   return pixmap;
+}
+
+//-----------------------------------------------------------------------------
+
+QImage pngToImage(const QString &path, const QSize &size,
+                  Qt::AspectRatioMode aspectRatioMode, const QColor &bgColor) {
+  if (path.isEmpty()) return QImage();
+
+  int devPixRatio = getHighestDevicePixelRatio();
+
+  QImage img;
+  if (!img.load(path)) {
+    qDebug() << "Unable to load the image file at path: " << path;
+    return QImage();
+  }
+
+  img = compositeImage(img, img.size() * devPixRatio, 1.0, aspectRatioMode,
+                       bgColor);
+
+  return img;
 }
 
 //-----------------------------------------------------------------------------
@@ -256,6 +332,50 @@ QString getIconThemePath(const QString &fileSVGPath) {
   if (!QFile::exists(QString(theme + fileSVGPath))) theme = ":icons/dark/";
 
   return theme + fileSVGPath;
+}
+
+//-----------------------------------------------------------------------------
+
+QImage compositeImage(const QImage &image, const QSize &newSize,
+                      const qreal &opacity, Qt::AspectRatioMode aspectRatioMode,
+                      const QColor &bgColor) {
+  if (image.isNull()) return QImage();
+
+  int devPixRatio = getHighestDevicePixelRatio();
+
+  // Use the image's size as a fallback if no size is provided
+  QSize maxSize = newSize.isEmpty() ? image.size() : newSize * devPixRatio;
+
+  QImage destination(maxSize, QImage::Format_ARGB32_Premultiplied);
+  destination.fill(bgColor);
+
+  if (destination.isNull()) {
+    qWarning() << "Failed to create image with size" << maxSize;
+    return QImage();
+  }
+
+  // The image will be scaled down if necessary to fit within the maximum size
+  QImage scaledImage =
+      image.scaled(maxSize, aspectRatioMode, Qt::SmoothTransformation);
+
+  if (image.width() > maxSize.width() || image.height() > maxSize.height()) {
+    qWarning() << "Source image is larger than the maximum size, it will be "
+                  "scaled down";
+  }
+
+  QPainter painter(&destination);
+  if (painter.isActive()) {
+    painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+    painter.setOpacity(opacity);
+    QPoint offset((destination.width() - scaledImage.width()) / 2,
+                  (destination.height() - scaledImage.height()) / 2);
+    painter.drawImage(offset, scaledImage);
+  } else {
+    qWarning() << "Failed to create QPainter";
+    return QImage();
+  }
+
+  return destination;
 }
 
 //-----------------------------------------------------------------------------
@@ -305,6 +425,47 @@ QPixmap recolorPixmap(QPixmap pixmap, QColor color) {
 
 //-----------------------------------------------------------------------------
 
+QImage recolorBlackPixels(const QImage &image, QColor color) {
+  if (color == Qt::black) return image;
+
+  // Default is icon theme color preference
+  if (!color.isValid())
+    color = Preferences::instance()->getIconTheme() ? Qt::black : Qt::white;
+
+  QImage img       = image.convertToFormat(QImage::Format_ARGB32);
+  QRgb targetColor = color.rgb();
+  int height       = img.height();
+  int width        = img.width();
+  for (int y = 0; y < height; ++y) {
+    QRgb *pixel = reinterpret_cast<QRgb *>(img.scanLine(y));
+    QRgb *end   = pixel + width;
+    for (; pixel != end; ++pixel) {
+      if (qGray(*pixel) == 0) {
+        *pixel = (targetColor & 0x00FFFFFF) | (qAlpha(*pixel) << 24);
+      }
+    }
+  }
+  return img;
+}
+
+//-----------------------------------------------------------------------------
+
+QPixmap recolorBlackPixels(const QPixmap &pixmap, QColor color) {
+  QImage image = pixmap.toImage().convertToFormat(QImage::Format_ARGB32);
+  image        = recolorBlackPixels(image, color);
+  return QPixmap::fromImage(image);
+}
+
+//-----------------------------------------------------------------------------
+
+QIcon createQIcon(const QString &iconSVGName, bool useFullOpacity,
+                  bool isForMenuItem) {
+  return IconManagerGUI::getInstance().getIcon(iconSVGName);
+}
+
+//-----------------------------------------------------------------------------
+
+/*
 QIcon createQIcon(const char *iconSVGName, bool useFullOpacity,
                   bool isForMenuItem) {
   static int devPixRatio = getHighestDevicePixelRatio();
@@ -445,6 +606,7 @@ QIcon createQIcon(const char *iconSVGName, bool useFullOpacity,
 
   return icon;
 }
+*/
 
 //-----------------------------------------------------------------------------
 
@@ -842,4 +1004,147 @@ void ToolBarContainer::paintEvent(QPaintEvent *event) { QPainter p(this); }
 
 QString operator+(const QString &a, const TFilePath &fp) {
   return a + QString::fromStdWString(fp.getWideString());
+}
+
+//=============================================================================
+// GUI Icons Manager
+//-----------------------------------------------------------------------------
+
+IconManagerGUI::IconManagerGUI() {
+  m_themeColor =
+      Preferences::instance()->getIconTheme() ? Qt::black : Qt::white;
+  m_overFilenameSuffix     = "_over";
+  m_onFilenameSuffix       = "_on";
+  m_offIconBrightness      = 1.0;
+  m_disabledIconBrightness = 0.3;
+}
+
+//-----------------------------------------------------------------------------
+
+IconManagerGUI &IconManagerGUI::getInstance() {
+  static IconManagerGUI instance;
+  return instance;
+}
+
+//-----------------------------------------------------------------------------
+
+QIcon IconManagerGUI::getIcon(const QString &filename) const {
+  return m_icons.value(filename);
+}
+
+//-----------------------------------------------------------------------------
+
+QString IconManagerGUI::getOverFilenameSuffix() const {
+  return m_overFilenameSuffix;
+}
+
+//-----------------------------------------------------------------------------
+
+QString IconManagerGUI::getOnFilenameSuffix() const {
+  return m_onFilenameSuffix;
+}
+
+//-----------------------------------------------------------------------------
+
+qreal IconManagerGUI::getOffIconBrightness() const {
+  return m_offIconBrightness;
+}
+
+//-----------------------------------------------------------------------------
+
+qreal IconManagerGUI::getDisabledIconBrightness() const {
+  return m_disabledIconBrightness;
+}
+
+//-----------------------------------------------------------------------------
+
+// Creates a map of QIcons and a map of icon image paths
+void IconManagerGUI::loadIcons(const QString &path) {
+  QDir dir(path);
+  if (!dir.exists()) {
+    throw std::runtime_error("path does not exist: " + path.toStdString());
+  }
+
+  // Expecting icon images to be svg, maybe png
+  QDirIterator it(path,
+                  QStringList() << "*.svg"
+                                << "*.png",
+                  QDir::Files, QDirIterator::Subdirectories);
+
+  const QString overSuffix = getOverFilenameSuffix();
+  const QString onSuffix   = getOnFilenameSuffix();
+
+  while (it.hasNext()) {
+    it.next();
+
+    const QString iconPath = it.fileInfo().filePath();    // :/folder/file.ext
+    const QString dirPath  = it.fileInfo().dir().path();  // :/folder
+    const QString iconName = it.fileInfo().baseName();    // file
+    const QString fileExt  = it.fileInfo().suffix();      // ext
+
+    // Don't need separate icons created from the over or on state images
+    if (iconName.endsWith(overSuffix) || iconName.endsWith(onSuffix)) {
+      continue;
+    }
+
+    // Prevent two icons with same key being added, filenames should be unique
+    if (!m_icons.contains(iconName)) {
+      // Construct 'over' and 'on' name icon state strings
+      QString overFilePath, onFilePath;
+      overFilePath = formatFilePath(dirPath, iconName, fileExt, overSuffix);
+      onFilePath   = formatFilePath(dirPath, iconName, fileExt, onSuffix);
+
+      // Get icon images and add their paths to the map
+      QImage baseImg, overImg, onImg;
+
+      if (QFile::exists(iconPath)) {  // Check for base image
+        baseImg = recolorBlackPixels(loadImage(iconPath));
+        m_imgPaths.insert(iconName, iconPath);
+      }
+      if (QFile::exists(overFilePath)) {  // Check for over image
+        overImg = recolorBlackPixels(loadImage(overFilePath));
+        m_imgPaths.insert(iconName + overSuffix, overFilePath);
+      }
+      if (QFile::exists(onFilePath)) {  // Check for on image
+        onImg = recolorBlackPixels(loadImage(onFilePath));
+        m_imgPaths.insert(iconName + onFilePath, onFilePath);
+      }
+
+      QIcon icon;
+      icon = processIcon(icon, baseImg, overImg, onImg);
+      m_icons.insert(iconName, icon);
+    }
+  }
+}
+
+//-----------------------------------------------------------------------------
+
+QIcon processIcon(QIcon &icon, const QImage &base, const QImage &over,
+                  const QImage &on) {
+  icon.addPixmap(QPixmap::fromImage(base));
+  icon.addPixmap(QPixmap::fromImage(over), QIcon::Active);
+  icon.addPixmap(QPixmap::fromImage(on), QIcon::Normal, QIcon::On);
+
+  return icon;
+}
+
+//-----------------------------------------------------------------------------
+
+QImage loadImage(const QString &path, const QSize &size,
+                 Qt::AspectRatioMode aspectRatioMode, QColor bgColor) {
+  if (!QFile::exists(path)) return QImage();
+  QFileInfo fileInfo(path);
+  QString ext = fileInfo.suffix();
+  QImage img = (ext == "svg") ? svgToImage(path, size, aspectRatioMode, bgColor)
+                              : pngToImage(path);
+  return img;
+}
+
+//-----------------------------------------------------------------------------
+
+QString formatFilePath(const QString &dirPath, const QString &fileName,
+                       const QString &fileExtension,
+                       const QString &nameModifier) {
+  return QString("%1/%2%3.%4")
+      .arg(dirPath, fileName, nameModifier, fileExtension);
 }

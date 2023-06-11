@@ -4,6 +4,7 @@
 #define GUTIL_H
 
 #include "tcommon.h"
+#include <QIcon>
 #include <QImage>
 #include <QFrame>
 #include <QColor>
@@ -39,6 +40,10 @@ const QColor grey225(225, 225, 225);
 const QColor grey190(190, 190, 190);
 const QColor grey150(150, 150, 150);
 
+struct SvgRenderParams {
+  QSize size;
+  QRectF rect;
+};
 }  // namespace
 
 class QPainter;
@@ -95,10 +100,49 @@ QPixmap DVAPI scalePixmapKeepingAspectRatio(QPixmap p, QSize size,
 
 //-----------------------------------------------------------------------------
 
+SvgRenderParams calculateSvgRenderParams(const QSize &desiredSize,
+                                         QSize &imageSize,
+                                         Qt::AspectRatioMode aspectRatioMode);
+
+//-----------------------------------------------------------------------------
+
+QImage DVAPI
+svgToImage(const QString &svgFilePath, const QSize &size = QSize(),
+           Qt::AspectRatioMode aspectRatioMode = Qt::IgnoreAspectRatio,
+           QColor bgColor                      = Qt::transparent);
+
+//-----------------------------------------------------------------------------
+
 QPixmap DVAPI
 svgToPixmap(const QString &svgFilePath, const QSize &size = QSize(),
             Qt::AspectRatioMode aspectRatioMode = Qt::IgnoreAspectRatio,
             QColor bgColor                      = Qt::transparent);
+
+//-----------------------------------------------------------------------------
+
+QImage DVAPI
+pngToImage(const QString &path, const QSize &size = QSize(),
+           Qt::AspectRatioMode aspectRatioMode = Qt::IgnoreAspectRatio,
+           const QColor &bgColor               = QColor());
+
+//-----------------------------------------------------------------------------
+
+// QPixmap DVAPI
+// pngToPixmap(const QString &path, const QSize &size = QSize(),
+//             Qt::AspectRatioMode aspectRatioMode = Qt::IgnoreAspectRatio,
+//             const QColor &bgColor               = QColor());
+
+//-----------------------------------------------------------------------------
+
+QImage DVAPI
+loadImage(const QString &path, const QSize &size = QSize(),
+          Qt::AspectRatioMode aspectRatioMode = Qt::IgnoreAspectRatio,
+          QColor bgColor                      = Qt::transparent);
+
+//-----------------------------------------------------------------------------
+
+QIcon DVAPI processIcon(QIcon &icon, const QImage &base, const QImage &over,
+                        const QImage &on);
 
 //-----------------------------------------------------------------------------
 // returns device-pixel ratio. It is 1 for normal monitors and 2 (or higher
@@ -108,15 +152,41 @@ int DVAPI getDevicePixelRatio(const QWidget *widget = nullptr);
 
 //-----------------------------------------------------------------------------
 
+QImage compositeImage(
+    const QImage &image, const QSize &newSize = QSize(),
+    const qreal &opacity                = 1.0,
+    Qt::AspectRatioMode aspectRatioMode = Qt::IgnoreAspectRatio,
+    const QColor &bgColor               = Qt::transparent);
+
+//-----------------------------------------------------------------------------
+
+QImage DVAPI recolorBlackPixels(const QImage &image, QColor color = QColor());
+
+//-----------------------------------------------------------------------------
+
+QPixmap DVAPI recolorBlackPixels(const QPixmap &pixmap,
+                                 QColor color = QColor());
+
+//-----------------------------------------------------------------------------
+
 QPixmap DVAPI compositePixmap(QPixmap pixmap, const qreal &opacity = 0.8,
                               const QSize &size = QSize(),
                               const int leftAdj = 0, const int topAdj = 0,
                               QColor bgColor = Qt::transparent);
+
+//-----------------------------------------------------------------------------
+
+QString DVAPI formatFilePath(const QString &dirPath, const QString &fileName,
+                             const QString &fileExtension,
+                             const QString &nameModifier = "");
+
+//-----------------------------------------------------------------------------
+
 QPixmap DVAPI recolorPixmap(
     QPixmap pixmap, QColor color = Preferences::instance()->getIconTheme()
                                        ? Qt::black
                                        : Qt::white);
-QIcon DVAPI createQIcon(const char *iconSVGName, bool useFullOpacity = false,
+QIcon DVAPI createQIcon(const QString &iconSVGName, bool useFullOpacity = false,
                         bool isForMenuItem = false);
 void DVAPI addSpecifiedSizedImageToIcon(QIcon &icon, const char *iconSVGName,
                                         QSize newSize);
@@ -177,6 +247,39 @@ inline TRectD toTRectD(const QRect &r) {
 }
 
 QPainterPath DVAPI strokeToPainterPath(TStroke *stroke);
+
+//-----------------------------------------------------------------------------
+// GUI Icons Manager
+
+class DVAPI IconManagerGUI {  // Singleton
+public:
+  static IconManagerGUI &getInstance();
+
+  enum class Theme { Light, Dark };
+  enum class State { Normal, Over, On };
+
+  void loadIcons(const QString &path);
+
+  QIcon getIcon(const QString &filename) const;
+
+  QString getOverFilenameSuffix() const;
+  QString getOnFilenameSuffix() const;
+
+  qreal getOffIconBrightness() const;
+  qreal getDisabledIconBrightness() const;
+
+private:
+  IconManagerGUI();
+  IconManagerGUI(IconManagerGUI const &) = delete;
+  void operator=(IconManagerGUI const &) = delete;
+
+  QMap<QString, QIcon> m_icons;
+  QMap<QString, QString> m_imgPaths;
+
+  QColor m_themeColor;
+  qreal m_offIconBrightness, m_disabledIconBrightness;
+  QString m_overFilenameSuffix, m_onFilenameSuffix;
+};
 
 //-----------------------------------------------------------------------------
 // This widget is only used to set the background color of the tabBar
