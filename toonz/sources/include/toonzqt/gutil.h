@@ -127,10 +127,10 @@ pngToImage(const QString &path, const QSize &size = QSize(),
 
 //-----------------------------------------------------------------------------
 
-// QPixmap DVAPI
-// pngToPixmap(const QString &path, const QSize &size = QSize(),
-//             Qt::AspectRatioMode aspectRatioMode = Qt::IgnoreAspectRatio,
-//             const QColor &bgColor               = QColor());
+QPixmap DVAPI
+pngToPixmap(const QString &path, const QSize &size = QSize(),
+            Qt::AspectRatioMode aspectRatioMode = Qt::IgnoreAspectRatio,
+            const QColor &bgColor               = QColor());
 
 //-----------------------------------------------------------------------------
 
@@ -141,8 +141,8 @@ loadImage(const QString &path, const QSize &size = QSize(),
 
 //-----------------------------------------------------------------------------
 
-QIcon DVAPI processIcon(QIcon &icon, const QImage &base, const QImage &over,
-                        const QImage &on);
+QIcon DVAPI processIcon(QIcon &icon, const QImage &baseImg,
+                        const QImage &overImg, const QImage &onImg);
 
 //-----------------------------------------------------------------------------
 // returns device-pixel ratio. It is 1 for normal monitors and 2 (or higher
@@ -173,6 +173,14 @@ QPixmap DVAPI compositePixmap(QPixmap pixmap, const qreal &opacity = 0.8,
                               const QSize &size = QSize(),
                               const int leftAdj = 0, const int topAdj = 0,
                               QColor bgColor = Qt::transparent);
+
+//-----------------------------------------------------------------------------
+
+QImage adjustOpacity(const QImage &img, const qreal &opacity = 1.0);
+
+//-----------------------------------------------------------------------------
+
+QPixmap adjustOpacity(const QPixmap &pm, const qreal &opacity = 1.0);
 
 //-----------------------------------------------------------------------------
 

@@ -302,6 +302,27 @@ QImage pngToImage(const QString &path, const QSize &size,
 
 //-----------------------------------------------------------------------------
 
+QPixmap pngToPixmap(const QString &path, const QSize &size,
+                    Qt::AspectRatioMode aspectRatioMode,
+                    const QColor &bgColor) {
+  if (path.isEmpty()) return QPixmap();
+
+  int devPixRatio = getHighestDevicePixelRatio();
+
+  QImage img;
+  if (!img.load(path)) {
+    qDebug() << "Unable to load the image file at path: " << path;
+    return QPixmap();
+  }
+
+  img = compositeImage(img, img.size() * devPixRatio, 1.0, aspectRatioMode,
+                       bgColor);
+
+  return QPixmap::fromImage(img);
+}
+
+//-----------------------------------------------------------------------------
+
 int getDevicePixelRatio(const QWidget *widget) {
   if (hasScreensWithDifferentDevPixRatio() && widget) {
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
@@ -401,6 +422,40 @@ QPixmap compositePixmap(QPixmap pixmap, const qreal &opacity, const QSize &size,
     p.drawPixmap(leftAdj, topAdj, pixmap);
   }
   return destination;
+}
+
+//-----------------------------------------------------------------------------
+
+QImage adjustOpacity(const QImage &input, const qreal &opacity) {
+  if (input.isNull()) return QImage();
+
+  QImage result(input.size(), QImage::Format_ARGB32_Premultiplied);
+
+  QPainter painter(&result);
+  if (!painter.isActive()) return QImage();
+
+  painter.setCompositionMode(QPainter::CompositionMode_Source);
+  painter.fillRect(result.rect(), Qt::transparent);
+  painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+  painter.drawImage(0, 0, input);
+  painter.setCompositionMode(QPainter::CompositionMode_DestinationIn);
+  painter.fillRect(
+      result.rect(),
+      QColor(0, 0, 0, qBound(0, static_cast<int>(opacity * 255), 255)));
+  painter.end();
+
+  return result;
+}
+
+//-----------------------------------------------------------------------------
+
+QPixmap adjustOpacity(const QPixmap &input, const qreal &opacity) {
+  if (input.isNull()) return QPixmap();
+
+  QImage img    = input.toImage();
+  QImage result = adjustOpacity(img, opacity);
+
+  return QPixmap::fromImage(result);
 }
 
 //-----------------------------------------------------------------------------
@@ -1015,7 +1070,7 @@ IconManagerGUI::IconManagerGUI() {
       Preferences::instance()->getIconTheme() ? Qt::black : Qt::white;
   m_overFilenameSuffix     = "_over";
   m_onFilenameSuffix       = "_on";
-  m_offIconBrightness      = 1.0;
+  m_offIconBrightness      = 0.8;
   m_disabledIconBrightness = 0.3;
 }
 
@@ -1082,7 +1137,7 @@ void IconManagerGUI::loadIcons(const QString &path) {
     const QString iconName = it.fileInfo().baseName();    // file
     const QString fileExt  = it.fileInfo().suffix();      // ext
 
-    // Don't need separate icons created from the over or on state images
+    // Don't need separate icons created from the 'over' or 'on' state images
     if (iconName.endsWith(overSuffix) || iconName.endsWith(onSuffix)) {
       continue;
     }
@@ -1098,6 +1153,7 @@ void IconManagerGUI::loadIcons(const QString &path) {
       QImage baseImg, overImg, onImg;
 
       if (QFile::exists(iconPath)) {  // Check for base image
+        qDebug() << "EXISTS";
         baseImg = recolorBlackPixels(loadImage(iconPath));
         m_imgPaths.insert(iconName, iconPath);
       }
@@ -1119,11 +1175,33 @@ void IconManagerGUI::loadIcons(const QString &path) {
 
 //-----------------------------------------------------------------------------
 
-QIcon processIcon(QIcon &icon, const QImage &base, const QImage &over,
-                  const QImage &on) {
-  icon.addPixmap(QPixmap::fromImage(base));
-  icon.addPixmap(QPixmap::fromImage(over), QIcon::Active);
-  icon.addPixmap(QPixmap::fromImage(on), QIcon::Normal, QIcon::On);
+QIcon processIcon(QIcon &icon, const QImage &baseImg, const QImage &overImg,
+                  const QImage &onImg) {
+  IconManagerGUI &params = IconManagerGUI::getInstance();
+
+  QImage offImg, disabledImg, onDisabledImg;
+
+  // Adjust base image brightness for standard off state
+  offImg = adjustOpacity(baseImg, params.getOffIconBrightness());
+
+  // Construct disabled images from sources
+  disabledImg   = adjustOpacity(baseImg, params.getDisabledIconBrightness());
+  onDisabledImg = adjustOpacity(onImg, params.getDisabledIconBrightness());
+
+  // Normal version
+  icon.addPixmap(QPixmap::fromImage(offImg), QIcon::Normal, QIcon::Off);
+  icon.addPixmap(QPixmap::fromImage(disabledImg), QIcon::Disabled, QIcon::Off);
+
+  // Over version
+  icon.addPixmap(QPixmap::fromImage(!overImg.isNull() ? overImg : baseImg),
+                 QIcon::Active);
+
+  // On version
+  icon.addPixmap(QPixmap::fromImage(!onImg.isNull() ? onImg : baseImg),
+                 QIcon::Normal, QIcon::On);
+  icon.addPixmap(
+      QPixmap::fromImage(!onDisabledImg.isNull() ? onDisabledImg : disabledImg),
+      QIcon::Disabled, QIcon::On);
 
   return icon;
 }
