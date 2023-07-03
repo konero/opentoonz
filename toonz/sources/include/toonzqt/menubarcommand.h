@@ -7,6 +7,7 @@
 #include <map>
 #include <string>
 #include "tcommon.h"
+#include "gutil.h"
 
 #include <QAction>
 #include <QMenu>
@@ -261,14 +262,21 @@ public:
 
 //-----------------------------------------------------------------------------
 
-class DVAPI DVAction final : public QAction {
+class DVAPI DVAction final : public QAction, public ThemeObserver {
   Q_OBJECT
 public:
   DVAction(const QString &text, QObject *parent);
-  DVAction(const QIcon &icon, const QString &text, QObject *parent);
+  DVAction(const QIcon &icon, const QString &text, const QString &iconName,
+           QObject *parent);
+  ~DVAction();
+
+  void themeChanged(const QString &newTheme) override;
 
 public slots:
   void onTriggered();
+
+private:
+  QString m_iconName; // store name of icon so we can update it later
 };
 
 //-----------------------------------------------------------------------------

@@ -270,9 +270,23 @@ QString DVAPI operator+(const QString &a, const TFilePath &fp);
 // Theme Manager
 // For managing icon themes
 
+class DVAPI ThemeObserver {
+public:
+  virtual ~ThemeObserver() = default;
+  virtual void themeChanged(const QString &newTheme) = 0;
+};
+
 class DVAPI ThemeManager {  // singleton
 public:
   static ThemeManager &getInstance();
+
+  QString getCurrentTheme() const; // #todo
+
+  void setCurrentTheme(const QString &theme); // #todo
+
+  void registerObserver(ThemeObserver* observer); // #todo
+
+  void unregisterObserver(ThemeObserver* observer); // #todo
 
   void buildIconPathsMap(const QString &path);
   bool hasIcon(const QString &iconName) const;
@@ -294,6 +308,11 @@ public:
 
 private:
   ThemeManager();
+
+  void notifyThemeChanged(); // #todo
+
+  QList<ThemeObserver*> m_observers; // list of observers
+  QString m_currentTheme; // current theme
 
   class ThemeManagerImpl;                  // forward declaration
   std::unique_ptr<ThemeManagerImpl> impl;  // opaque pointer

@@ -1,7 +1,7 @@
 
 
 #include "toonzqt/menubarcommand.h"
-//#include "menubarcommandids.h"
+// #include "menubarcommandids.h"
 #include "toonzqt/dvdialog.h"
 #include "toonzqt/gutil.h"
 #include "toonz/toonzfolders.h"
@@ -12,6 +12,7 @@
 #include <QSettings>
 #include <QKeySequence>
 #include <QApplication>
+#include <QDebug>
 
 #include <sys/types.h>
 
@@ -411,7 +412,7 @@ void CommandManager::enlargeIcon(CommandId id, const QSize dstSize) {
   }
 
   icon = createQIcon(iconSVGName, false, false, dstSize);
-  
+
   action->setIcon(icon);
 }
 
@@ -492,10 +493,28 @@ DVAction::DVAction(const QString &text, QObject *parent)
 
 //-----------------------------------------------------------------------------
 
-DVAction::DVAction(const QIcon &icon, const QString &text, QObject *parent)
-    : QAction(icon, text, parent) {
+DVAction::DVAction(const QIcon &icon, const QString &text,
+                   const QString &iconName, QObject *parent)
+    : QAction(icon, text, parent), m_iconName(iconName) {
   connect(this, SIGNAL(triggered()), this, SLOT(onTriggered()));
+  ThemeManager::getInstance().registerObserver(this);
 }
+
+void DVAction::themeChanged(const QString &newTheme) {
+  qDebug() << "Updating icon for DVAction: " << text();
+  qDebug() << "Icon name: " << m_iconName;
+
+  QIcon icon = createQIcon(m_iconName);
+  if (icon.isNull()) {
+    qDebug() << "Failed to create icon";
+  } else {
+    qDebug() << "Successfully created icon";
+  }
+
+  setIcon(icon);
+}
+
+DVAction::~DVAction() { ThemeManager::getInstance().unregisterObserver(this); }
 
 //-----------------------------------------------------------------------------
 

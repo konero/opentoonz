@@ -981,6 +981,40 @@ void ThemeManager::printiconPathsMap() {
   }
 }
 
+// #todo
+//-----------------------------------------------------------------------------
+
+QString ThemeManager::getCurrentTheme() const { return m_currentTheme; }
+
+//-----------------------------------------------------------------------------
+
+void ThemeManager::setCurrentTheme(const QString &theme) {
+  m_currentTheme = theme;
+  notifyThemeChanged();
+}
+
+//-----------------------------------------------------------------------------
+
+void ThemeManager::registerObserver(ThemeObserver* observer) {
+  if (!m_observers.contains(observer)) {
+    m_observers.append(observer);
+  }
+}
+
+//-----------------------------------------------------------------------------
+
+void ThemeManager::unregisterObserver(ThemeObserver* observer) {
+  m_observers.removeAll(observer);
+}
+
+//-----------------------------------------------------------------------------
+
+void ThemeManager::notifyThemeChanged() {
+  for (auto observer : m_observers) {
+    observer->themeChanged(m_currentTheme);
+  }
+}
+
 //-----------------------------------------------------------------------------
 
 // Public version of ThemeManager::getIconPath()

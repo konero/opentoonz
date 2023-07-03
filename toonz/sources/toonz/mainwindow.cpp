@@ -1662,7 +1662,7 @@ QAction *MainWindow::createToolAction(const char *id, const char *iconName,
                                       const char *name,
                                       const QString &defaultShortcut) {
   QIcon icon      = createQIcon(iconName);
-  QAction *action = new DVAction(icon, tr(name), this);
+  QAction *action = new DVAction(icon, tr(name), iconName, this);
   action->setCheckable(true);
   action->setActionGroup(m_toolsActionGroup);
 

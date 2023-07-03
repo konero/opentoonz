@@ -504,7 +504,10 @@ void PreferencesPopup::onStyleSheetTypeChanged() {
 
 //-----------------------------------------------------------------------------
 
-void PreferencesPopup::onIconThemeChanged() {}
+void PreferencesPopup::onIconThemeChanged() {
+  QString newTheme = Preferences::instance()->getIconTheme() ? "dark" : "light";
+  ThemeManager::getInstance().setCurrentTheme(newTheme);
+}
 
 //-----------------------------------------------------------------------------
 
