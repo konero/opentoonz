@@ -1824,8 +1824,8 @@ TFx *FxSchematicPort::getOwnerFx() const {
 //*****************************************************
 
 FxSchematicDock::FxSchematicDock(FxSchematicNode *parent, const QString &name,
-                                 double width, eFxSchematicPortType type)
-    : QGraphicsItem(parent), m_name(name), m_width(width) {
+                                 double width, eFxSchematicPortType type, QColor bgColor)
+    : QGraphicsItem(parent), m_name(name), m_width(width), m_bgColor(bgColor) {
   m_port = new FxSchematicPort(this, type);
   m_port->setPos(0, 0);
   if (parent) {
@@ -1880,8 +1880,13 @@ void FxSchematicDock::paint(QPainter *painter,
     // do nothing when small scaled
     if (!getNode()->isNormalIconView()) return;
 
-    painter->setPen(Qt::NoPen);
-    painter->setBrush(QColor(0, 0, 0, 192));
+    painter->setPen(m_bgColor);
+    painter->setBrush(m_bgColor); // black box bg color //#todo
+
+    QRectF rect = boundingRect();
+    if (this == m_inDocks.back()) {
+      
+    }
     painter->drawRect(boundingRect());
 
     QFont tempFont(painter->font());
@@ -2428,6 +2433,8 @@ FxSchematicNormalFxNode::FxSchematicNormalFxNode(FxSchematicScene *scene,
 
   checkDynamicInputPortSize();
 
+  QColor testColor = viewer->getLevelColumnColor();
+
   // resize if small scaled
   if (!m_isNormalIconView) {
     setWidth(70);
@@ -2578,7 +2585,7 @@ FxSchematicNormalFxNode::FxSchematicNormalFxNode(FxSchematicScene *scene,
     FxSchematicDock *inDock;
 
     if (m_isNormalIconView) {
-      inDock = new FxSchematicDock(this, qPortName, m_width - 18, eFxInputPort);
+      inDock = new FxSchematicDock(this, qPortName, m_width - 18, eFxInputPort, Qt::red);
       inDock->setPos(0, lastPosY);
       lastPosY += inDock->boundingRect().height();
     } else {

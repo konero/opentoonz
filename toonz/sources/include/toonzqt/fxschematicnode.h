@@ -245,11 +245,12 @@ private:
 class FxSchematicDock final : public QGraphicsItem, public QObject {
   QString m_name;
   double m_width;
+  QColor m_bgColor;
   FxSchematicPort *m_port;
 
 public:
   FxSchematicDock(FxSchematicNode *parent, const QString &string, double width,
-                  eFxSchematicPortType type);
+                  eFxSchematicPortType type, QColor bgColor = Qt::blue);
   ~FxSchematicDock();
 
   QRectF boundingRect() const override;

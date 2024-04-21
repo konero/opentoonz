@@ -147,7 +147,7 @@ void ColumnPainter::paint(QPainter *painter,
   }
 
   if (levelType == PLT_XSHLEVEL)
-    painter->drawRoundRect(0, 0, m_width, m_height, 32, 99);
+    painter->drawRoundedRect(0, 0, m_width, m_height, 32, 99, Qt::RelativeSize);
   else
     painter->drawRect(0, 0, m_width, m_height);
 
@@ -1658,7 +1658,7 @@ void StageSchematicTableNode::paint(QPainter *painter,
 //========================================================
 //
 // class StageSchematicColumnNode
-//
+// #todo: this isn't fx schematic
 //========================================================
 
 StageSchematicColumnNode::StageSchematicColumnNode(StageSchematicScene *scene,
