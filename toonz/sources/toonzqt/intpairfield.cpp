@@ -17,7 +17,7 @@ using namespace DVGui;
 #ifdef MACOSX
 #define MARGIN_OFFSET 7
 #else
-#define MARGIN_OFFSET 2
+#define MARGIN_OFFSET 6
 #endif
 
 //=============================================================================
@@ -118,34 +118,52 @@ int IntPairField::value2pos(int v) const {
 
 void IntPairField::paintEvent(QPaintEvent *) {
   QPainter p(this);
+  p.setRenderHint(QPainter::Antialiasing);
   p.setBrush(Qt::NoBrush);
 
-  int x0 = value2pos(m_minValue);
-  int x1 = value2pos(m_maxValue);
-  int y  = height() / 2;
+  int sliderHeight = 20;                 // logical size
+  int grooveHeight = 7;  // visual size
+  int handleWidth  = m_handlePixmap.width();
+  int x0           = value2pos(m_minValue);
+  int x1           = value2pos(m_maxValue);
+  int y            = height() / 2;
+  int yOffset      = grooveHeight / 2;  // positioning inside sliderRect
 
-  p.setPen(QPen(getDarkLineColor(), 4));
-  p.drawLine(x0 - 1, y, x1, y);
+  // Logic handling rectangle (invisible)
+  QRectF sliderRect = QRectF(x0, y - sliderHeight / 2, x1 - x0, sliderHeight);
 
-  p.setPen(Qt::black);
+  // Visual groove rectangle
+  QRectF grooveRect = QRectF(x0 - handleWidth / 2, y - yOffset,
+                             x1 - x0 + handleWidth, grooveHeight);
 
-  int y1 = height() - 1;
-  int x;
-  x                = value2pos(m_values.first);
-  QRect sliderRect = QRect(x0, -5, x1 - x0 + 1, 10);
+  // Draw groove
+  p.setPen(getBorderColor());
+  p.setBrush(getGrooveColor());
+  p.drawRoundedRect(grooveRect, 4, 4);
+  
+  // Draw filled area between handles
+  QRectF filledRect = QRectF(
+      value2pos(m_values.first) - handleWidth / 2, y - yOffset,
+      (value2pos(m_values.second) - value2pos(m_values.first)) + handleWidth,
+      grooveHeight);
+  p.setBrush(getValueColor());
+  p.drawRect(filledRect);
 
-  if (sliderRect.contains(QPoint(x, 0)))
-    p.drawPixmap(x - m_handleLeftPixmap.width() + 1, 2, m_handleLeftPixmap);
-  else
-    p.drawPixmap(sliderRect.right() - m_handleLeftPixmap.width() + 1, 2,
-                 m_handleLeftGrayPixmap);
+  // Draw left handle
+  int x = value2pos(m_values.first);
+  if (sliderRect.contains(QPoint(x, 0))) {
+    p.drawPixmap(x - handleWidth + 1, 2, m_handlePixmap);
+  } else {
+    p.drawPixmap(sliderRect.right() - handleWidth + 1, 2, m_handleGrayPixmap);
+  }
 
+  // Draw right handle
   x = value2pos(m_values.second);
-
-  if (sliderRect.contains(QPoint(x, 0)))
-    p.drawPixmap(x, 2, m_handleRightPixmap);
-  else
-    p.drawPixmap(sliderRect.right(), 2, m_handleRightGrayPixmap);
+  if (sliderRect.contains(QPoint(x, 0))) {
+    p.drawPixmap(x, 2, m_handlePixmap);
+  } else {
+    p.drawPixmap(sliderRect.right(), 2, m_handleGrayPixmap);
+  }
 }
 
 //-----------------------------------------------------------------------------
