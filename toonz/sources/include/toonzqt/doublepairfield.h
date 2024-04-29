@@ -91,10 +91,12 @@ public:
   // Return a pair containing current values.
   std::pair<double, double> getValues() const { return m_values; }
 
-  // Set left label string to QString text. Recompute left margin adding label width.
+  // Set left label string to QString text. Recompute left margin adding label
+  // width.
   void setLeftText(const QString &text);
 
-  // Set right label string to QString text. Recompute right margin adding label width.
+  // Set right label string to QString text. Recompute right margin adding label
+  // width.
   void setRightText(const QString &text);
 
   void setLabelsEnabled(bool enable);
@@ -108,7 +110,9 @@ public:
   QPixmap getHandlePixmap() const { return m_handlePixmap; }
   void setHandlePixmap(const QPixmap &pixmap) { m_handlePixmap = pixmap; }
   QPixmap getHandleGrayPixmap() const { return m_handleGrayPixmap; }
-  void setHandleGrayPixmap(const QPixmap &pixmap) { m_handleGrayPixmap = pixmap; }
+  void setHandleGrayPixmap(const QPixmap &pixmap) {
+    m_handleGrayPixmap = pixmap;
+  }
   QColor getGrooveColor() const { return m_grooveColor; }
   void setGrooveColor(const QColor &color) { m_grooveColor = color; }
   QColor getValueColor() const { return m_valueColor; }
@@ -141,23 +145,25 @@ protected slots:
    * value is greater than right, change also current right value.
    * This protected slot is called when text editing is finished.
    * Emit valuesChanged().
-   * If current left value is equal to left text field value, return and do nothing.
+   * If current left value is equal to left text field value, return and do
+   * nothing.
    */
   void onLeftEditingFinished();
 
   /*
-   * Set current right value to value in right text field; if necessary, if right
-   * value is lower than left, change also current left value.
-   * This protected slot is called when text editing is finished.
-   * Emit valuesChanged().
-   * If current right value is equal to right text field value return and do nothing.
+   * Set current right value to value in right text field; if necessary, if
+   * right value is lower than left, change also current left value. This
+   * protected slot is called when text editing is finished. Emit
+   * valuesChanged(). If current right value is equal to right text field value
+   * return and do nothing.
    */
   void onRightEditingFinished();
 
 signals:
   /*
    * This signal is emitted when change one of two DoubleField value;
-   * if one slider grab position change or if one text field editing is finished.
+   * if one slider grab position change or if one text field editing is
+   * finished.
    */
   void valuesChanged(bool isDragging);
 };
@@ -194,12 +200,12 @@ public:
  * This class inherits from DoubleValuePairField.
  *
  * Example:
- * MeasuredDoublePairField *doublePairFieldExample =
- *    new MeasuredDoublePairField(this);
- *  doublePairFieldExample->setLeftText(tr("Left Value:"));
- *  doublePairFieldExample->setRightText(tr("Right Value:"));
- *  doublePairFieldExample->setRange(0, 10);
- *  doublePairFieldExample->setValues(std::make_pair(3.58, 7.65));
+ *   MeasuredDoublePairField *doublePairFieldExample =
+ *     new MeasuredDoublePairField(this);
+ *   doublePairFieldExample->setLeftText(tr("Left Value:"));
+ *   doublePairFieldExample->setRightText(tr("Right Value:"));
+ *   doublePairFieldExample->setRange(0, 10);
+ *   doublePairFieldExample->setValues(std::make_pair(3.58, 7.65));
  *
  * Result:
  *   Refer to the image 'DoublePairField.jpg' for the result.

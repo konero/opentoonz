@@ -125,26 +125,24 @@ void DoubleValuePairField::paintEvent(QPaintEvent *) {
   p.setRenderHint(QPainter::Antialiasing);
   p.setBrush(Qt::NoBrush);
 
-  int sliderHeight = 20; // logical height
-  int grooveHeight = 7;  // visual groove height
+  int sliderHeight = 20;                 // logical size
+  int grooveHeight = 7;  // visual size
   int handleWidth  = m_handlePixmap.width();
   int x0           = value2pos(m_minValue);
   int x1           = value2pos(m_maxValue);
   int y            = height() / 2;
+  int yOffset      = grooveHeight / 2;  // positioning inside sliderRect
 
   // Logic handling rectangle (invisible)
   QRectF sliderRect = QRectF(x0, y - sliderHeight / 2, x1 - x0, sliderHeight);
-
-  // Calculate vertical offset to center grooveRect within sliderRect
-  int yOffset = (grooveHeight / 2);
 
   // Visual groove rectangle
   QRectF grooveRect = QRectF(x0 - handleWidth / 2, y - yOffset,
                              x1 - x0 + handleWidth, grooveHeight);
 
   // Draw groove
-  p.setPen(m_borderColor);
-  p.setBrush(m_grooveColor);
+  p.setPen(getBorderColor());
+  p.setBrush(getGrooveColor());
   p.drawRoundedRect(grooveRect, 4, 4);
 
   // Draw filled area between handles
@@ -152,7 +150,7 @@ void DoubleValuePairField::paintEvent(QPaintEvent *) {
       value2pos(m_values.first) - handleWidth / 2, y - yOffset,
       (value2pos(m_values.second) - value2pos(m_values.first)) + handleWidth,
       grooveHeight);
-  p.setBrush(m_valueColor);
+  p.setBrush(getValueColor());
   p.drawRect(filledRect);
 
   // Draw left handle
