@@ -122,10 +122,12 @@ int DoubleValuePairField::value2pos(double v) const {
 
 void DoubleValuePairField::paintEvent(QPaintEvent *) {
   QPainter p(this);
+  p.setRenderHint(QPainter::Antialiasing);
   p.setBrush(Qt::NoBrush);
 
-  int sliderHeight = 20;
-  int handleWidth  = m_handleLeftPixmap.width();
+  int sliderHeight = 20; // logical height
+  int grooveHeight = 7;  // visual groove height
+  int handleWidth  = m_handlePixmap.width();
   int x0           = value2pos(m_minValue);
   int x1           = value2pos(m_maxValue);
   int y            = height() / 2;
@@ -133,41 +135,42 @@ void DoubleValuePairField::paintEvent(QPaintEvent *) {
   // Logic handling rectangle (invisible)
   QRectF sliderRect = QRectF(x0, y - sliderHeight / 2, x1 - x0, sliderHeight);
 
+  // Calculate vertical offset to center grooveRect within sliderRect
+  int yOffset = (grooveHeight / 2);
+
   // Visual groove rectangle
-  QRectF grooveRect = QRectF(x0 - handleWidth / 2, y - sliderHeight / 2,
-                             x1 - x0 + handleWidth, sliderHeight);
+  QRectF grooveRect = QRectF(x0 - handleWidth / 2, y - yOffset,
+                             x1 - x0 + handleWidth, grooveHeight);
 
   // Draw groove
-  p.setPen(Qt::transparent);
-  p.setBrush(Qt::red);
+  p.setPen(m_borderColor);
+  p.setBrush(m_grooveColor);
   p.drawRoundedRect(grooveRect, 4, 4);
 
   // Draw filled area between handles
   QRectF filledRect = QRectF(
-      value2pos(m_values.first) - handleWidth / 2, y - sliderHeight / 2,
+      value2pos(m_values.first) - handleWidth / 2, y - yOffset,
       (value2pos(m_values.second) - value2pos(m_values.first)) + handleWidth,
-      sliderHeight);
-  QColor testColor = Qt::blue;
-  testColor.setAlpha(128);
-  p.setBrush(testColor);
+      grooveHeight);
+  p.setBrush(m_valueColor);
   p.drawRect(filledRect);
 
   // Draw left handle
   int x;
   x = value2pos(m_values.first);
   if (sliderRect.contains(QPoint(x, 0))) {
-    p.drawPixmap(x - m_handleLeftPixmap.width() + 1, 2, m_handleLeftPixmap);
+    p.drawPixmap(x - m_handlePixmap.width() + 1, 2, m_handlePixmap);
   } else {
-    p.drawPixmap(sliderRect.right() - m_handleLeftPixmap.width() + 1, 2,
-                 m_handleLeftGrayPixmap);
+    p.drawPixmap(sliderRect.right() - m_handlePixmap.width() + 1, 2,
+                 m_handleGrayPixmap);
   }
 
   // Draw right handle
   x = value2pos(m_values.second);
   if (sliderRect.contains(QPoint(x, 0))) {
-    p.drawPixmap(x, 2, m_handleRightPixmap);
+    p.drawPixmap(x, 2, m_handlePixmap);
   } else {
-    p.drawPixmap(sliderRect.right(), 2, m_handleRightGrayPixmap);
+    p.drawPixmap(sliderRect.right(), 2, m_handleGrayPixmap);
   }
 }
 

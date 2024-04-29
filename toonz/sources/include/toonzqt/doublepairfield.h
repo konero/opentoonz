@@ -26,8 +26,8 @@ namespace DVGui {
 
 //=============================================================================
 /*!
- * \brief The DoubleValuePairField class provides a view to manage a pair of
- * double parameters. Inherits QWidget.
+ * The DoubleValuePairField class provides a view to manage a pair of double
+ * parameters. Inherits QWidget.
  *
  * The object is composed of a horizontal layout QHBoxLayout which contains two
  * pairs [label, text field] and a slider with two grabs, one for each double
@@ -56,17 +56,15 @@ class DVAPI DoubleValuePairField : public QWidget {
   Q_OBJECT
 
 protected:
-  QPixmap m_handleLeftPixmap, m_handleRightPixmap, m_handleLeftGrayPixmap,
-      m_handleRightGrayPixmap;
-  Q_PROPERTY(QPixmap HandleLeftPixmap READ getHandleLeftPixmap WRITE
-                 setHandleLeftPixmap);
-  Q_PROPERTY(QPixmap HandleRightPixmap READ getHandleRightPixmap WRITE
-                 setHandleRightPixmap);
-  Q_PROPERTY(QPixmap HandleLeftGrayPixmap READ getHandleLeftGrayPixmap WRITE
-                 setHandleLeftGrayPixmap);
-  Q_PROPERTY(QPixmap HandleRightGrayPixmap READ getHandleRightGrayPixmap WRITE
-                 setHandleRightGrayPixmap);
-  
+  QPixmap m_handlePixmap, m_handleGrayPixmap;
+  QColor m_grooveColor, m_valueColor, m_borderColor;
+  Q_PROPERTY(QPixmap HandlePixmap READ getHandlePixmap WRITE setHandlePixmap);
+  Q_PROPERTY(QPixmap HandleGrayPixmap READ getHandleGrayPixmap WRITE
+                 setHandleGrayPixmap);
+  Q_PROPERTY(QColor GrooveColor READ getGrooveColor WRITE setGrooveColor);
+  Q_PROPERTY(QColor ValueColor READ getValueColor WRITE setValueColor);
+  Q_PROPERTY(QColor BorderColor READ getBorderColor WRITE setBorderColor);
+
   DoubleValueLineEdit *m_leftLineEdit;
   DoubleValueLineEdit *m_rightLineEdit;
 
@@ -87,53 +85,46 @@ public:
                        DoubleValueLineEdit *rightLineEdit);
   ~DoubleValuePairField() {}
 
-  /*! Set current values to \b values. */
+  // Set current values to values.
   void setValues(const std::pair<double, double> &values);
-  /*!	Return a pair containing current values. */
+
+  // Return a pair containing current values.
   std::pair<double, double> getValues() const { return m_values; }
 
-  /*! Set left label string to \b QString \b text. Recompute left margin adding
-                  label width. */
+  // Set left label string to QString text. Recompute left margin adding label width.
   void setLeftText(const QString &text);
-  /*! Set right label string to \b QString \b text. Recompute right margin
-     adding
-                  label width. */
+
+  // Set right label string to QString text. Recompute right margin adding label width.
   void setRightText(const QString &text);
 
   void setLabelsEnabled(bool enable);
 
-  /*! Set range of \b DoublePairField to \b minValue, \b maxValue. */
+  // Set range of DoublePairField to minValue, maxValue.
   void setRange(double minValue, double maxValue);
-  /*! Set \b minValue and \b maxValue to DoublePairField range. */
+
+  // Set minValue and maxValue to DoublePairField range.
   void getRange(double &minValue, double &maxValue);
 
-  QPixmap getHandleLeftPixmap() const { return m_handleLeftPixmap; }
-  void setHandleLeftPixmap(const QPixmap &pixmap) {
-    m_handleLeftPixmap = pixmap;
-  }
-  QPixmap getHandleRightPixmap() const { return m_handleRightPixmap; }
-  void setHandleRightPixmap(const QPixmap &pixmap) {
-    m_handleRightPixmap = pixmap;
-  }
-  QPixmap getHandleLeftGrayPixmap() const { return m_handleLeftGrayPixmap; }
-  void setHandleLeftGrayPixmap(const QPixmap &pixmap) {
-    m_handleLeftGrayPixmap = pixmap;
-  }
-  QPixmap getHandleRightGrayPixmap() const { return m_handleRightGrayPixmap; }
-  void setHandleRightGrayPixmap(const QPixmap &pixmap) {
-    m_handleRightGrayPixmap = pixmap;
-  }
+  QPixmap getHandlePixmap() const { return m_handlePixmap; }
+  void setHandlePixmap(const QPixmap &pixmap) { m_handlePixmap = pixmap; }
+  QPixmap getHandleGrayPixmap() const { return m_handleGrayPixmap; }
+  void setHandleGrayPixmap(const QPixmap &pixmap) { m_handleGrayPixmap = pixmap; }
+  QColor getGrooveColor() const { return m_grooveColor; }
+  void setGrooveColor(const QColor &color) { m_grooveColor = color; }
+  QColor getValueColor() const { return m_valueColor; }
+  void setValueColor(const QColor &color) { m_valueColor = color; }
+  QColor getBorderColor() const { return m_borderColor; }
+  void setBorderColor(const QColor &color) { m_borderColor = color; }
 
 protected:
-  /*! Return value corresponding \b x position. */
+  // Return value corresponding x position.
   double pos2value(int x) const;
-  /*! Return x position corresponding \b value. */
+
+  // Return x position corresponding value.
   int value2pos(double v) const;
 
-  /*! Set current value to \b value.
-                  Set left or right value, or both, to value depending on
-     current slider
-                  grab edited and \b value. */
+  // Set current value to value.
+  // Set left or right value, or both, to value depending on current slider grab edited and value.
   void setValue(double v);
 
   void paintEvent(QPaintEvent *) override;
@@ -143,50 +134,51 @@ protected:
   void mouseReleaseEvent(QMouseEvent *event) override;
 
   void setLinearSlider(bool linear) { m_isLinear = linear; }
+
 protected slots:
-  /*! Set current left value to value in left text field; if necessary, if left
-                  value is greater than right, change also current right value.
-  \n	This protected slot is called when text editing is finished.
-  \n	Emit valuesChanged().
-  \n	If current left value is equal to left text field value, return and do
-  nothing. */
+  /*
+   * Set current left value to value in left text field; if necessary, if left
+   * value is greater than right, change also current right value.
+   * This protected slot is called when text editing is finished.
+   * Emit valuesChanged().
+   * If current left value is equal to left text field value, return and do nothing.
+   */
   void onLeftEditingFinished();
 
-  /*! Set current right value to value in right text field; if necessary, if
-  right
-                  value is lower than left, change also current left value.
-  \n	This protected slot is called when text editing is finished.
-  \n	Emit valuesChanged().
-  \n	If current right value is equal to right text field value return and
-  do nothing. */
+  /*
+   * Set current right value to value in right text field; if necessary, if right
+   * value is lower than left, change also current left value.
+   * This protected slot is called when text editing is finished.
+   * Emit valuesChanged().
+   * If current right value is equal to right text field value return and do nothing.
+   */
   void onRightEditingFinished();
 
 signals:
-  /*!	This signal is emitted when change one of two DoubleField value;
-                  if one slider grab position change or if one text field
-     editing is finished. */
+  /*
+   * This signal is emitted when change one of two DoubleField value;
+   * if one slider grab position change or if one text field editing is finished.
+   */
   void valuesChanged(bool isDragging);
 };
 
 //=============================================================================
-/*! \brief The DoublePairField class provides a DoubleValuePairField with
-                left DoubleLineEdit and right DoubleLineEdit.
-
-                Inherits \b DoubleValuePairField.
-
-                \b Example:
-                \code
-                        DoublePairField* doublePairFieldExample = new
-   DoublePairField(this);
-                        doublePairFieldExample->setLeftText(tr("Left Value:"));
-                        doublePairFieldExample->setRightText(tr("Right
-   Value:"));
-                        doublePairFieldExample->setRange(0,10);
-                        doublePairFieldExample->setValues(std::make_pair(3.58,7.65));
-                \endcode
-                \b Result:
-                        \image html DoublePairField.jpg
-*/
+/*
+ * The DoublePairField class provides a DoubleValuePairField with
+ * left DoubleLineEdit and right DoubleLineEdit.
+ *
+ * This class inherits from DoubleValuePairField.
+ *
+ * Example:
+ *   DoublePairField* doublePairFieldExample = new DoublePairField(this);
+ *   doublePairFieldExample->setLeftText(tr("Left Value:"));
+ *   doublePairFieldExample->setRightText(tr("Right Value:"));
+ *   doublePairFieldExample->setRange(0,10);
+ *   doublePairFieldExample->setValues(std::make_pair(3.58,7.65));
+ *
+ * Result:
+ *   Refer to the image 'DoublePairField.jpg' for the result.
+ */
 
 class DVAPI DoublePairField : public DoubleValuePairField {
 public:
@@ -195,25 +187,23 @@ public:
 };
 
 //=============================================================================
-/*! \brief The MeasuredDoublePairField class provides a DoubleValuePairField
-   with
-                left MeasuredDoubleLineEdit and right DoubleLineEdit.
-
-                Inherits \b DoubleValuePairField.
-
-                \b Example:
-                \code
-                        MeasuredDoublePairField* doublePairFieldExample = new
-   MeasuredDoublePairField(this);
-                        doublePairFieldExample->setLeftText(tr("Left Value:"));
-                        doublePairFieldExample->setRightText(tr("Right
-   Value:"));
-                        doublePairFieldExample->setRange(0,10);
-                        doublePairFieldExample->setValues(std::make_pair(3.58,7.65));
-                \endcode
-                \b Result:
-                        \image html DoublePairField.jpg
-*/
+/*
+ * The MeasuredDoublePairField class provides a DoubleValuePairField with
+ * left MeasuredDoubleLineEdit and right DoubleLineEdit.
+ *
+ * This class inherits from DoubleValuePairField.
+ *
+ * Example:
+ * MeasuredDoublePairField *doublePairFieldExample =
+ *    new MeasuredDoublePairField(this);
+ *  doublePairFieldExample->setLeftText(tr("Left Value:"));
+ *  doublePairFieldExample->setRightText(tr("Right Value:"));
+ *  doublePairFieldExample->setRange(0, 10);
+ *  doublePairFieldExample->setValues(std::make_pair(3.58, 7.65));
+ *
+ * Result:
+ *   Refer to the image 'DoublePairField.jpg' for the result.
+ */
 
 class DVAPI MeasuredDoublePairField final : public DoubleValuePairField {
 public:
