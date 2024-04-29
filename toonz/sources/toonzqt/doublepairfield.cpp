@@ -18,7 +18,7 @@ using namespace DVGui;
 #ifdef MACOSX
 #define MARGIN_OFFSET 7
 #else
-#define MARGIN_OFFSET 2
+#define MARGIN_OFFSET 6
 #endif
 
 //=============================================================================
@@ -124,32 +124,51 @@ void DoubleValuePairField::paintEvent(QPaintEvent *) {
   QPainter p(this);
   p.setBrush(Qt::NoBrush);
 
-  int x0 = value2pos(m_minValue);
-  int x1 = value2pos(m_maxValue);
-  int y  = height() / 2;
+  int sliderHeight = 20;
+  int handleWidth  = m_handleLeftPixmap.width();
+  int x0           = value2pos(m_minValue);
+  int x1           = value2pos(m_maxValue);
+  int y            = height() / 2;
 
-  p.setPen(QPen(getDarkLineColor(), 4));
-  p.drawLine(x0 - 1, y, x1, y);
+  // Logic handling rectangle (invisible)
+  QRectF sliderRect = QRectF(x0, y - sliderHeight / 2, x1 - x0, sliderHeight);
 
-  p.setPen(Qt::black);
+  // Visual groove rectangle
+  QRectF grooveRect = QRectF(x0 - handleWidth / 2, y - sliderHeight / 2,
+                             x1 - x0 + handleWidth, sliderHeight);
 
-  int y1 = height() - 1;
+  // Draw groove
+  p.setPen(Qt::transparent);
+  p.setBrush(Qt::red);
+  p.drawRoundedRect(grooveRect, 4, 4);
+
+  // Draw filled area between handles
+  QRectF filledRect = QRectF(
+      value2pos(m_values.first) - handleWidth / 2, y - sliderHeight / 2,
+      (value2pos(m_values.second) - value2pos(m_values.first)) + handleWidth,
+      sliderHeight);
+  QColor testColor = Qt::blue;
+  testColor.setAlpha(128);
+  p.setBrush(testColor);
+  p.drawRect(filledRect);
+
+  // Draw left handle
   int x;
-  x                = value2pos(m_values.first);
-  QRect sliderRect = QRect(x0, -5, x1 - x0 + 1, 10);
-
-  if (sliderRect.contains(QPoint(x, 0)))
+  x = value2pos(m_values.first);
+  if (sliderRect.contains(QPoint(x, 0))) {
     p.drawPixmap(x - m_handleLeftPixmap.width() + 1, 2, m_handleLeftPixmap);
-  else
+  } else {
     p.drawPixmap(sliderRect.right() - m_handleLeftPixmap.width() + 1, 2,
                  m_handleLeftGrayPixmap);
+  }
 
+  // Draw right handle
   x = value2pos(m_values.second);
-
-  if (sliderRect.contains(QPoint(x, 0)))
+  if (sliderRect.contains(QPoint(x, 0))) {
     p.drawPixmap(x, 2, m_handleRightPixmap);
-  else
+  } else {
     p.drawPixmap(sliderRect.right(), 2, m_handleRightGrayPixmap);
+  }
 }
 
 //-----------------------------------------------------------------------------

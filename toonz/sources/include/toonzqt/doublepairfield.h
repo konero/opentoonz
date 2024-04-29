@@ -25,44 +25,33 @@ class QLabel;
 namespace DVGui {
 
 //=============================================================================
-/*! \brief The DoubleValuePairField class provides to view an object to manage a
-   pair
-                                         of double parameter.
+/*!
+ * \brief The DoubleValuePairField class provides a view to manage a pair of
+ * double parameters. Inherits QWidget.
+ *
+ * The object is composed of a horizontal layout QHBoxLayout which contains two
+ * pairs [label, text field] and a slider with two grabs, one for each double
+ * value to manage. [label, text field] are a QLabel and a DoubleLineEdit.
+ * Objects are inserted in the following order: a label and respective text
+ * field, the slider, and the other pair [label, text field].
+ *
+ * Object width is not fixed, while height is equal to DVGui::WidgetHeight (20).
+ * Labels' width depends on their text length, text fields have a fixed size,
+ * while the slider width changes according to the widget size.
+ *
+ * Objects contained in this widget are connected, so if you change one value,
+ * the other automatically changes, if necessary. You can set the current value,
+ * getValues(), minimum and maximum value, getRange(), using setValues(),
+ * setRange().
+ *
+ * To know when one of the two double parameter values changes, the class
+ * provides a signal valuesChanged(); the class emits the signal when a grab
+ * slider position changes or when editing a text field (left or right) is
+ * finished and the current value changes. Editing a text field finished may
+ * occur if focus is lost or the enter key is pressed. See SLOT:
+ * onLeftEditingFinished() and onRightEditingFinished().
+ */
 
-                Inherits \b QWidget.
-
-                The object is composed of an horizontal layout \b QHBoxLayout
-   which contains
-                two pair [label, text field] and a slider with two grab, one for
-   each double
-                value to manage. [label, text field] are a \b QLabel and a \b
-   DoubleLineEdit.
-                Objects are inserted in the following order: a label and
-   respective text field,
-                the slider and the other pair [lebel,text field].
-                Object size width is not fixed, while height is equal to
-   DVGui::WidgetHeight, 20;
-                labels width depend from its text length, text fields has fixed
-   size, while
-                slider width change in according with widget size.
-
-                Objects contained in this widget are connected, so if you change
-   one value the
-                other automatically change, if it is necessary. You can set
-   current value,
-                getValues(), minimum and max value, getRange(), using
-   setValues(), setRange().
-
-                To know when one of two double parameter value change class
-   provides a signal,
-                valuesChanged(); class emit signal when a grab slider position
-   change or when
-                editing text field, left or right is finished and current value
-   is changed.
-                Editing text field finished may occur if focus is lost or enter
-   key is pressed.
-                See SLOT: onLeftEditingFinished() and onRightEditingFinished().
-*/
 class DVAPI DoubleValuePairField : public QWidget {
   Q_OBJECT
 
@@ -77,19 +66,7 @@ protected:
                  setHandleLeftGrayPixmap);
   Q_PROPERTY(QPixmap HandleRightGrayPixmap READ getHandleRightGrayPixmap WRITE
                  setHandleRightGrayPixmap);
-
-  QColor m_lightLineColor; /*-- スライダ溝の明るい色（白） --*/
-  QColor m_darkLineColor; /*-- スライダ溝の暗い色（128,128,128） --*/
-  QColor m_middleLineColor;
-  QColor m_lightLineEdgeColor;
-  Q_PROPERTY(
-      QColor LightLineColor READ getLightLineColor WRITE setLightLineColor);
-  Q_PROPERTY(QColor DarkLineColor READ getDarkLineColor WRITE setDarkLineColor);
-  Q_PROPERTY(
-      QColor MiddleLineColor READ getMiddleLineColor WRITE setMiddleLineColor);
-  Q_PROPERTY(QColor LightLineEdgeColor READ getLightLineEdgeColor WRITE
-                 setLightLineEdgeColor);
-
+  
   DoubleValueLineEdit *m_leftLineEdit;
   DoubleValueLineEdit *m_rightLineEdit;
 
@@ -146,17 +123,6 @@ public:
   void setHandleRightGrayPixmap(const QPixmap &pixmap) {
     m_handleRightGrayPixmap = pixmap;
   }
-
-  void setLightLineColor(const QColor &color) { m_lightLineColor = color; }
-  QColor getLightLineColor() const { return m_lightLineColor; }
-  void setDarkLineColor(const QColor &color) { m_darkLineColor = color; }
-  QColor getDarkLineColor() const { return m_darkLineColor; }
-  void setMiddleLineColor(const QColor &color) { m_middleLineColor = color; }
-  QColor getMiddleLineColor() const { return m_middleLineColor; }
-  void setLightLineEdgeColor(const QColor &color) {
-    m_lightLineEdgeColor = color;
-  }
-  QColor getLightLineEdgeColor() const { return m_lightLineEdgeColor; }
 
 protected:
   /*! Return value corresponding \b x position. */
