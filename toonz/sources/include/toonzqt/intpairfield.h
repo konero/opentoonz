@@ -71,11 +71,24 @@ namespace DVGui {
 class DVAPI IntPairField : public QWidget {
   Q_OBJECT
 
-  QPixmap m_handlePixmap, m_handleGrayPixmap;
+protected:
+  int m_grooveHeight, m_grooveBorderRadius;
+  Q_PROPERTY(int GrooveHeight READ getGrooveHeight WRITE setGrooveHeight);
+  Q_PROPERTY(int GrooveBorderRadius READ getGrooveBorderRadius WRITE
+                 setGrooveBorderRadius);
+  
+  QPixmap m_handleLeftPixmap, m_handleLeftGrayPixmap, m_handleRightPixmap,
+      m_handleRightGrayPixmap;
+  Q_PROPERTY(QPixmap HandleLeftPixmap READ getHandleLeftPixmap WRITE
+                 setHandleLeftPixmap);
+  Q_PROPERTY(QPixmap HandleLeftGrayPixmap READ getHandleLeftGrayPixmap WRITE
+                 setHandleLeftGrayPixmap);
+  Q_PROPERTY(QPixmap HandleRightPixmap READ getHandleRightPixmap WRITE
+                 setHandleRightPixmap);
+  Q_PROPERTY(QPixmap HandleRightGrayPixmap READ getHandleRightGrayPixmap WRITE
+                 setHandleRightGrayPixmap);
+
   QColor m_grooveColor, m_valueColor, m_borderColor;
-  Q_PROPERTY(QPixmap HandlePixmap READ getHandlePixmap WRITE setHandlePixmap);
-  Q_PROPERTY(QPixmap HandleGrayPixmap READ getHandleGrayPixmap WRITE
-                 setHandleGrayPixmap);
   Q_PROPERTY(QColor GrooveColor READ getGrooveColor WRITE setGrooveColor);
   Q_PROPERTY(QColor ValueColor READ getValueColor WRITE setValueColor);
   Q_PROPERTY(QColor BorderColor READ getBorderColor WRITE setBorderColor);
@@ -120,12 +133,28 @@ public:
   // Set minValue and maxValue to IntPairField range.
   void getRange(int &minValue, int &maxValue);
 
-  QPixmap getHandlePixmap() const { return m_handlePixmap; }
-  void setHandlePixmap(const QPixmap &pixmap) { m_handlePixmap = pixmap; }
-  QPixmap getHandleGrayPixmap() const { return m_handleGrayPixmap; }
-  void setHandleGrayPixmap(const QPixmap &pixmap) {
-    m_handleGrayPixmap = pixmap;
+  int getGrooveHeight() const { return m_grooveHeight; }
+  void setGrooveHeight(const int &value) { m_grooveHeight = value; }
+  int getGrooveBorderRadius() const { return m_grooveBorderRadius; }
+  void setGrooveBorderRadius(const int &value) { m_grooveBorderRadius = value; }
+  
+  QPixmap getHandleLeftPixmap() const { return m_handleLeftPixmap; }
+  void setHandleLeftPixmap(const QPixmap &pixmap) {
+    m_handleLeftPixmap = pixmap;
   }
+  QPixmap getHandleLeftGrayPixmap() const { return m_handleLeftGrayPixmap; }
+  void setHandleLeftGrayPixmap(const QPixmap &pixmap) {
+    m_handleLeftGrayPixmap = pixmap;
+  }
+  QPixmap getHandleRightPixmap() const { return m_handleRightPixmap; }
+  void setHandleRightPixmap(const QPixmap &pixmap) {
+    m_handleRightPixmap = pixmap;
+  }
+  QPixmap getHandleRightGrayPixmap() const { return m_handleRightGrayPixmap; }
+  void setHandleRightGrayPixmap(const QPixmap &pixmap) {
+    m_handleRightGrayPixmap = pixmap;
+  }
+
   QColor getGrooveColor() const { return m_grooveColor; }
   void setGrooveColor(const QColor &color) { m_grooveColor = color; }
   QColor getValueColor() const { return m_valueColor; }
