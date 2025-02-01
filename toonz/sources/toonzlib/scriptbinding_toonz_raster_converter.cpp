@@ -1,5 +1,3 @@
-
-
 #include "toonz/scriptbinding_toonz_raster_converter.h"
 #include "toonz/scriptbinding_level.h"
 #include "tropcm.h"
@@ -24,33 +22,32 @@ QScriptValue ToonzRasterConverter::convert(QScriptContext *context,
   if (context->argumentCount() != 1)
     return context->throwError(
         "Expected one argument (a raster Level or a raster Image)");
+
   QScriptValue arg = context->argument(0);
-  Level *level     = qscriptvalue_cast<Level *>(arg);
   Image *img       = qscriptvalue_cast<Image *>(arg);
-  QString type;
-  if (level) {
-    type = level->getType();
-    if (type != "Raster")
-      return context->throwError(tr("Can't convert a %1 level").arg(type));
-    if (level->getFrameCount() <= 0)
-      return context->throwError(tr("Can't convert a level with no frames"));
-  } else if (img) {
-    type = img->getType();
-    if (type != "Raster")
-      return context->throwError(tr("Can't convert a %1 image").arg(type));
-  } else {
-    return context->throwError(
-        tr("Bad argument (%1): should be a raster Level or a raster Image")
-            .arg(arg.toString()));
+
+  if (!img) {
+    return context->throwError(tr("Bad argument: should be a raster Image"));
   }
+
+  // Check the image type
+  QString type = img->getType();
+  if (type != "Raster") {
+    return context->throwError(tr("Can't convert a %1 image").arg(type));
+  }
+
+  // Perform the conversion
   RasterToToonzRasterConverter converter;
-  if (img) {
-    TRasterImageP ri = img->getImg();
-    TToonzImageP ti  = converter.convert(ri);
-    ti->setPalette(converter.getPalette().getPointer());
-    return create(engine, new Image(ti));
-  } else
-    return QScriptValue();
+  TRasterImageP ri  = img->getImg();
+  TRasterP raster   = ri->getRaster();  // Extract the raster from TRasterImageP
+  TRasterCM32P rout = converter.convert(raster);  // Convert to TRasterCM32P
+
+  // Wrap the TRasterCM32P in a TToonzImageP
+  TToonzImageP ti = TToonzImageP(rout, rout->getBounds());
+  ti->setPalette(converter.getPalette().getPointer());  // Assign the palette
+
+  // Return the result as a new Image object
+  return create(engine, new Image(ti));
 }
 
 }  // namespace TScriptBinding

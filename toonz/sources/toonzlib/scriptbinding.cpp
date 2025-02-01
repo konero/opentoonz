@@ -139,14 +139,9 @@ public:
 static void deffoo(QScriptEngine &engine) {
     QScriptValue f = engine.newFunction(
         Dummy<ToonzRasterConverter, &ToonzRasterConverter::convert>::dummy);
-    QScriptValue f2 = engine.newFunction(
-        Dummy<ToonzRasterConverter, &ToonzRasterConverter::convertFullColor>::dummy);
     engine.globalObject()
         .property("ToonzRasterConverter")
         .setProperty("convert", f);
-    engine.globalObject()
-        .property("ToonzRasterConverter")
-        .setProperty("convertFullColor", f2);
 }
 
 void bindAll(QScriptEngine &engine) {

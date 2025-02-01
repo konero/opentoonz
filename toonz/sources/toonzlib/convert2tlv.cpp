@@ -1,5 +1,3 @@
-
-
 #pragma warning(disable : 4533)
 
 #include "tiio_std.h"
@@ -949,27 +947,139 @@ void RasterToToonzRasterConverter::setPalette(const TPaletteP &palette) {
 
 TRasterCM32P RasterToToonzRasterConverter::convert(
     const TRasterP &inputRaster) {
-  int lx = inputRaster->getLx();
-  int ly = inputRaster->getLy();
-
   TRaster32P r = inputRaster;
-  /*
-TRasterGR8P r1gr = (TRasterGR8P)inputRaster;
-TRasterP rU, rP;
-*/
+  if (!r) return TRasterCM32P();
 
+  int lx = r->getLx();
+  int ly = r->getLy();
   TRasterCM32P rout(lx, ly);
 
+  // Initialize palette
+  if (!m_palette) {
+    m_palette = new TPalette();
+    m_palette->addStyle(TPixel::Transparent);  // Style 0 is always transparent
+  }
+
+  // Create map for color management
+  std::map<TPixel32, int> colorMap;
+  int lastIndex = 0;  // Will be incremented for each new color
+
+  // Make sure black is style 1
+  colorMap[TPixel::Black] = ++lastIndex;
+  if (m_palette->getStyleCount() <= lastIndex) {
+    m_palette->addStyle(TPixel::Black);
+  }
+
+  const int colorTolerance = 10;  // Color similarity threshold
+
+  rout->lock();
+  r->lock();
+
+  // First pass: analyze colors and build palette
   for (int y = 0; y < ly; y++) {
-    TPixel32 *pixin    = r->pixels(y);
-    TPixel32 *pixinEnd = pixin + lx;
-    TPixelCM32 *pixout = rout->pixels(y);
-    while (pixin < pixinEnd) {
-      int v = (pixin->r + pixin->g + pixin->b) / 3;
-      ++pixin;
-      *pixout++ = TPixelCM32(1, 0, v);
+    TPixel32 *pixin = r->pixels(y);
+    for (int x = 0; x < lx; x++) {
+      TPixel32 inColor = pixin[x];
+
+      // Skip transparent/white pixels
+      if (inColor == TPixel32(255, 255, 255) || inColor.m == 0) {
+        continue;
+      }
+
+      // Special handling for black - always use style 1
+      if (inColor.r <= colorTolerance && inColor.g <= colorTolerance &&
+          inColor.b <= colorTolerance) {
+        continue;  // Skip black, we already added it
+      }
+
+      // Find if this color or a similar one exists
+      bool found = false;
+      for (const auto &colorPair : colorMap) {
+        const TPixel32 &existingColor = colorPair.first;
+        if (abs(existingColor.r - inColor.r) <= colorTolerance &&
+            abs(existingColor.g - inColor.g) <= colorTolerance &&
+            abs(existingColor.b - inColor.b) <= colorTolerance) {
+          found = true;
+          break;
+        }
+      }
+
+      // Add new color if not found
+      if (!found && lastIndex < 4095) {
+        colorMap[inColor] = ++lastIndex;
+
+        // Add style to palette with proper name
+        if (m_palette->getStyleCount() <= lastIndex) {
+          int styleId = m_palette->addStyle(inColor);
+          m_palette->getStyle(styleId)->setName(L"color_" +
+                                                std::to_wstring(lastIndex));
+        }
+      }
     }
   }
+
+  // Second pass: convert pixels using established palette
+  for (int y = 0; y < ly; y++) {
+    TPixel32 *pixin    = r->pixels(y);
+    TPixelCM32 *pixout = rout->pixels(y);
+
+    for (int x = 0; x < lx; x++) {
+      TPixel32 inColor = pixin[x];
+
+      // Handle transparent/white pixels
+      if (inColor == TPixel32(255, 255, 255) || inColor.m == 0) {
+        pixout[x] = TPixelCM32(0, 0, 255);
+        continue;
+      }
+
+      // Handle black pixels - always use style 1
+      if (inColor.r <= colorTolerance && inColor.g <= colorTolerance &&
+          inColor.b <= colorTolerance) {
+        pixout[x] = TPixelCM32(1, 0, 0);
+        continue;
+      }
+
+      // Find closest color for other pixels
+      int styleIndex  = 0;
+      int minDistance = std::numeric_limits<int>::max();
+
+      for (const auto &colorPair : colorMap) {
+        const TPixel32 &paletteColor = colorPair.first;
+        int dist = (paletteColor.r - inColor.r) * (paletteColor.r - inColor.r) +
+                   (paletteColor.g - inColor.g) * (paletteColor.g - inColor.g) +
+                   (paletteColor.b - inColor.b) * (paletteColor.b - inColor.b);
+
+        if (dist < minDistance) {
+          minDistance = dist;
+          styleIndex  = colorPair.second;
+        }
+      }
+
+      pixout[x] = TPixelCM32(styleIndex, 0, 0);
+    }
+  }
+
+  r->unlock();
+  rout->unlock();
+
+  // Add all styles to the palette page in order
+  TPalette::Page *page = m_palette->getPage(0);
+  if (!page) {
+    page = m_palette->addPage(L"colors");
+  }
+
+  // Remove all styles from the page
+  while (page->getStyleCount() > 0) {
+    page->removeStyle(0);
+  }
+
+  // Add styles to page in sequential order
+  for (int i = 0; i <= lastIndex; i++) {
+    if (i < m_palette->getStyleCount()) {
+      page->addStyle(i);
+    }
+  }
+
   return rout;
 }
 
