@@ -52,33 +52,37 @@ public:
                  const TRenderSettings &ri) override {
     if (!m_input.isConnected()) return;
 
-    // Get the param values
+    // Get parameter values
     int threshold = (int)m_threshold->getValue(frame);
     int softness  = (int)m_softness->getValue(frame);
 
-    // Skip if no softness...
+    // Skip if no softness
     if (softness == 0) {
       m_input->compute(tile, frame, ri);
       return;
     }
 
-    // First compute the input into our tile...
+    // Compute the input into our tile
     m_input->compute(tile, frame, ri);
 
+    // Skip antialiasing for float rasters as per the menu implementation
     TRasterP ras = tile.getRaster();
-
-    // Skip antialiasing for float rasters (same check as in tcolumnfx.cpp)
     if (TRasterFP rasF = ras) {
       return;
     }
 
-    // Apply antialias
-    TRop::antialias(ras, ras, threshold, softness);
+    // Create a new raster for the output to avoid in-place modification
+    TRasterP outRas = ras->create(ras->getLx(), ras->getLy());
 
-    ras->copy(ras);
+    // Apply antialias effect using TRop
+    TRop::antialias(ras, outRas, threshold, softness);
+
+    // Copy result back to tile
+    ras->copy(outRas);
   }
 
   bool canHandle(const TRenderSettings &info, double frame) override {
+    // TODO: Is this needed?
     return true;
   }
 };
