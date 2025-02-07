@@ -54,6 +54,7 @@
 #include <QListWidget>
 #include <QGroupBox>
 #include <QKeySequence>
+#include <mainwindow.h>
 
 using namespace DVGui;
 
@@ -504,7 +505,32 @@ void PreferencesPopup::onStyleSheetTypeChanged() {
 
 //-----------------------------------------------------------------------------
 
-void PreferencesPopup::onIconThemeChanged() {}
+void PreferencesPopup::onIconThemeChanged() {
+  qDebug() << "=========== onIconThemeChanged =============";
+  // First, clear our icon cache to force fresh renders with new theme colors
+  CustomIconEngine::clearGlobalCache();
+
+  m_pref->emit iconThemeChanged();
+
+  // EXPERIMENTAL
+  // Find the main window through Qt's widget system
+  QWidget* mainWidget    = QApplication::activeWindow();
+  MainWindow* mainWindow = qobject_cast<MainWindow*>(mainWidget);
+  if (mainWindow) {
+    // Try request a complete update of the main window hierarchy
+    mainWindow->update();
+  }
+
+  // Try to handle any floating windows, menus and other Qt widgets and update
+  // their icons after theme change. Possibly we can refactor the codebase to
+  // use custom sub-classed widgets that are theme aware.
+  foreach (QWidget* widget, QApplication::allWidgets()) {
+    if (qobject_cast<QMenu*>(widget) || qobject_cast<QToolBar*>(widget) ||
+        qobject_cast<QDialog*>(widget) || qobject_cast<QPushButton*>(widget)) {
+      widget->update();
+    }
+  }
+}
 
 //-----------------------------------------------------------------------------
 
