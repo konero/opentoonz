@@ -357,22 +357,38 @@ GenericToolOptionsBox::GenericToolOptionsBox(QWidget *parent, TTool *tool,
 
 //-----------------------------------------------------------------------------
 
-// show 17x17 icon without style dependency
 class SimpleIconViewField : public DraggableIconView {
+private:
   QIcon m_icon;
+  static constexpr int ICON_SIZE        = 18;
+  static constexpr int VERTICAL_PADDING = 2;
 
 public:
   SimpleIconViewField(const QString &iconName, const QString &toolTipStr = "",
                       QWidget *parent = 0)
-      : DraggableIconView(parent), m_icon(createQIcon(iconName.toUtf8())) {
-    setMinimumSize(18, 18);
+      : DraggableIconView(parent), m_icon(createTIcon(iconName)) {
+    setMinimumSize(ICON_SIZE, ICON_SIZE + 2 * VERTICAL_PADDING);
     setToolTip(toolTipStr);
   }
 
 protected:
-  void paintEvent(QPaintEvent *e) {
+  void paintEvent(QPaintEvent *e) override {
     QPainter p(this);
-    p.drawPixmap(QRect(0, 2, 18, 18), m_icon.pixmap(18, 18));
+
+    // Calculate the icon rect maintaining aspect ratio
+    QRect iconRect(0, VERTICAL_PADDING, ICON_SIZE, ICON_SIZE);
+
+    // Center horizontally if widget is wider than icon
+    if (width() > ICON_SIZE) {
+      iconRect.moveLeft((width() - ICON_SIZE) / 2);
+    }
+
+    // Get the appropriate pixmap for the current DPI
+    qreal dpr   = devicePixelRatio();
+    QPixmap pix = m_icon.pixmap(QSize(ICON_SIZE, ICON_SIZE) * dpr);
+    pix.setDevicePixelRatio(dpr);
+
+    p.drawPixmap(iconRect, pix);
   }
 };
 
@@ -2835,6 +2851,9 @@ ToolOptions::ToolOptions() : m_panel(0) {
   mainLayout->setMargin(0);
   mainLayout->setSpacing(0);
   setLayout(mainLayout);
+
+  connect(Preferences::instance(), SIGNAL(iconThemeChanged()), this,
+          SLOT(onThemeChanged()));
 }
 
 //-----------------------------------------------------------------------------
@@ -2902,7 +2921,7 @@ void ToolOptions::onToolSwitched() {
   ToolHandle *currTool    = app->getCurrentTool();
   TTool *tool             = currTool->getTool();
 
-    // Skip panel updates if we're in navigation mode
+  // Skip panel updates if we're in navigation mode
   if (currTool && currTool->isSpacePressed()) {
     return;
   }
@@ -3005,6 +3024,10 @@ void ToolOptions::onStageObjectChange() {
   ToolOptionsBox *panel = it->second;
   panel->onStageObjectChange();
 }
+
+//-----------------------------------------------------------------------------
+
+void ToolOptions::onThemeChanged() { update(); }
 
 //***********************************************************************************
 //    Command instantiation
