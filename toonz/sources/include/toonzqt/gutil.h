@@ -3,12 +3,23 @@
 #ifndef GUTIL_H
 #define GUTIL_H
 
+// Toonz includes
 #include "tcommon.h"
+#include "toonz/preferences.h"
+#include "traster.h"
+
+#include <memory>
+
+// Qt includes
 #include <QImage>
 #include <QFrame>
 #include <QColor>
-#include "traster.h"
-#include "toonz/preferences.h"
+#include <QIconEngine>
+#include <QIcon>
+#include <QHash>
+#include <QString>
+#include <QByteArray>
+#include <QSvgRenderer>
 
 #undef DVAPI
 #undef DVVAR
@@ -172,6 +183,8 @@ void DVAPI addPixmapToAllModesAndStates(QIcon &icon, const QPixmap &pixmap);
 
 QIcon DVAPI createQIcon(const QString &iconSVGName, bool useFullOpacity = false,
                         bool isForMenuItem = false, QSize newSize = QSize());
+QIcon DVAPI createTIcon(const QString &iconSVGName, const QColor &color = QColor());
+QIcon DVAPI createTIcon(const char *iconSVGName, const QColor &color = QColor());
 QIcon DVAPI createQIconPNG(const char *iconPNGName);
 QIcon DVAPI createQIconOnOffPNG(const char *iconPNGName, bool withOver = true);
 QIcon DVAPI createTemporaryIconFromName(const char *commandName);
@@ -305,5 +318,66 @@ private:
 };
 
 QString DVAPI getIconPath(const QString &path);
+
+//-----------------------------------------------------------------------------
+
+/**
+ * @brief Custom icon engine that renders SVG icons with theme-aware coloring
+ *
+ * This class extends QIconEngine to provide SVG rendering with automatic color
+ * adjustments based on the current theme. Icons can either use a specified
+ * color or fall back to theme-based defaults (red for white theme, green for
+ * black theme).
+ */
+class DVAPI CustomIconEngine : public QIconEngine {
+public:
+  /**
+   * @brief Constructs a CustomIconEngine
+   * @param iconPath Path to the SVG file
+   * @param targetColor Optional color for the icon. If not specified, uses
+   * theme-based defaults
+   */
+  CustomIconEngine(const QString &iconPath,
+                   const QColor &targetColor = QColor());
+
+  ~CustomIconEngine() override;
+
+  // Required QIconEngine overrides
+  void paint(QPainter *painter, const QRect &rect, QIcon::Mode mode,
+             QIcon::State state) override;
+  QIconEngine *clone() const override;
+  QPixmap pixmap(const QSize &size, QIcon::Mode mode,
+                 QIcon::State state) override;
+
+  /**
+   * @brief Updates the target color for the icon
+   * @param color New color to use for rendering. Pass an invalid color to use
+   * theme defaults
+   */
+  void setTargetColor(const QColor &color);
+
+  /**
+   * @brief Clears the global icon cache
+   */
+  static void clearGlobalCache();
+
+private:
+  QString m_iconPath;
+  QColor m_targetColor;
+  QSvgRenderer m_renderer;
+
+  static QMap<QString, QPixmap> s_pixmapCache;
+
+  /**
+   * @brief Gets the effective color to use based on theme and target color
+   * @return QColor to use for rendering
+   */
+  QColor getEffectiveColor() const;
+
+  QPixmap getCachedPixmap(const QSize &requestedSize);
+  QImage recolorBlackPixels(const QImage &input, const QColor &targetColor);
+  QString generateCacheKey(const QSize &size) const;
+};
+
 
 #endif  // GUTIL_H

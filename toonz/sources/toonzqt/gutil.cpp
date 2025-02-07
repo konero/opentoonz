@@ -35,6 +35,7 @@
 #include <QScreen>
 #include <QWindow>
 #include <QDebug>
+#include <QPixmapCache>
 
 using namespace DVGui;
 
@@ -500,7 +501,7 @@ QIcon createQIcon(const QString &iconSVGName, bool useFullOpacity,
   static ThemeManager &themeManager = ThemeManager::getInstance();
   if (iconSVGName.isEmpty() || !themeManager.hasIcon(iconSVGName)) {
     // Use debug to check if something calls for an icon that doesn't exist
-    //qDebug () << "File not found:" << iconSVGName;
+    // qDebug () << "File not found:" << iconSVGName;
     return QIcon();
   }
 
@@ -511,7 +512,7 @@ QIcon createQIcon(const QString &iconSVGName, bool useFullOpacity,
   QImage onImg(generateIconImage(iconSVGName + "_on", qreal(1.0), newSize));
 
   QIcon icon;
-  
+
   // START_BUG_WORKAROUND: #20230627
   // Set an empty pixmap for menu icons when hiding icons from menus is true,
   // search bug ID for more info.
@@ -1013,4 +1014,242 @@ void ThemeManager::printiconPathsMap() {
 // Public version of ThemeManager::getIconPath()
 QString getIconPath(const QString &path) {
   return ThemeManager::getInstance().getIconPath(path);
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+// Initialize the static icon cache
+QMap<QString, QPixmap> CustomIconEngine::s_pixmapCache;
+
+//-----------------------------------------------------------------------------
+
+CustomIconEngine::CustomIconEngine(const QString &iconPath,
+                                   const QColor &targetColor)
+    : m_iconPath(iconPath), m_targetColor(targetColor) {
+  // Load the SVG file
+  QFile file(m_iconPath);
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    qWarning() << "Failed to open SVG file:" << m_iconPath;
+    return;  // Early return if the file cannot be opened
+  }
+
+  QByteArray svgData = file.readAll();
+  file.close();
+
+  // Attempt to load the SVG data into the renderer
+  if (!m_renderer.load(svgData)) {
+    qWarning() << "Failed to load SVG data from file:" << m_iconPath;
+  }
+}
+
+//-----------------------------------------------------------------------------
+
+CustomIconEngine::~CustomIconEngine() {}
+
+//-----------------------------------------------------------------------------
+
+QIconEngine *CustomIconEngine::clone() const {
+  return new CustomIconEngine(m_iconPath, m_targetColor);
+}
+
+//-----------------------------------------------------------------------------
+
+QColor CustomIconEngine::getEffectiveColor() const {
+  // If a specific color was set, use it
+  if (m_targetColor.isValid()) {
+    return m_targetColor;
+  }
+
+  // Otherwise, use theme-based
+  bool isWhiteTheme = !Preferences::instance()->getIconTheme();
+  return isWhiteTheme ? Qt::red : Qt::green;
+}
+
+//-----------------------------------------------------------------------------
+
+QPixmap CustomIconEngine::getCachedPixmap(const QSize &requestedSize) {
+  qDebug() << "\n==== getCachedPixmap ===="
+           << "\nRequested size:" << requestedSize
+           << "\nIcon path:" << m_iconPath;
+  // Check if this is a 16x16 icon being used at 20x20
+  bool is16x16Icon = m_iconPath.contains("/16/");
+  bool requestedAs20x20 =
+      (requestedSize.width() == 20 && requestedSize.height() == 20);
+
+  qDebug() << "Is 16x16 icon:" << is16x16Icon
+           << "\nRequested as 20x20:" << requestedAs20x20;
+
+  // If it's a 16x16 icon requested at 20x20, we'll render at 16x16 and center
+  // it
+  QSize renderSize =
+      (is16x16Icon && requestedAs20x20) ? QSize(16, 16) : requestedSize;
+
+  QString cacheKey = generateCacheKey(renderSize);
+
+  // Try to get from cache first
+  if (s_pixmapCache.contains(cacheKey)) {
+    QPixmap cached = s_pixmapCache[cacheKey];
+
+    // If this is our special case, center it on a 20x20 canvas
+    if (is16x16Icon && requestedAs20x20) {
+      qDebug() << "Centering 16x16 cached pixmap on 20x20";
+      QPixmap expanded(requestedSize);
+      expanded.fill(Qt::transparent);
+      QPainter painter(&expanded);
+      int x = (requestedSize.width() - renderSize.width()) / 2;
+      int y = (requestedSize.height() - renderSize.height()) / 2;
+      painter.drawPixmap(x, y, cached);
+      return expanded;
+    }
+
+    return cached;
+  }
+
+  // If not in cache, create new pixmap
+  qreal devicePixelRatio = qApp->devicePixelRatio();
+  QSize scaledSize       = renderSize * devicePixelRatio;
+
+  QPixmap pixmap(scaledSize);
+  pixmap.setDevicePixelRatio(devicePixelRatio);
+  pixmap.fill(Qt::transparent);
+
+  // Render SVG
+  {
+    QPainter pixmapPainter(&pixmap);
+    m_renderer.render(&pixmapPainter, QRect(QPoint(0, 0), scaledSize));
+  }
+
+  // Convert to image for pixel manipulation
+  QImage image = pixmap.toImage();
+  image        = recolorBlackPixels(image, getEffectiveColor());
+  pixmap       = QPixmap::fromImage(image);
+
+  // Cache the base pixmap
+  s_pixmapCache[cacheKey] = pixmap;
+
+  // If this is our special case, center it on a 20x20 canvas
+  if (is16x16Icon && requestedAs20x20) {
+    qDebug() << "Centering newly rendered 16x16 pixmap on 20x20";
+    QPixmap expanded(requestedSize);
+    expanded.fill(Qt::transparent);
+    QPainter painter(&expanded);
+    int x = (requestedSize.width() - renderSize.width()) / 2;
+    int y = (requestedSize.height() - renderSize.height()) / 2;
+    painter.drawPixmap(x, y, pixmap);
+    return expanded;
+  }
+
+  return pixmap;
+}
+
+//-----------------------------------------------------------------------------
+
+void CustomIconEngine::paint(QPainter *painter, const QRect &rect,
+                             QIcon::Mode mode, QIcon::State state) {
+  Q_UNUSED(mode);
+  Q_UNUSED(state);
+
+  QPixmap pixmap = getCachedPixmap(rect.size());
+  painter->drawPixmap(rect, pixmap);
+}
+
+//-----------------------------------------------------------------------------
+
+QPixmap CustomIconEngine::pixmap(const QSize &size, QIcon::Mode mode,
+                                 QIcon::State state) {
+  Q_UNUSED(mode);
+  Q_UNUSED(state);
+
+  return getCachedPixmap(size);
+}
+
+//-----------------------------------------------------------------------------
+
+void CustomIconEngine::setTargetColor(const QColor &color) {
+  if (m_targetColor != color) {
+    m_targetColor = color;
+    clearGlobalCache();
+  }
+}
+
+//-----------------------------------------------------------------------------
+
+QImage CustomIconEngine::recolorBlackPixels(const QImage &input,
+                                            const QColor &targetColor) {
+  QImage image   = input.convertToFormat(QImage::Format_ARGB32);
+  QRgb targetRgb = targetColor.rgb();
+  int height     = image.height();
+  int width      = image.width();
+
+  for (int y = 0; y < height; ++y) {
+    QRgb *pixel = reinterpret_cast<QRgb *>(image.scanLine(y));
+    QRgb *end   = pixel + width;
+    for (; pixel != end; ++pixel) {
+      if (qGray(*pixel) < 10) {  // Allow slight tolerance for near-black pixels
+        *pixel = (targetRgb & 0x00FFFFFF) | (qAlpha(*pixel) << 24);
+      }
+    }
+  }
+
+  return image;
+}
+
+//-----------------------------------------------------------------------------
+
+void CustomIconEngine::clearGlobalCache() {
+  s_pixmapCache.clear();
+  qDebug() << "\n*******GLOBAL CACHE CLEARED";
+}
+
+//-----------------------------------------------------------------------------
+
+QString CustomIconEngine::generateCacheKey(const QSize &size) const {
+  QString key = QString("%1_%2x%3_%4_%5_%6")
+                    .arg(m_iconPath)
+                    .arg(size.width())
+                    .arg(size.height())
+                    .arg(getEffectiveColor().name())
+                    .arg(qApp->devicePixelRatio())
+                    .arg(Preferences::instance()->getIconTheme());
+
+  qDebug() << "\nGenerated cache key:" << key;
+
+  return key;
+}
+
+//-----------------------------------------------------------------------------
+
+QIcon createTIcon(const QString &iconSVGName, const QColor &color) {
+  static ThemeManager &themeManager = ThemeManager::getInstance();
+  qDebug() << "\n========== CREATING ICON =========="
+           << "\nName: " << iconSVGName << "\nColor: " << color
+           << "\nPath: " << themeManager.getIconPath(iconSVGName);
+
+  // Return empty icon if name is empty or icon doesn't exist
+  if (iconSVGName.isEmpty() || !themeManager.hasIcon(iconSVGName)) {
+    qDebug() << "\n========== CREATING ICON (EMPTY) ==========";
+    return QIcon();
+  }
+
+  // Get full path to icon
+  const QString iconPath = themeManager.getIconPath(iconSVGName);
+
+  // Determine color to use
+  QColor targetColor;
+  if (color.isValid()) {
+    // Use explicitly provided color
+    targetColor = color;
+  } else {
+    // Use theme-base color (handled internally by engine)
+    targetColor = QColor();  // Invalid color tells engine to use theme color
+  }
+
+  return QIcon(new CustomIconEngine(iconPath, targetColor));
+}
+
+// Overload that takes const char* for convenience
+QIcon createTIcon(const char *iconSVGName, const QColor &color) {
+  return createTIcon(QString::fromUtf8(iconSVGName), color);
 }
