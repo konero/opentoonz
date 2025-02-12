@@ -12,6 +12,7 @@
 #include <QString>
 
 #include "../toonzqt/tdockwindows.h"
+#include <dragcommandhandler.h>
 
 class QStackedWidget;
 class TPanel;

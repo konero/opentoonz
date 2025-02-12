@@ -25,6 +25,7 @@
 #include <array>
 #include <QMatrix4x4>
 #include <QTouchDevice>
+#include "dragcommandhandler.h"
 
 //=====================================================================
 
@@ -472,6 +473,16 @@ signals:
   void previewToggled();
   // to notify FilmStripFrames and safely disconnect with this
   void aboutToBeDestroyed();
+
+private:
+  DragCommandHandler *m_dragCommandHandler;
+
+      // Drag command state
+  bool m_dragCommandActive = false;
+  QPoint m_lastDragPos;
+  const int DRAG_SENSITIVITY     = 20;  // Pixels needed for one command
+  const char *m_dragLeftCommand  = nullptr;
+  const char *m_dragRightCommand = nullptr;
 };
 
 // Functions

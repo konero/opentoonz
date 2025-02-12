@@ -30,6 +30,7 @@ set(MOC_HEADERS
     commandbarpopup.h
     convertpopup.h
     crashhandler.h
+    dragcommandhandler.h
     duplicatepopup.h
     dvdirtreeview.h
     dvitemview.h
@@ -388,6 +389,7 @@ set(SOURCES
     custompaneleditorpopup.cpp
     convertfolderpopup.cpp
     exportcameratrackpopup.cpp
+    dragcommandhandler.cpp
 # Tracker file
     dummyprocessor.cpp
     metnum.cpp

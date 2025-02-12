@@ -488,7 +488,7 @@ void MainWindow::changeWindowTitle() {
   ToonzScene *scene = app->getCurrentScene()->getScene();
   if (!scene) return;
 
-  auto project = scene->getProject();
+  auto project        = scene->getProject();
   QString projectName = QString::fromStdString(project->getName().getName());
 
   QString sceneName = QString::fromStdWString(scene->getSceneName());
@@ -507,7 +507,8 @@ void MainWindow::changeWindowTitle() {
 
 //-----------------------------------------------------------------------------
 
-void MainWindow::changeWindowTitle(QString &str) { setWindowTitle(str); }
+void MainWindow::changeWindowTitle(QString &str) {
+  setWindowTitle(str); }
 
 //-----------------------------------------------------------------------------
 
@@ -543,11 +544,13 @@ Room *MainWindow::getRoomByName(QString &roomName) {
 
 //-----------------------------------------------------------------------------
 
-int MainWindow::getRoomCount() const { return m_stackedWidget->count(); }
+int MainWindow::getRoomCount() const {
+  return m_stackedWidget->count(); }
 
 //-----------------------------------------------------------------------------
 
-void MainWindow::refreshWriteSettings() { writeSettings(); }
+void MainWindow::refreshWriteSettings() {
+  writeSettings(); }
 
 //-----------------------------------------------------------------------------
 
@@ -935,8 +938,7 @@ Room *MainWindow::getCurrentRoom() const {
 
 void MainWindow::onUndo() {
   // Must wait for current save to finish, just in case
-  while (TApp::instance()->isSaveInProgress())
-    ;
+  while (TApp::instance()->isSaveInProgress());
 
   ToolHandle *toolH = TApp::instance()->getCurrentTool();
 
@@ -951,8 +953,7 @@ void MainWindow::onUndo() {
 
 void MainWindow::onRedo() {
   // Must wait for current save to finish, just in case
-  while (TApp::instance()->isSaveInProgress())
-    ;
+  while (TApp::instance()->isSaveInProgress());
 
   bool ret = TUndoManager::manager()->redo();
   if (!ret) DVGui::error(QObject::tr("No more Redo operations available."));
@@ -971,11 +972,13 @@ void MainWindow::onNewScene() {
 
 //-----------------------------------------------------------------------------
 
-void MainWindow::onLoadScene() { IoCmd::loadScene(); }
+void MainWindow::onLoadScene() {
+  IoCmd::loadScene(); }
 
 //-----------------------------------------------------------------------------
 
-void MainWindow::onLoadSubScene() { IoCmd::loadSubScene(); }
+void MainWindow::onLoadSubScene() {
+  IoCmd::loadSubScene(); }
 //-----------------------------------------------------------------------------
 
 void MainWindow::onUpgradeTabPro() {}
@@ -1654,7 +1657,8 @@ QAction *MainWindow::createToggle(const char *id, const char *name,
                                   const char *iconSVGName) {
   QAction *action = createAction(id, name, defaultShortcut, type, iconSVGName);
   // Remove if the icon is not set. Checkbox will be drawn by style sheet.
-  if (!iconSVGName || !*iconSVGName) action->setIcon(QIcon());
+  if (!iconSVGName || !*iconSVGName)
+    action->setIcon(QIcon());
 #if defined(_WIN32)
   else {
     bool visible = Preferences::instance()->getBoolValue(showIconsInMenu);
@@ -1888,7 +1892,7 @@ void MainWindow::defineActions() {
   createMenuLevelAction(MI_ExportLevel, QT_TR_NOOP("&Export Level..."), "",
                         "export_level");
   createMenuLevelAction(MI_ExportAllLevels,
-                        QT_TR_NOOP("&Export All Levels... "), "", 
+                        QT_TR_NOOP("&Export All Levels... "), "",
                         "export_all_levels");
   createMenuLevelAction(MI_RemoveEndpoints,
                         QT_TR_NOOP("&Remove Vector Overflow"), "",
@@ -3172,7 +3176,8 @@ public:
   }
 } reloadStyle;
 
-void MainWindow::onQuit() { close(); }
+void MainWindow::onQuit() {
+  close(); }
 
 //=============================================================================
 // RecentFiles

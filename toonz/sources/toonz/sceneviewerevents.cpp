@@ -521,6 +521,25 @@ void SceneViewer::mouseMoveEvent(QMouseEvent *event) {
 void SceneViewer::onMove(const TMouseEvent &event) {
   if (m_freezedStatus != NO_FREEZED) return;
 
+
+    // Handle drag commands
+  if (m_dragCommandActive) {
+    QPoint currentPos = QCursor::pos();
+    int delta         = currentPos.x() - m_lastDragPos.x();
+
+    // Only trigger if we've moved enough since the last command
+    if (abs(delta) >= DRAG_SENSITIVITY) {
+      const char *command =
+          (delta > 0) ? m_dragRightCommand : m_dragLeftCommand;
+      CommandManager::instance()->execute(command);
+
+      // Update last position after executing command
+      m_lastDragPos = currentPos;
+      qDebug() << "Executed command with delta:" << delta;
+    }
+    return;
+  }
+
   // in case mouseReleaseEvent is not called, finish the action for the previous
   // button first.
   if (m_mouseButton != Qt::NoButton && event.m_buttons == Qt::NoButton) {
@@ -882,6 +901,14 @@ void SceneViewer::onRelease(const TMouseEvent &event) {
   // evita i release ripetuti
   if (!m_buttonClicked) return;
   m_buttonClicked = false;
+
+      if (m_dragCommandActive) {
+    qDebug() << "Ending drag operation on mouse release";
+    // We don't set m_dragCommandActive to false here since the key might still
+    // be held
+    //m_dragAccumulator = 0;
+    return;
+  }
 
   TTool *tool = TApp::instance()->getCurrentTool()->getTool();
   if (!tool || !tool->isEnabled()) {
@@ -1419,6 +1446,19 @@ void SceneViewer::keyPressEvent(QKeyEvent *event) {
   if (m_freezedStatus != NO_FREEZED) return;
   int key = event->key();
 
+    if (event->key() == Qt::Key_NumberSign) {
+    // Only start drag mode if it's not already active and not an auto-repeat
+    if (!m_dragCommandActive && !event->isAutoRepeat()) {
+      qDebug() << "Starting drag mode";
+      m_dragCommandActive = true;
+      m_lastDragPos       = QCursor::pos();
+      m_dragLeftCommand   = "MI_PrevFrame";
+      m_dragRightCommand  = "MI_NextFrame";
+    }
+    event->accept();
+    return;
+  }
+
   // Handle only initial key presses, not auto-repeat
   if (!event->isAutoRepeat()) {
     ToolHandle *toolHandle = TApp::instance()->getCurrentTool();
@@ -1638,6 +1678,18 @@ void SceneViewer::keyReleaseEvent(QKeyEvent *event) {
   tool->setViewer(this);
 
   int key = event->key();
+
+    if (event->key() == Qt::Key_NumberSign) {
+    // Only end drag mode if it's not an auto-repeat
+    if (!event->isAutoRepeat()) {
+      qDebug() << "Ending drag mode";
+      m_dragCommandActive = false;
+      m_dragLeftCommand   = nullptr;
+      m_dragRightCommand  = nullptr;
+    }
+    event->accept();
+    return;
+  }
 
   // Handle only real key releases, not auto-repeat
   if (!event->isAutoRepeat()) {
