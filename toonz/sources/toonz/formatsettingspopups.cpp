@@ -23,7 +23,6 @@
 #include "timageinfo.h"
 #include "tfiletype.h"
 #include "tiio.h"
-#include "movsettings.h"
 
 // Qt includes
 #include <QComboBox>
@@ -404,25 +403,6 @@ void FormatSettingsPopup::onPaddingCBChanged() {
 bool openFormatSettingsPopup(QWidget *parent, const std::string &format,
                              TPropertyGroup *props, TFrameId *tmplFId,
                              bool forInput, const TFilePath &levelPath) {
-  bool quicktime = (format == "mov" || format == "3gp") && Tiio::useQuicktime();
-  if (quicktime)  // trattato diversamente; il format
-                  // popup dei mov e' quello di
-                  // quicktime
-  {
-    // gmt 26/9/07. con la penna capita spesso di premere ripetutamente il
-    // bottone.
-    // si aprono due popup uno sopra l'altro (brutto di per se e puo' causare
-    // dei crash misteriosi)
-    static bool popupIsOpen = false;
-    if (popupIsOpen) return 0;
-
-    popupIsOpen = true;
-    openMovSettingsPopup(props);
-    popupIsOpen = false;
-
-    return true;
-  }
-
   if ((!props || props->getPropertyCount() == 0) &&
       !(checkForSeqNum(QString::fromStdString(format)) && tmplFId))
     return false;

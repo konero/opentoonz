@@ -14,7 +14,6 @@ set(HEADERS ${MOC_HEADERS}
     ../common/trop/quickputP.h
     ../common/tiio/compatibility/tfile_io.h
     ../common/tiio/bmp/filebmp.h
-    ../include/movsettings.h
     ../include/tconst.h
     ../include/transparencycheck.h
     ../include/trastercm.h
@@ -115,7 +114,6 @@ set(HEADERS ${MOC_HEADERS}
     ../include/ttoonzimage.h
     ../include/tipc.h
     ../include/tipcmsg.h
-    ../include/t32bitsrv_wrap.h
     ../include/tenv.h
     ../include/tmeshimage.h
     ../include/tgldisplaylistsmanager.h
@@ -228,7 +226,6 @@ set(SOURCES
     ../common/tiio/tiio_jpg_util.cpp
     ../common/tiio/tiio_jpg_exif.cpp
     ../common/tiio/tiio_std.cpp
-    ../common/tiio/movsettings.cpp
     ../common/tiio/compatibility/tfile_io.c
     ../common/tiio/bmp/filebmp.c
     ../common/trop/tfracmove.cpp
@@ -239,7 +236,6 @@ set(SOURCES
     ../common/tipc/tipc.cpp
     ../common/tipc/tipcmsg.cpp
     ../common/tipc/tipcsrv.cpp
-    ../common/tipc/t32bitsrv_wrap.cpp
     ../common/tsystem/tsystempd.cpp
     ../common/tapptools/tenv.cpp
     ../common/tmeshimage/tmeshimage.cpp

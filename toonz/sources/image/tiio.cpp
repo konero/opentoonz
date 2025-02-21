@@ -49,22 +49,6 @@
 #if defined(_WIN32)
 
 #include "./zcc/tiio_zcc.h"
-#include "./mov/tiio_mov.h"
-#include "./3gp/tiio_3gp.h"
-
-#if !defined(x64) && !defined(__GNUC__)
-
-#define list QuickTime_list
-#define map QuickTime_map
-#define iterator QuickTime_iterator
-#define float_t QuickTime_float_t
-#define GetProcessInformation QuickTime_GetProcessInformation
-#define int_fast8_t QuickTime_int_fast8_t
-#define int_fast16_t QuickTime_int_fast16_t
-#define uint_fast16_t QuickTime_uint_fast16_t
-
-#include "QuickTimeComponents.h"
-#include "tquicktime.h"
 
 #undef list
 #undef map
@@ -75,17 +59,6 @@
 #undef int_fast16_t
 #undef uint_fast16_t
 
-#endif
-
-#elif defined(MACOSX)
-#include "./mov/tiio_movM.h"
-#include "./3gp/tiio_3gpM.h"
-
-#elif defined(LINUX) || defined(FREEBSD) ||                                    \
-    defined(HAIKU)  // No more supported by the way...
-// #include "./mov/tiio_movL.h"
-#include "./mov/tiio_mov_proxy.h"
-#include "./3gp/tiio_3gp_proxy.h"
 #endif
 
 //-------------------------------------------------------------------
@@ -221,18 +194,6 @@ void initImageIo(bool lightVersion) {
       TFileType::declare("apng", TFileType::RASTER_LEVEL);
       Tiio::defineWriterProperties("apng", new Tiio::APngWriterProperties());
     }
-    if (!IsQuickTimeInstalled()) {
-      if (Ffmpeg::checkFormat("mov")) {
-        TLevelWriter::define("mov", TLevelWriterFFMov::create, true);
-        TLevelReader::define("mov", TLevelReaderFFMov::create);
-        TFileType::declare("mov", TFileType::RASTER_LEVEL);
-        Tiio::defineWriterProperties("mov", new Tiio::FFMovWriterProperties());
-      }
-      if (Ffmpeg::checkFormat("3gp")) {
-        TLevelReader::define("3gp", TLevelReaderFFmpeg::create);
-        TFileType::declare("3gp", TFileType::RASTER_LEVEL);
-      }
-    }
     TLevelReader::define("webp", TLevelReaderFFmpeg::create);
     TFileType::declare("webp", TFileType::RASTER_LEVEL);
     TLevelReader::define("ffvideo", TLevelReaderFFmpeg::create);
@@ -250,20 +211,6 @@ void initImageIo(bool lightVersion) {
     Tiio::defineWriterProperties("avi", new Tiio::AviWriterProperties());
 
 #endif  // _WIN32
-
-    if (IsQuickTimeInstalled()) {
-      Tiio::useQuicktime(true);
-
-      TLevelWriter::define("mov", TLevelWriterMov::create, true);
-      TLevelReader::define("mov", TLevelReaderMov::create);
-      TFileType::declare("mov", TFileType::RASTER_LEVEL);
-      Tiio::defineWriterProperties("mov", new Tiio::MovWriterProperties());
-
-      TLevelWriter::define("3gp", TLevelWriter3gp::create, true);
-      TLevelReader::define("3gp", TLevelReader3gp::create);
-      TFileType::declare("3gp", TFileType::RASTER_LEVEL);
-      Tiio::defineWriterProperties("3gp", new Tiio::MovWriterProperties());
-    }
 
     /*
 #if (defined(_WIN32) && !defined(x64))

@@ -657,10 +657,6 @@ if(BUILD_ENV_APPLE)
     add_subdirectory(mousedragfilter)
 endif()
 
-if((PLATFORM EQUAL 32) AND ((BUILD_TARGET_WIN AND BUILD_ENV_MSVC) OR BUILD_TARGET_APPLE))
-    add_subdirectory(t32bitsrv)
-endif()
-
 if(BUILD_ENV_APPLE)
     add_custom_command(TARGET executable
         POST_BUILD COMMAND
