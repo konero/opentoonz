@@ -343,7 +343,7 @@ void TPanelTitleBarButton::updatePixmaps() {
 
   // Compute icon
   QImage baseImg = svgToImage(m_standardPixmapName);
-  baseImg        = themeManager.recolorBlackPixels(baseImg);
+  baseImg        = recolorBlackPixels(baseImg);
   QImage onImg   = compositeImage(baseImg, QSize(), false, bgColor);
   QImage offImg  = adjustImageOpacity(baseImg, offOpacity);
   QImage overImg = compositeImage(baseImg, QSize(), false, getOverColor());

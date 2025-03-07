@@ -114,7 +114,7 @@ svgToPixmap(const QString &svgFilePath, QSize size = QSize(),
 //-----------------------------------------------------------------------------
 
 QImage DVAPI
-svgToImage(const QString &svgFilePath, QSize size = QSize(),
+svgToImage(const QString &svgFilePath, QSize size = QSize(), qreal dpr = 0.0,
            Qt::AspectRatioMode aspectRatioMode = Qt::IgnoreAspectRatio,
            QColor bgColor                      = Qt::transparent);
 
@@ -133,6 +133,15 @@ QImage DVAPI adjustImageOpacity(const QImage &input, qreal opacity = 1.0);
 QImage DVAPI compositeImage(const QImage &input, QSize newSize = QSize(),
                             bool scaleInput = false,
                             QColor bgColor  = Qt::transparent);
+
+//-----------------------------------------------------------------------------
+
+QImage DVAPI recolorBlackPixels(const QImage &image, QColor color = QColor());
+
+//-----------------------------------------------------------------------------
+
+QPixmap DVAPI renderIconPixmap(const QString &iconName, QSize size = QSize(),
+                               qreal dpr = 0.0);
 
 //-----------------------------------------------------------------------------
 
@@ -286,9 +295,6 @@ public:
   qreal getOnOpacity() const;
   qreal getOffOpacity() const;
   qreal getDisabledOpacity() const;
-
-  QImage recolorBlackPixels(const QImage &image, QColor color = QColor());
-  QPixmap recolorBlackPixels(const QPixmap &input, QColor color = QColor());
 
   // Debug
   void printiconPathsMap();

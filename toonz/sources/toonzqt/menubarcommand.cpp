@@ -410,6 +410,7 @@ void CommandManager::enlargeIcon(CommandId id, const QSize dstSize) {
       return;
   }
 
+  // TODO: custom panel buttons
   addSpecifiedSizedImageToIcon(icon, iconSVGName, dstSize);
 
   action->setIcon(icon);

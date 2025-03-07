@@ -265,9 +265,10 @@ QPixmap svgToPixmap(const QString &svgFilePath, QSize size,
 
 //-----------------------------------------------------------------------------
 
-QImage svgToImage(const QString &svgFilePath, QSize size,
+QImage svgToImage(const QString &svgFilePath, QSize size, qreal dpr,
                   Qt::AspectRatioMode aspectRatioMode, QColor bgColor) {
   if (svgFilePath.isEmpty()) return QImage();
+  if (dpr == 0.0) dpr = getHighestDevicePixelRatio();
 
   QSvgRenderer svgRenderer(svgFilePath);
 
@@ -277,9 +278,7 @@ QImage svgToImage(const QString &svgFilePath, QSize size,
     return QImage();
   }
 
-  static int devPixRatio = getHighestDevicePixelRatio();
-
-  QSize imageSize = svgRenderer.defaultSize() * devPixRatio;
+  QSize imageSize = svgRenderer.defaultSize() * dpr;
   SvgRenderParams params =
       calculateSvgRenderParams(size, imageSize, aspectRatioMode);
   QImage image(params.size, QImage::Format_ARGB32_Premultiplied);
@@ -298,7 +297,6 @@ QImage svgToImage(const QString &svgFilePath, QSize size,
 
 //-----------------------------------------------------------------------------
 
-// Change the opacity of a QImage (0.0 - 1.0)
 QImage adjustImageOpacity(const QImage &input, qreal opacity) {
   if (input.isNull()) return QImage();
 
@@ -360,6 +358,29 @@ QImage compositeImage(const QImage &input, QSize newSize, bool scaleInput,
 
 //-----------------------------------------------------------------------------
 
+QImage recolorBlackPixels(const QImage &input, QColor color) {
+  if (input.isNull()) return QImage();
+  if (!color.isValid()) return input;
+
+  QImage image     = input.convertToFormat(QImage::Format_ARGB32);
+  QRgb targetColor = color.rgb();
+  int height       = image.height();
+  int width        = image.width();
+  for (int y = 0; y < height; ++y) {
+    QRgb *pixel = reinterpret_cast<QRgb *>(image.scanLine(y));
+    QRgb *end   = pixel + width;
+    for (; pixel != end; ++pixel) {
+      if (qGray(*pixel) == 0) {
+        *pixel = (targetColor & 0x00FFFFFF) | (qAlpha(*pixel) << 24);
+      }
+    }
+  }
+
+  return image;
+}
+
+//-----------------------------------------------------------------------------
+
 // Convert QImage to QPixmap and set device pixel ratio
 QPixmap convertImageToPixmap(const QImage &image) {
   if (image.isNull()) return QPixmap();
@@ -392,7 +413,7 @@ QImage generateIconImage(const QString &iconSVGName, qreal opacity,
   QImage image(svgToImage(imgPath, newSize, aspectRatioMode));
 
   // Colorize QImage
-  image = themeManager.recolorBlackPixels(image);
+  image = recolorBlackPixels(image);
 
   // Change opacity if required
   if (opacity != qreal(1.0)) image = adjustImageOpacity(image, opacity);
@@ -468,86 +489,137 @@ void addSpecifiedSizedImageToIcon(QIcon &icon, const char *iconSVGName,
 
 //-----------------------------------------------------------------------------
 
-// Add the same pixmap to all modes and states of a QIcon
 void addPixmapToAllModesAndStates(QIcon &icon, const QPixmap &pixmap) {
-  QIcon::Mode modes[]   = {QIcon::Normal, QIcon::Disabled, QIcon::Selected};
-  QIcon::State states[] = {QIcon::On, QIcon::Off};
-
-  for (const auto &mode : modes) {
-    for (const auto &state : states) {
+  for (auto mode :
+       {QIcon::Normal, QIcon::Disabled, QIcon::Selected, QIcon::Active})
+    for (auto state : {QIcon::On, QIcon::Off})
       icon.addPixmap(pixmap, mode, state);
-    }
-  }
-  icon.addPixmap(pixmap, QIcon::Active, QIcon::Off);
 }
 
 //-----------------------------------------------------------------------------
 
-/// @brief Return a themed icon
-/// @param iconSVGName Name of the icon (SVG file base name)
-/// @param useFullOpacity If true the icon will be max brightness
-/// @param isForMenuItem For special handling of menu icons
-/// @param newSize Render the SVG images of the icon at the specified size
-/// @return QIcon
+QPixmap renderIconPixmap(const QString &iconName, QSize size, qreal dpr) {
+  QImage img(svgToImage(getIconPath(iconName), size, dpr));
+  img         = recolorBlackPixels(img, Qt::red);
+  QPixmap pix = QPixmap::fromImage(img);
+  pix.setDevicePixelRatio(dpr);
+  return pix;
+}
+
+//-----------------------------------------------------------------------------
+
+// No widget context, use highest scale
+// static int dpr = getHighestDevicePixelRatio();
+
+// Full opacity for color level icons
+// if (iconSVGName.contains("new_toonz_raster_level") ||
+//    iconSVGName.contains("new_vector_level") ||
+//    iconSVGName.contains("new_raster_level") ||
+//    iconSVGName.contains("new_note_level")) {
+//  useFullOpacity = true;
+//}
+
+// QImage baseImg(generateIconImage(iconSVGName, qreal(1.0), newSize));
+// QImage overImg(generateIconImage(iconSVGName + "_over", qreal(1.0),
+// newSize)); QImage onImg(generateIconImage(iconSVGName + "_on", qreal(1.0),
+// newSize));
+
+// TODO:
+// 1. Make the screen unique DPRs static
+// 2. Modes and States
+// 3. Hiding in menus
+// 4.
+
 QIcon createQIcon(const QString &iconSVGName, bool useFullOpacity,
                   bool isForMenuItem, QSize newSize) {
   static ThemeManager &themeManager = ThemeManager::getInstance();
   if (iconSVGName.isEmpty() || !themeManager.hasIcon(iconSVGName)) {
-    // Use debug to check if something calls for an icon that doesn't exist
-    // qDebug () << "File not found:" << iconSVGName;
     return QIcon();
   }
 
-  // Full opacity for color level icons
-  if (iconSVGName.contains("new_toonz_raster_level") ||
-      iconSVGName.contains("new_vector_level") ||
-      iconSVGName.contains("new_raster_level") ||
-      iconSVGName.contains("new_note_level")) {
-    useFullOpacity = true;
-  }
-
-  static int devPixRatio = getHighestDevicePixelRatio();
-
-  QImage baseImg(generateIconImage(iconSVGName, qreal(1.0), newSize));
-  QImage overImg(generateIconImage(iconSVGName + "_over", qreal(1.0), newSize));
-  QImage onImg(generateIconImage(iconSVGName + "_on", qreal(1.0), newSize));
-
   QIcon icon;
 
-  // START_BUG_WORKAROUND: #20230627
-  // Set an empty pixmap for menu icons when hiding icons from menus is true,
-  // search bug ID for more info.
-#ifdef _WIN32
-  bool showIconInMenu = Preferences::instance()->getBoolValue(showIconsInMenu);
-  if (isForMenuItem && baseImg.width() == (16 * devPixRatio) &&
-      baseImg.height() == (16 * devPixRatio) && !showIconInMenu) {
-    static QPixmap emptyPm(16 * devPixRatio, 16 * devPixRatio);
-    emptyPm.fill(Qt::transparent);
-    addPixmapToAllModesAndStates(icon, emptyPm);
-  } else
-#endif  // END_BUG_WORKAROUND
-  {
-    addImagesToIcon(icon, baseImg, overImg, onImg, useFullOpacity);
+  // Get unique DPRs
+  QSet<qreal> uniqueDPRs;
+  for (QScreen *scr : QGuiApplication::screens()) {
+    uniqueDPRs.insert(scr->devicePixelRatio());
   }
 
-  // For tool bars we draw menu sized icons onto tool bar sized images otherwise
-  // there can be scaling artifacts with high dpi and load these in addition
-  if (baseImg.width() == (16 * devPixRatio) &&
-      baseImg.height() == (16 * devPixRatio)) {
-    for (auto screen : QApplication::screens()) {
-      QSize expandSize(20, 20);
-      int otherDevPixRatio = screen->devicePixelRatio();
-      if (otherDevPixRatio != devPixRatio) {
-        expandSize.setWidth(16 * otherDevPixRatio);
-        expandSize.setHeight(16 * otherDevPixRatio);
+  // Render img at each DPR
+  for (qreal dpr : uniqueDPRs) {
+    // Base img
+    QPixmap pm = renderIconPixmap(iconSVGName, QSize(), dpr);
+    // TODO: modes, states, add features to renderIconPixmap
+
+    // Menu img
+    if (pm.width() == (16 * dpr) && pm.height() == (16 * dpr)) {
+#ifdef _WIN32
+      // Use empty img if user wants to hide icons in menus
+      if (!Preferences::instance()->getBoolValue(showIconsInMenu) &&
+          isForMenuItem) {  // Hide it
+        static QPixmap emptyPm(16 * dpr, 16 * dpr);
+        emptyPm.setDevicePixelRatio(dpr);
+        emptyPm.fill(Qt::transparent);
+        icon.addPixmap(emptyPm, QIcon::Normal, QIcon::Off);
+        // TODO: modes, states
+      } else {  // Show it
+#endif
+        icon.addPixmap(pm);
       }
-      QImage toolBaseImg(compositeImage(baseImg, expandSize));
-      QImage toolOverImg(compositeImage(overImg, expandSize));
-      QImage toolOnImg(compositeImage(onImg, expandSize));
-      addImagesToIcon(icon, toolBaseImg, toolOverImg, toolOnImg,
-                      useFullOpacity);
+
+      // Render toolbar size variant
+      QPixmap canvas(QSize(20 * dpr, 20 * dpr));
+      canvas.setDevicePixelRatio(dpr);
+      canvas.fill(Qt::white);
+      int x = (canvas.width() - pm.width()) / (2 * dpr);
+      int y = (canvas.height() - pm.height()) / (2 * dpr);
+      QPainter p(&canvas);
+      p.drawPixmap(x, y, pm);
+      icon.addPixmap(canvas);
     }
+
+    // All others
+
+    icon.addPixmap(pm);
   }
+
+  //
+  // MENU
+  //
+  // #ifdef _WIN32
+  //  bool showIconInMenu =
+  //  Preferences::instance()->getBoolValue(showIconsInMenu); if
+  //  (isForMenuItem
+  //  && baseImg.width() == (16 * devPixRatio) &&
+  //      baseImg.height() == (16 * devPixRatio) && !showIconInMenu) {
+  //    static QPixmap emptyPm(16 * devPixRatio, 16 * devPixRatio);
+  //    emptyPm.fill(Qt::transparent);
+  //    addPixmapToAllModesAndStates(icon, emptyPm);
+  //  } else
+  // #endif
+  //{
+  //  addImagesToIcon(icon, baseImg, overImg, onImg, useFullOpacity);
+  //}
+
+  //
+  // TOOLBAR
+  //
+  // if (baseImg.width() == (16 * devPixRatio) &&
+  //    baseImg.height() == (16 * devPixRatio)) {
+  //  for (auto screen : QApplication::screens()) {
+  //    QSize expandSize(20, 20);
+  //    int otherDevPixRatio = screen->devicePixelRatio();
+  //    if (otherDevPixRatio != devPixRatio) {
+  //      expandSize.setWidth(16 * otherDevPixRatio);
+  //      expandSize.setHeight(16 * otherDevPixRatio);
+  //    }
+  //    QImage toolBaseImg(compositeImage(baseImg, expandSize));
+  //    QImage toolOverImg(compositeImage(overImg, expandSize));
+  //    QImage toolOnImg(compositeImage(onImg, expandSize));
+  //    addImagesToIcon(icon, toolBaseImg, toolOverImg, toolOnImg,
+  //                    useFullOpacity);
+  //  }
+  //}
 
   return icon;
 }
@@ -955,48 +1027,6 @@ qreal ThemeManager::getOffOpacity() const { return impl->m_offOpacity; }
 
 qreal ThemeManager::getDisabledOpacity() const {
   return impl->m_disabledOpacity;
-}
-
-//-----------------------------------------------------------------------------
-
-// Colorize black pixels in a QImage while retaining other colors, however be
-// mindful that if black pixels overlap color pixels it can cause artifacting
-QImage ThemeManager::recolorBlackPixels(const QImage &input, QColor color) {
-  if (input.isNull() || color == Qt::black) return QImage();
-
-  // Default is icon theme color
-  if (!color.isValid())
-    color = Preferences::instance()->getIconTheme() ? Qt::black : Qt::white;
-
-  QImage image     = input.convertToFormat(QImage::Format_ARGB32);
-  QRgb targetColor = color.rgb();
-  int height       = image.height();
-  int width        = image.width();
-  for (int y = 0; y < height; ++y) {
-    QRgb *pixel = reinterpret_cast<QRgb *>(image.scanLine(y));
-    QRgb *end   = pixel + width;
-    for (; pixel != end; ++pixel) {
-      if (qGray(*pixel) == 0) {
-        *pixel = (targetColor & 0x00FFFFFF) | (qAlpha(*pixel) << 24);
-      }
-    }
-  }
-
-  return image;
-}
-
-//-----------------------------------------------------------------------------
-
-// Colorize black pixels in a QPixmap while retaining other colors, however be
-// mindful that if black pixels overlap color pixels if can cause artifacting
-QPixmap ThemeManager::recolorBlackPixels(const QPixmap &input, QColor color) {
-  if (input.isNull() || color == Qt::black) return QPixmap();
-
-  QImage image          = input.toImage();
-  QImage recoloredImage = recolorBlackPixels(image, color);
-  QPixmap pixmap        = convertImageToPixmap(recoloredImage);
-
-  return pixmap;
 }
 
 //-----------------------------------------------------------------------------
