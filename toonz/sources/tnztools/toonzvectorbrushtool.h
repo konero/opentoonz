@@ -138,6 +138,7 @@ public:
 
   bool preLeftButtonDown() override;
   void leftButtonDown(const TPointD &pos, const TMouseEvent &e) override;
+  bool wantsCoalescedMouseSamples() const override { return true; }
   void leftButtonDrag(const TPointD &pos, const TMouseEvent &e) override;
   void leftButtonDrag(const std::vector<TToolInputSample> &samples,
                       const TMouseEvent &e) override;

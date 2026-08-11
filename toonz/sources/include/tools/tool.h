@@ -421,6 +421,7 @@ return true if the method execution can have changed the current tool
   virtual void mouseMove(const TPointD &, const TMouseEvent &) {}
   virtual void leftButtonDown(const TPointD &, const TMouseEvent &) {}
   virtual void leftButtonDrag(const TPointD &, const TMouseEvent &) {}
+  virtual bool wantsCoalescedMouseSamples() const { return false; }
   virtual void leftButtonDrag(const std::vector<TToolInputSample> &samples,
                               const TMouseEvent &event);
   virtual void leftButtonUp(const TPointD &, const TMouseEvent &) {}

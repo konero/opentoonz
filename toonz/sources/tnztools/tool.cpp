@@ -180,8 +180,9 @@ TTool::TTool(std::string name)
 
 void TTool::leftButtonDrag(const std::vector<TToolInputSample> &samples,
                            const TMouseEvent &event) {
+  TMouseEvent sampleEvent = event;
+  sampleEvent.m_coalescedSamples.clear();
   for (const TToolInputSample &sample : samples) {
-    TMouseEvent sampleEvent = event;
     sampleEvent.m_pos             = sample.position;
     sampleEvent.m_pressure        = sample.pressure;
     sampleEvent.m_tilt            = sample.tilt;
