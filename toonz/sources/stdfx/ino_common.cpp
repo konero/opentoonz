@@ -682,9 +682,26 @@ void TBlendForeBackRasterFx::nonlinearTmpl(TRasterPT<T> dn_ras_out,
       double dng = static_cast<double>(out_pix->g) / maxi;
       double dnb = static_cast<double>(out_pix->b) / maxi;
       double dna = static_cast<double>(out_pix->m) / maxi;
-      brendKernel(dnr, dng, dnb, dna, upr, upg, upb, upa,
-                  clipping_mask_sw ? up_opacity * dna : up_opacity,
-                  alpha_rendering_sw, true);
+      if (clipping_mask_sw) {
+        const double mask_a = dna;
+        if (mask_a > 0.0) {
+          dnr /= mask_a;
+          dng /= mask_a;
+          dnb /= mask_a;
+          dna = 1.0;
+          brendKernel(dnr, dng, dnb, dna, upr, upg, upb, upa, up_opacity,
+                      alpha_rendering_sw, true);
+          dnr *= mask_a;
+          dng *= mask_a;
+          dnb *= mask_a;
+          dna = mask_a;
+        } else {
+          dnr = dng = dnb = dna = 0.0;
+        }
+      } else {
+        brendKernel(dnr, dng, dnb, dna, upr, upg, upb, upa, up_opacity,
+                    alpha_rendering_sw, true);
+      }
       out_pix->r = static_cast<Q>(dnr * (maxi + 0.999999));
       out_pix->g = static_cast<Q>(dng * (maxi + 0.999999));
       out_pix->b = static_cast<Q>(dnb * (maxi + 0.999999));
@@ -714,9 +731,26 @@ void TBlendForeBackRasterFx::nonlinearTmpl<TPixelF, float>(
       double dng = static_cast<double>(out_pix->g);
       double dnb = static_cast<double>(out_pix->b);
       double dna = static_cast<double>(out_pix->m);
-      brendKernel(dnr, dng, dnb, dna, up_pix->r, up_pix->g, up_pix->b,
-                  up_pix->m, clipping_mask_sw ? up_opacity * dna : up_opacity,
-                  alpha_rendering_sw, false);
+      if (clipping_mask_sw) {
+        const double mask_a = dna;
+        if (mask_a > 0.0) {
+          dnr /= mask_a;
+          dng /= mask_a;
+          dnb /= mask_a;
+          dna = 1.0;
+          brendKernel(dnr, dng, dnb, dna, up_pix->r, up_pix->g, up_pix->b,
+                      up_pix->m, up_opacity, alpha_rendering_sw, false);
+          dnr *= mask_a;
+          dng *= mask_a;
+          dnb *= mask_a;
+          dna = mask_a;
+        } else {
+          dnr = dng = dnb = dna = 0.0;
+        }
+      } else {
+        brendKernel(dnr, dng, dnb, dna, up_pix->r, up_pix->g, up_pix->b,
+                    up_pix->m, up_opacity, alpha_rendering_sw, false);
+      }
       out_pix->r = dnr;
       out_pix->g = dng;
       out_pix->b = dnb;
@@ -746,12 +780,17 @@ void TBlendForeBackRasterFx::linearTmpl(TRasterPT<T> dn_ras_out,
     const T* const out_end = out_pix + dn_ras_out->getLx();
     const T* up_pix        = up_ras->pixels(yy);
     for (; out_pix < out_end; ++out_pix, ++up_pix) {
+      double dna = static_cast<double>(out_pix->m) / maxi;
+      if (clipping_mask_sw && dna <= 0.0) {
+        out_pix->r = out_pix->g = out_pix->b = out_pix->m = 0;
+        continue;
+      }
       if (up_pix->m <= 0 || up_opacity <= 0) {
         continue;
       }
 
-      double dna         = static_cast<double>(out_pix->m) / maxi;
-      double tmp_opacity = clipping_mask_sw ? up_opacity * dna : up_opacity;
+      const double mask_a = dna;
+      double tmp_opacity  = up_opacity;
       if (tmp_opacity <= 0) continue;
 
       double dnBGR[3];
@@ -760,11 +799,13 @@ void TBlendForeBackRasterFx::linearTmpl(TRasterPT<T> dn_ras_out,
       dnBGR[2]        = static_cast<double>(out_pix->r) / maxi;
       double dnXYZ[3] = {0.0, 0.0, 0.0};
       if (dna > 0.0) {
+        if (clipping_mask_sw) dna = 1.0;
         for (int c = 0; c < 3; c++) {
-          if (premultiplied_sw)
-            dnBGR[c] =
-                to_linear_color_space(dnBGR[c] / dna, 1.0, gammaDif) * dna;
-          else
+          if (premultiplied_sw) {
+            double channel =
+                clipping_mask_sw ? dnBGR[c] / mask_a : dnBGR[c] / dna;
+            dnBGR[c] = to_linear_color_space(channel, 1.0, gammaDif) * dna;
+          } else
             dnBGR[c] = to_linear_color_space(dnBGR[c], 1.0, gammaDif);
         }
 
@@ -793,12 +834,14 @@ void TBlendForeBackRasterFx::linearTmpl(TRasterPT<T> dn_ras_out,
       to_bgr(dnBGR, dnXYZ);
 
       // premultiply the result
+      double out_a = clipping_mask_sw ? mask_a : dna;
+      double color_a = clipping_mask_sw ? 1.0 : dna;
       double nonlinear_b =
-          to_nonlinear_color_space(dnBGR[0] / dna, 1.0, gammaDif) * dna;
+          to_nonlinear_color_space(dnBGR[0] / color_a, 1.0, gammaDif) * out_a;
       double nonlinear_g =
-          to_nonlinear_color_space(dnBGR[1] / dna, 1.0, gammaDif) * dna;
+          to_nonlinear_color_space(dnBGR[1] / color_a, 1.0, gammaDif) * out_a;
       double nonlinear_r =
-          to_nonlinear_color_space(dnBGR[2] / dna, 1.0, gammaDif) * dna;
+          to_nonlinear_color_space(dnBGR[2] / color_a, 1.0, gammaDif) * out_a;
 
       out_pix->r =
           static_cast<Q>(clamp(nonlinear_r, 0.0, 1.0) * (maxi + 0.999999));
@@ -806,7 +849,7 @@ void TBlendForeBackRasterFx::linearTmpl(TRasterPT<T> dn_ras_out,
           static_cast<Q>(clamp(nonlinear_g, 0.0, 1.0) * (maxi + 0.999999));
       out_pix->b =
           static_cast<Q>(clamp(nonlinear_b, 0.0, 1.0) * (maxi + 0.999999));
-      out_pix->m = static_cast<Q>(dna * (maxi + 0.999999));
+      out_pix->m = static_cast<Q>(out_a * (maxi + 0.999999));
     }
   }
 }
@@ -833,12 +876,17 @@ void TBlendForeBackRasterFx::linearTmpl<TPixelF, float>(TRasterFP dn_ras_out,
     const TPixelF* const out_end = out_pix + dn_ras_out->getLx();
     const TPixelF* up_pix        = up_ras->pixels(yy);
     for (; out_pix < out_end; ++out_pix, ++up_pix) {
+      double dna = static_cast<double>(out_pix->m);
+      if (clipping_mask_sw && dna <= 0.0) {
+        out_pix->r = out_pix->g = out_pix->b = out_pix->m = 0.f;
+        continue;
+      }
       if (up_pix->m <= 0.f || up_opacity <= 0.f) {
         continue;
       }
 
-      double dna         = static_cast<double>(out_pix->m);
-      double tmp_opacity = clipping_mask_sw ? up_opacity * dna : up_opacity;
+      const double mask_a = dna;
+      double tmp_opacity  = up_opacity;
       if (tmp_opacity <= 0.) continue;
 
       double dnBGR[3];
@@ -847,11 +895,13 @@ void TBlendForeBackRasterFx::linearTmpl<TPixelF, float>(TRasterFP dn_ras_out,
       dnBGR[2]        = static_cast<double>(out_pix->r);
       double dnXYZ[3] = {0.0, 0.0, 0.0};
       if (dna > 0.0) {
+        if (clipping_mask_sw) dna = 1.0;
         for (int c = 0; c < 3; c++) {
-          if (premultiplied_sw)
-            dnBGR[c] =
-                to_linear_color_space(dnBGR[c] / dna, 1.0, gammaDif) * dna;
-          else
+          if (premultiplied_sw) {
+            double channel =
+                clipping_mask_sw ? dnBGR[c] / mask_a : dnBGR[c] / dna;
+            dnBGR[c] = to_linear_color_space(channel, 1.0, gammaDif) * dna;
+          } else
             dnBGR[c] = to_linear_color_space(dnBGR[c], 1.0, gammaDif);
         }
         to_xyz(dnXYZ, dnBGR);
@@ -879,17 +929,19 @@ void TBlendForeBackRasterFx::linearTmpl<TPixelF, float>(TRasterFP dn_ras_out,
       to_bgr(dnBGR, dnXYZ);
 
       // premultiply the result
+      double out_a = clipping_mask_sw ? mask_a : dna;
+      double color_a = clipping_mask_sw ? 1.0 : dna;
       double nonlinear_b =
-          to_nonlinear_color_space(dnBGR[0] / dna, 1.0, gammaDif) * dna;
+          to_nonlinear_color_space(dnBGR[0] / color_a, 1.0, gammaDif) * out_a;
       double nonlinear_g =
-          to_nonlinear_color_space(dnBGR[1] / dna, 1.0, gammaDif) * dna;
+          to_nonlinear_color_space(dnBGR[1] / color_a, 1.0, gammaDif) * out_a;
       double nonlinear_r =
-          to_nonlinear_color_space(dnBGR[2] / dna, 1.0, gammaDif) * dna;
+          to_nonlinear_color_space(dnBGR[2] / color_a, 1.0, gammaDif) * out_a;
 
       out_pix->r = nonlinear_r;
       out_pix->g = nonlinear_g;
       out_pix->b = nonlinear_b;
-      out_pix->m = dna;
+      out_pix->m = out_a;
     }
   }
 }
