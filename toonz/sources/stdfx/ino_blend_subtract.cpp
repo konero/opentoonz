@@ -12,6 +12,11 @@ public:
   ino_blend_subtract()
       : TBlendForeBackRasterFx(true, true) {}  // with alpha_rendering switch
   ~ino_blend_subtract() {}
+
+  bool propagatesClippingMaskAlpha() const override {
+    return m_alpha_rendering->getValue();
+  }
+
   void brendKernel(double& dnr, double& dng, double& dnb, double& dna,
                    const double upr, double upg, double upb, double upa,
                    const double up_opacity,
