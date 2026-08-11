@@ -9,6 +9,8 @@ message(STATUS "C++ standard: ${CMAKE_CXX_STANDARD}")
 
 project(OpenToonz LANGUAGES C CXX)
 
+include(CTest)
+
 #-----------------------------------------------------------------------------
 # Platform Specific Defaults
 

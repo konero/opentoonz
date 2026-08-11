@@ -180,6 +180,11 @@ class SceneViewer final : public TToolViewer, public Previewer::Listener {
   bool m_isStyleShortcutSwitchable;
 
   bool m_isBusyOnTabletMove;
+  qint64 m_lastNativeMouseTimestamp = -1;
+  QPoint m_lastNativeMousePosition;
+  qint64 m_sourceTimestampAnchor = -1;
+  TTimerTicks m_sourceTickAnchor = 0;
+  TTimerTicks m_lastInputTime = 0;
 
   QMatrix4x4 m_projectionMatrix;
 

@@ -16,7 +16,7 @@
 
 #include <tools/inputmanager.h>
 #include <tools/modifiers/modifierline.h>
-#include <tools/modifiers/modifiertangents.h>
+#include <tools/modifiers/modifierfreehand.h>
 #include <tools/modifiers/modifierassistants.h>
 #include <tools/modifiers/modifiersegmentation.h>
 #include <tools/modifiers/modifiersmooth.h>
@@ -148,6 +148,8 @@ public:
   bool preLeftButtonDown() override;
   void leftButtonDown(const TPointD &pos, const TMouseEvent &e) override;
   void leftButtonDrag(const TPointD &pos, const TMouseEvent &e) override;
+  void leftButtonDrag(const std::vector<TToolInputSample> &samples,
+                      const TMouseEvent &e) override;
   void leftButtonUp(const TPointD &pos, const TMouseEvent &e) override;
   void mouseMove(const TPointD &pos, const TMouseEvent &e) override;
 
@@ -200,11 +202,13 @@ private:
   enum MouseEventType { ME_DOWN, ME_DRAG, ME_UP, ME_MOVE };
   void handleMouseEvent(MouseEventType type, const TPointD &pos,
                         const TMouseEvent &e);
+  void handleMouseSamples(const std::vector<TToolInputSample> &samples,
+                          const TMouseEvent &e);
 
 protected:
   TInputManager m_inputmanager;
   TSmartPointerT<TModifierLine> m_modifierLine;
-  TSmartPointerT<TModifierTangents> m_modifierTangents;
+  TSmartPointerT<TModifierFreehand> m_modifierFreehand;
   TSmartPointerT<TModifierAssistants> m_modifierAssistants;
   TSmartPointerT<TModifierSegmentation> m_modifierSegmentation;
   TSmartPointerT<TModifierSegmentation> m_modifierSmoothSegmentation;

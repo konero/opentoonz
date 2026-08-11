@@ -162,7 +162,7 @@ FullColorBrushTool::FullColorBrushTool(std::string name)
   m_modifierTest = new TModifierTest();
 #endif
   m_modifierLine         = new TModifierLine();
-  m_modifierTangents     = new TModifierTangents();
+  m_modifierFreehand     = new TModifierFreehand();
   m_modifierAssistants   = new TModifierAssistants();
   m_modifierSegmentation = new TModifierSegmentation();
 
@@ -335,7 +335,7 @@ void FullColorBrushTool::updateModifiers() {
     TReplicator::scanReplicators(this, nullptr, &m_modifierReplicate, false, true, false, false, nullptr);
   
   m_inputmanager.clearModifiers();
-  m_inputmanager.addModifier(TInputModifierP(m_modifierTangents.getPointer()));
+  m_inputmanager.addModifier(TInputModifierP(m_modifierFreehand.getPointer()));
   m_inputmanager.addModifier(
       TInputModifierP(m_modifierAssistants.getPointer()));
 #ifndef NDEBUG
@@ -368,7 +368,7 @@ bool FullColorBrushTool::preLeftButtonDown() {
 void FullColorBrushTool::handleMouseEvent(MouseEventType type,
                                           const TPointD &pos,
                                           const TMouseEvent &e) {
-  TTimerTicks t = TToolTimer::ticks();
+  TTimerTicks t = e.time() > 0 ? e.time() : TToolTimer::ticks();
   bool alt      = e.getModifiersMask() & TMouseEvent::ALT_KEY;
   bool shift    = e.getModifiersMask() & TMouseEvent::SHIFT_KEY;
   bool control  = e.getModifiersMask() & TMouseEvent::CTRL_KEY;
@@ -403,7 +403,8 @@ void FullColorBrushTool::handleMouseEvent(MouseEventType type,
     double pressure    = hasPressure ? e.m_pressure : defPressure;
     bool   final       = type == ME_UP;
     m_inputmanager.trackEvent(
-      deviceId, 0, pos, pressure, TPointD(), hasPressure, false, final, t);
+      deviceId, 0, pos, pressure, e.m_tilt, hasPressure, e.isTablet(), final,
+      t);
     m_inputmanager.processTracks();
   }
 }
@@ -418,12 +419,46 @@ void FullColorBrushTool::leftButtonDrag(const TPointD &pos,
                                         const TMouseEvent &e) {
   handleMouseEvent(ME_DRAG, pos, e);
 }
+void FullColorBrushTool::leftButtonDrag(
+    const std::vector<TToolInputSample> &samples, const TMouseEvent &e) {
+  if (samples.size() <= 1) {
+    if (!samples.empty()) leftButtonDrag(samples.front().position, e);
+    return;
+  }
+  handleMouseSamples(samples, e);
+}
 void FullColorBrushTool::leftButtonUp(const TPointD &pos,
                                       const TMouseEvent &e) {
   handleMouseEvent(ME_UP, pos, e);
 }
 void FullColorBrushTool::mouseMove(const TPointD &pos, const TMouseEvent &e) {
   handleMouseEvent(ME_MOVE, pos, e);
+}
+
+void FullColorBrushTool::handleMouseSamples(
+    const std::vector<TToolInputSample> &samples, const TMouseEvent &e) {
+  if (samples.empty()) return;
+
+  TTimerTicks t = samples.front().timestamp > 0 ? samples.front().timestamp
+                                                : TToolTimer::ticks();
+  bool alt      = e.getModifiersMask() & TMouseEvent::ALT_KEY;
+  bool shift    = e.getModifiersMask() & TMouseEvent::SHIFT_KEY;
+  bool control  = e.getModifiersMask() & TMouseEvent::CTRL_KEY;
+  if (alt != m_inputmanager.state.isKeyPressed(TKey::alt))
+    m_inputmanager.keyEvent(alt, TKey::alt, t, nullptr);
+  if (shift != m_inputmanager.state.isKeyPressed(TKey::shift))
+    m_inputmanager.keyEvent(shift, TKey::shift, t, nullptr);
+  if (control != m_inputmanager.state.isKeyPressed(TKey::control))
+    m_inputmanager.keyEvent(control, TKey::control, t, nullptr);
+
+  std::vector<TToolInputSample> inputSamples = samples;
+  const bool isMyPaint =
+      getApplication()->getCurrentLevelStyle()->getTagId() == 4001;
+  for (TToolInputSample &sample : inputSamples)
+    if (!sample.isTablet && isMyPaint) sample.pressure = 0.5;
+  m_inputmanager.trackEvents(e.isTablet() ? 1 : 0, 0, inputSamples.data(),
+                             (int)inputSamples.size());
+  m_inputmanager.processTracks();
 }
 
 //---------------------------------------------------------------------------------------------------------------

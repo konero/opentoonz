@@ -67,6 +67,16 @@
 #include <QGestureEvent>
 #include <QPainter>
 
+#include <algorithm>
+#include <vector>
+
+#ifdef _WIN32
+#ifndef NDEBUG
+#include <QDebug>
+#endif
+#include <windows.h>
+#endif
+
 // definito - per ora - in tapp.cpp
 extern QString updateToolEnableStatus(TTool *tool);
 
@@ -74,12 +84,118 @@ extern QString updateToolEnableStatus(TTool *tool);
 namespace {
 //-----------------------------------------------------------------------------
 
+void mapSourceTimestamp(TMouseEvent &event, qint64 &sourceAnchor,
+                        TTimerTicks &tickAnchor, TTimerTicks &lastTime) {
+  if (event.m_sourceTimestamp < 0) return;
+
+  const qint64 source = event.m_sourceTimestamp;
+  if (sourceAnchor < 0 || source < sourceAnchor || source - sourceAnchor > 60000) {
+    sourceAnchor = source;
+    tickAnchor   = event.m_time;
+  }
+
+  TTimerTicks mapped = tickAnchor + (source - sourceAnchor) * 1000000;
+  if (mapped <= lastTime) mapped = lastTime + 1;
+  event.m_time = mapped;
+  lastTime     = mapped;
+}
+
+#ifdef _WIN32
+std::vector<TNativeInputSample> getNativeMouseHistory(
+    QWidget *viewer, QMouseEvent *event, qint64 &lastTimestamp,
+    QPoint &lastPosition) {
+  std::vector<TNativeInputSample> result;
+  if (!viewer || !event || event->source() != Qt::MouseEventNotSynthesized ||
+      !(event->buttons() & Qt::LeftButton))
+    return result;
+
+  MOUSEMOVEPOINT query = {};
+  QPoint globalPos      = event->globalPos();
+  query.x               = globalPos.x();
+  query.y               = globalPos.y();
+  query.time            = (DWORD)event->timestamp();
+
+  MOUSEMOVEPOINT points[64] = {};
+  int count = GetMouseMovePointsEx(sizeof(MOUSEMOVEPOINT), &query, points,
+                                   64, GMMP_USE_DISPLAY_POINTS);
+  if (count <= 0) return result;
+
+  // MOUSEMOVEPOINT::time is a wrapping 32-bit millisecond clock.  Unwrap
+  // against the current Qt timestamp before ordering, otherwise a stroke
+  // crossing the wrap boundary can be delivered backwards in time.
+  qint64 reference = event->timestamp() >= 0
+                         ? (qint64)event->timestamp()
+                         : (lastTimestamp >= 0 ? lastTimestamp : 0);
+  if (lastTimestamp >= 0) {
+    const qint64 low = lastTimestamp & 0xffffffffLL;
+    qint64 delta      = reference - low;
+    if (delta > 0x7fffffffLL)
+      delta -= 0x100000000LL;
+    else if (delta < -0x7fffffffLL)
+      delta += 0x100000000LL;
+    reference = lastTimestamp + delta;
+  }
+  struct TimedPoint {
+    MOUSEMOVEPOINT point;
+    qint64 timestamp;
+  };
+  std::vector<TimedPoint> ordered;
+  ordered.reserve(count);
+  for (int i = 0; i < count; ++i) {
+    const qint64 raw = (qint64)(quint32)points[i].time;
+    const qint64 low = reference & 0xffffffffLL;
+    qint64 delta      = raw - low;
+    if (delta > 0x7fffffffLL)
+      delta -= 0x100000000LL;
+    else if (delta < -0x7fffffffLL)
+      delta += 0x100000000LL;
+    ordered.push_back({points[i], reference + delta});
+  }
+  std::sort(ordered.begin(), ordered.end(),
+            [](const TimedPoint &a, const TimedPoint &b) {
+              return a.timestamp < b.timestamp;
+            });
+
+  result.reserve(ordered.size());
+  for (const TimedPoint &timed : ordered) {
+    const MOUSEMOVEPOINT &point = timed.point;
+    QPoint screenPoint((int)point.x, (int)point.y);
+    qint64 timestamp = timed.timestamp;
+    if (timestamp < lastTimestamp) continue;
+    // Adjacent history entries at the same display coordinate carry no new
+    // geometry. Suppressing them also prevents zero-length dabs after Qt and
+    // Win32 report the same sample through both paths.
+    if (lastTimestamp >= 0 && screenPoint == lastPosition) continue;
+
+    TNativeInputSample sample;
+    // GMMP_USE_DISPLAY_POINTS returns screen coordinates in the same
+    // display-point space used by Qt's globalPos() (including per-monitor DPI
+    // virtualization), so mapFromGlobal performs the required Qt conversion.
+    sample.position  = viewer->mapFromGlobal(screenPoint);
+    sample.timestamp = timestamp;
+    result.push_back(sample);
+    lastTimestamp = timestamp;
+    lastPosition  = screenPoint;
+  }
+#ifndef NDEBUG
+  if (qEnvironmentVariableIsSet("OPENTOONZ_POINTER_TRACE"))
+    qDebug() << "[pointer] native=" << count
+             << " recovered=" << (int)result.size()
+             << " duplicates=" << (count - (int)result.size());
+#endif
+  return result;
+}
+#endif
+
 void initToonzEvent(TMouseEvent &toonzEvent, QMouseEvent *event,
                     int widgetHeight, double pressure, int devPixRatio) {
   toonzEvent.m_pos      = TPointD(event->pos().x() * devPixRatio,
                                   widgetHeight - 1 - event->pos().y() * devPixRatio);
   toonzEvent.m_mousePos = event->pos();
   toonzEvent.m_pressure = 1.0;
+  toonzEvent.m_tilt     = TPointD();
+  toonzEvent.m_time = TToolTimer::ticks();
+  toonzEvent.m_sourceTimestamp = event->timestamp();
 
   toonzEvent.setModifiers(event->modifiers() & Qt::ShiftModifier,
                           event->modifiers() & Qt::AltModifier,
@@ -100,6 +216,9 @@ void initToonzEvent(TMouseEvent &toonzEvent, QTabletEvent *event,
       (float)widgetHeight - 1.0f - event->posF().y() * (float)devPixRatio);
   toonzEvent.m_mousePos = event->posF();
   toonzEvent.m_pressure = pressure;
+  toonzEvent.m_tilt = TPointD(event->xTilt() / 90.0, event->yTilt() / 90.0);
+  toonzEvent.m_time = TToolTimer::ticks();
+  toonzEvent.m_sourceTimestamp = event->timestamp();
 
   toonzEvent.setModifiers(event->modifiers() & Qt::ShiftModifier,
                           event->modifiers() & Qt::AltModifier,
@@ -280,6 +399,8 @@ void SceneViewer::tabletEvent(QTabletEvent *e) {
   }
   switch (e->type()) {
   case QEvent::TabletPress: {
+    m_sourceTimestampAnchor = -1;
+    m_lastInputTime         = 0;
 #ifdef MACOSX
     // In OSX tablet action may cause only tabletEvent, not followed by
     // mousePressEvent.
@@ -287,6 +408,8 @@ void SceneViewer::tabletEvent(QTabletEvent *e) {
     if (e->button() == Qt::LeftButton) m_tabletState = Touched;
     TMouseEvent mouseEvent;
     initToonzEvent(mouseEvent, e, height(), m_pressure, getDevPixRatio());
+    mapSourceTimestamp(mouseEvent, m_sourceTimestampAnchor,
+                       m_sourceTickAnchor, m_lastInputTime);
     onPress(mouseEvent);
 
     // create context menu on right click here
@@ -308,6 +431,8 @@ void SceneViewer::tabletEvent(QTabletEvent *e) {
       if (m_tabletState == Released || m_tabletState == None) {
         TMouseEvent mouseEvent;
         initToonzEvent(mouseEvent, e, height(), m_pressure, getDevPixRatio());
+        mapSourceTimestamp(mouseEvent, m_sourceTimestampAnchor,
+                           m_sourceTickAnchor, m_lastInputTime);
         m_tabletState = Touched;
         onPress(mouseEvent);
       } else if (m_tabletState == Touched) {
@@ -334,6 +459,8 @@ void SceneViewer::tabletEvent(QTabletEvent *e) {
 
     TMouseEvent mouseEvent;
     initToonzEvent(mouseEvent, e, height(), m_pressure, getDevPixRatio());
+    mapSourceTimestamp(mouseEvent, m_sourceTimestampAnchor,
+                       m_sourceTickAnchor, m_lastInputTime);
     onRelease(mouseEvent);
 
     if (TApp::instance()->getCurrentTool()->isToolBusy())
@@ -343,6 +470,8 @@ void SceneViewer::tabletEvent(QTabletEvent *e) {
       m_tabletState = Released;
       TMouseEvent mouseEvent;
       initToonzEvent(mouseEvent, e, height(), m_pressure, getDevPixRatio());
+      mapSourceTimestamp(mouseEvent, m_sourceTimestampAnchor,
+                         m_sourceTickAnchor, m_lastInputTime);
       onRelease(mouseEvent);
     } else
       m_tabletEvent = false;
@@ -365,31 +494,19 @@ void SceneViewer::tabletEvent(QTabletEvent *e) {
 #endif
 
     QPointF curPos = e->posF() * getDevPixRatio();
-#if defined(_WIN32)
-    // Use the application attribute Qt::AA_CompressTabletEvents instead of the
-    // delay timer
-    // 21/4/2021 High frequent tablet event caused slowness when deforming with
-    // Raster Selection Tool. So I re-introduced the delay timer to make
-    // necessary interval for it. Deformation will be processed at interval of
-    // 20msec. (See RasterSelectionTool::leftButtonDrag())
+    // Deliver every distinct tablet position to drawing tools. The timer is
+    // retained only as a high-frequency marker for expensive tools (for
+    // example raster deformation), not as a global drawing-rate limiter...
     if (curPos != m_lastMousePos) {
       TMouseEvent mouseEvent;
       initToonzEvent(mouseEvent, e, height(), m_pressure, getDevPixRatio(),
                      m_isBusyOnTabletMove);
+      mapSourceTimestamp(mouseEvent, m_sourceTimestampAnchor,
+                         m_sourceTickAnchor, m_lastInputTime);
       if (!m_isBusyOnTabletMove) {
         m_isBusyOnTabletMove = true;
         QTimer::singleShot(20, this, SLOT(releaseBusyOnTabletMove()));
       }
-#else
-    // It seems that the tabletEvent is called more often than mouseMoveEvent.
-    // So I fire the interval timer in order to limit the following process
-    // to be called in 50fps in maximum.
-    if (curPos != m_lastMousePos && !m_isBusyOnTabletMove) {
-      m_isBusyOnTabletMove = true;
-      TMouseEvent mouseEvent;
-      initToonzEvent(mouseEvent, e, height(), m_pressure, getDevPixRatio());
-      QTimer::singleShot(20, this, SLOT(releaseBusyOnTabletMove()));
-#endif
 
       // cancel stroke to prevent drawing while floating
       // 23/1/2018 There is a case that the pressure becomes zero at the start
@@ -511,6 +628,12 @@ void SceneViewer::mouseMoveEvent(QMouseEvent *event) {
 
   TMouseEvent mouseEvent;
   initToonzEvent(mouseEvent, event, height(), 1.0, getDevPixRatio());
+  mapSourceTimestamp(mouseEvent, m_sourceTimestampAnchor, m_sourceTickAnchor,
+                     m_lastInputTime);
+#ifdef _WIN32
+  mouseEvent.m_coalescedSamples = getNativeMouseHistory(
+      this, event, m_lastNativeMouseTimestamp, m_lastNativeMousePosition);
+#endif
   onMove(mouseEvent);
 }
 
@@ -663,7 +786,55 @@ void SceneViewer::onMove(const TMouseEvent &event) {
         (m_tabletState == OnStroke || m_tabletState == StartStroke) &&
         m_tabletMove) {
       if (m_toolSwitched) tool->leftButtonDown(pos, event);
-      tool->leftButtonDrag(pos, event);
+      std::vector<TToolInputSample> samples;
+      samples.reserve(event.m_coalescedSamples.size() + 1);
+      for (const TNativeInputSample &nativeSample :
+           event.m_coalescedSamples) {
+        QPointF nativePos = nativeSample.position * devPixRatio;
+        TPointD nativeWorld = winToWorld(nativePos);
+        TPointD nativeTool  = tool->getMatrix().inv() * nativeWorld;
+        if ((tool->getToolType() & TTool::LevelTool) &&
+            !objHandle->isSpline()) {
+          nativeTool.x /= m_dpiScale.x;
+          nativeTool.y /= m_dpiScale.y;
+        }
+
+        TTimerTicks nativeTime = event.m_time;
+        if (event.m_sourceTimestamp >= 0 && nativeSample.timestamp >= 0) {
+          qint64 delta = event.m_sourceTimestamp - nativeSample.timestamp;
+          // Qt and Win32 timestamps are millisecond clocks, reject a
+          // wrapped/mismatched value rather than generating a non-monotonic
+          // input track.
+          if (delta >= 0 && delta < 10000)
+            nativeTime -= delta * 1000000;
+        }
+
+        TToolInputSample sample;
+        sample.position       = nativeTool;
+        sample.pressure       = event.m_pressure;
+        sample.tilt           = event.m_tilt;
+        sample.timestamp      = nativeTime;
+        sample.isTablet       = false;
+        sample.isHighFrequent = event.m_isHighFrequent;
+        samples.push_back(sample);
+      }
+
+      TToolInputSample current;
+      current.position       = pos;
+      current.pressure       = event.m_pressure;
+      current.tilt           = event.m_tilt;
+      current.timestamp      = event.m_time;
+      current.isTablet       = event.m_isTablet;
+      current.isHighFrequent = event.m_isHighFrequent;
+      if (samples.empty() ||
+          !areAlmostEqual(samples.back().position, current.position))
+        samples.push_back(current);
+#ifndef NDEBUG
+      if (qEnvironmentVariableIsSet("OPENTOONZ_POINTER_TRACE"))
+        qDebug() << "[pointer] delivered=" << (int)samples.size()
+                 << "tablet=1";
+#endif
+      tool->leftButtonDrag(samples, event);
       m_tabletState = OnStroke;
     }
 
@@ -673,7 +844,49 @@ void SceneViewer::onMove(const TMouseEvent &event) {
       //      if (m_buttonClicked && !m_toolSwitched) tool->leftButtonDrag(pos,
       //      event);
       if (m_toolSwitched) tool->leftButtonDown(pos, event);
-      tool->leftButtonDrag(pos, event);
+      std::vector<TToolInputSample> samples;
+      samples.reserve(event.m_coalescedSamples.size() + 1);
+      for (const TNativeInputSample &nativeSample :
+           event.m_coalescedSamples) {
+        QPointF nativePos = nativeSample.position * devPixRatio;
+        TPointD nativeWorld = winToWorld(nativePos);
+        TPointD nativeTool  = tool->getMatrix().inv() * nativeWorld;
+        if ((tool->getToolType() & TTool::LevelTool) &&
+            !objHandle->isSpline()) {
+          nativeTool.x /= m_dpiScale.x;
+          nativeTool.y /= m_dpiScale.y;
+        }
+
+        TTimerTicks nativeTime = event.m_time;
+        if (event.m_sourceTimestamp >= 0 && nativeSample.timestamp >= 0) {
+          qint64 delta = event.m_sourceTimestamp - nativeSample.timestamp;
+          if (delta >= 0 && delta < 10000)
+            nativeTime -= delta * 1000000;
+        }
+
+        TToolInputSample sample;
+        sample.position       = nativeTool;
+        sample.pressure       = 1.0;
+        sample.timestamp      = nativeTime;
+        sample.isTablet       = false;
+        sample.isHighFrequent = event.m_isHighFrequent;
+        samples.push_back(sample);
+      }
+      TToolInputSample current;
+      current.position       = pos;
+      current.pressure       = 1.0;
+      current.timestamp      = event.m_time;
+      current.isTablet       = false;
+      current.isHighFrequent = event.m_isHighFrequent;
+      if (samples.empty() ||
+          !areAlmostEqual(samples.back().position, current.position))
+        samples.push_back(current);
+#ifndef NDEBUG
+      if (qEnvironmentVariableIsSet("OPENTOONZ_POINTER_TRACE"))
+        qDebug() << "[pointer] delivered=" << (int)samples.size()
+                 << "tablet=0";
+#endif
+      tool->leftButtonDrag(samples, event);
       m_mouseState = OnStroke;
     } else if (m_pressure == 0.0) {
       tool->mouseMove(pos, event);
@@ -742,7 +955,17 @@ void SceneViewer::mousePressEvent(QMouseEvent *event) {
 
   TMouseEvent mouseEvent;
   m_mouseState = Touched;
+  m_sourceTimestampAnchor = -1;
+  m_lastInputTime         = 0;
   initToonzEvent(mouseEvent, event, height(), 1.0, getDevPixRatio());
+  mapSourceTimestamp(mouseEvent, m_sourceTimestampAnchor,
+                     m_sourceTickAnchor, m_lastInputTime);
+#ifdef _WIN32
+  if (event->source() == Qt::MouseEventNotSynthesized) {
+    m_lastNativeMouseTimestamp = event->timestamp();
+    m_lastNativeMousePosition  = event->globalPos();
+  }
+#endif
   onPress(mouseEvent);
 }
 
@@ -904,6 +1127,8 @@ void SceneViewer::mouseReleaseEvent(QMouseEvent *event) {
   TMouseEvent mouseEvent;
   if (m_mouseState != None) m_mouseState = Released;
   initToonzEvent(mouseEvent, event, height(), 1.0, getDevPixRatio());
+  mapSourceTimestamp(mouseEvent, m_sourceTimestampAnchor, m_sourceTickAnchor,
+                     m_lastInputTime);
   onRelease(mouseEvent);
 }
 //-----------------------------------------------------------------------------

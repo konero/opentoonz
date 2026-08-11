@@ -6,6 +6,10 @@
 // TnzCore includes
 #include <tgl.h>
 
+#ifndef NDEBUG
+#include <QDebug>
+#endif
+
 
 //*****************************************************************************************
 //    static members
@@ -157,6 +161,11 @@ TInputHandler::inputHoverEvent(const TInputManager &manager) {
 
 void
 TInputHandler::inputPaintTrackPoint(const TTrackPoint &point, const TTrack &track, bool firstTrack, bool preview) {
+#ifndef NDEBUG
+  if (qEnvironmentVariableIsSet("OPENTOONZ_POINTER_TRACE"))
+    qDebug() << "[pointer] committed=" << (!preview)
+             << "trackPoint=" << point.position.x << point.position.y;
+#endif
   if (firstTrack && !preview) {
     if (track.pointsAdded == track.size())
       inputLeftButtonDown(point, track);
@@ -505,6 +514,27 @@ TInputManager::trackEvent(
       tilt,
       time,
       final );
+  }
+}
+
+void TInputManager::trackEvents(
+    TInputState::DeviceId deviceId,
+    TInputState::TouchId touchId,
+    const TToolInputSample *samples,
+    int sampleCount) {
+  if (!samples || sampleCount <= 0) return;
+
+#ifndef NDEBUG
+  if (qEnvironmentVariableIsSet("OPENTOONZ_POINTER_TRACE"))
+    qDebug() << "[pointer] submitted batch samples=" << sampleCount;
+#endif
+
+  for (int i = 0; i < sampleCount; ++i) {
+    const TToolInputSample &sample = samples[i];
+    TTimerTicks ticks = sample.timestamp;
+    if (ticks <= 0) ticks = TToolTimer::ticks();
+    trackEvent(deviceId, touchId, sample.position, sample.pressure,
+               sample.tilt, sample.isTablet, sample.isTablet, false, ticks);
   }
 }
 

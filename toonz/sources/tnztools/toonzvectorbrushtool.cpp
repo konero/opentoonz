@@ -632,7 +632,7 @@ ToonzVectorBrushTool::ToonzVectorBrushTool(std::string name, int targetType)
 
   m_inputmanager.setHandler(this);
   m_modifierLine               = new TModifierLine();
-  m_modifierTangents           = new TModifierTangents();
+  m_modifierFreehand           = new TModifierFreehand();
   m_modifierAssistants         = new TModifierAssistants();
   m_modifierSegmentation       = new TModifierSegmentation();
   m_modifierSmoothSegmentation = new TModifierSegmentation(TPointD(1, 1), 3);
@@ -1126,7 +1126,7 @@ void ToonzVectorBrushTool::updateModifiers() {
     TReplicator::scanReplicators(this, nullptr, &m_modifierReplicate, false, true, false, false, nullptr);
   
   m_inputmanager.clearModifiers();
-  m_inputmanager.addModifier(TInputModifierP(m_modifierTangents.getPointer()));
+  m_inputmanager.addModifier(TInputModifierP(m_modifierFreehand.getPointer()));
   if (smoothRadius > 0) {
     m_inputmanager.addModifier(TInputModifierP(m_modifierSmoothSegmentation.getPointer()));
     for(int i = 0; i < 3; ++i) {
@@ -1164,7 +1164,7 @@ void ToonzVectorBrushTool::handleMouseEvent(MouseEventType type,
                                           const TPointD &pos,
                                           const TMouseEvent &e)
 {
-  TTimerTicks t = TToolTimer::ticks();
+  TTimerTicks t = e.time() > 0 ? e.time() : TToolTimer::ticks();
   bool alt      = e.getModifiersMask() & TMouseEvent::ALT_KEY;
   bool shift    = e.getModifiersMask() & TMouseEvent::SHIFT_KEY;
   bool control  = e.getModifiersMask() & TMouseEvent::CTRL_KEY;
@@ -1210,7 +1210,8 @@ void ToonzVectorBrushTool::handleMouseEvent(MouseEventType type,
     double pressure    = hasPressure ? e.m_pressure : 1.0;
     bool   final       = type == ME_UP;
     m_inputmanager.trackEvent(
-      deviceId, 0, snappedPos, pressure, TPointD(), hasPressure, false, final, t);
+      deviceId, 0, snappedPos, pressure, e.m_tilt, hasPressure,
+      e.isTablet(), final, t);
     m_inputmanager.processTracks();
   }
 }
@@ -1225,12 +1226,54 @@ void ToonzVectorBrushTool::leftButtonDrag(const TPointD &pos,
                                         const TMouseEvent &e) {
   handleMouseEvent(ME_DRAG, pos, e);
 }
+void ToonzVectorBrushTool::leftButtonDrag(
+    const std::vector<TToolInputSample> &samples, const TMouseEvent &e) {
+  if (samples.size() <= 1) {
+    if (!samples.empty()) leftButtonDrag(samples.front().position, e);
+    return;
+  }
+  handleMouseSamples(samples, e);
+}
 void ToonzVectorBrushTool::leftButtonUp(const TPointD &pos,
                                       const TMouseEvent &e) {
   handleMouseEvent(ME_UP, pos, e);
 }
 void ToonzVectorBrushTool::mouseMove(const TPointD &pos, const TMouseEvent &e) {
   handleMouseEvent(ME_MOVE, pos, e);
+}
+
+void ToonzVectorBrushTool::handleMouseSamples(
+    const std::vector<TToolInputSample> &samples, const TMouseEvent &e) {
+  if (samples.empty()) return;
+
+  TTimerTicks t = samples.front().timestamp > 0 ? samples.front().timestamp
+                                                : TToolTimer::ticks();
+  bool alt      = e.getModifiersMask() & TMouseEvent::ALT_KEY;
+  bool shift    = e.getModifiersMask() & TMouseEvent::SHIFT_KEY;
+  bool control  = e.getModifiersMask() & TMouseEvent::CTRL_KEY;
+  if (alt != m_inputmanager.state.isKeyPressed(TKey::alt))
+    m_inputmanager.keyEvent(alt, TKey::alt, t, nullptr);
+  if (shift != m_inputmanager.state.isKeyPressed(TKey::shift))
+    m_inputmanager.keyEvent(shift, TKey::shift, t, nullptr);
+  if (control != m_inputmanager.state.isKeyPressed(TKey::control))
+    m_inputmanager.keyEvent(control, TKey::control, t, nullptr);
+
+  std::vector<TToolInputSample> snappedSamples;
+  snappedSamples.reserve(samples.size());
+  bool pickerMode = getViewer() && getViewer()->getGuidedStrokePickerMode();
+  if (pickerMode) return;
+  bool snapInvert = alt && (!control);
+  bool snapEnabled = !pickerMode && (snapInvert != m_snap.getValue());
+  for (const TToolInputSample &sample : samples) {
+    TToolInputSample snapped = sample;
+    snap(sample.position, snapEnabled, m_active);
+    if (m_snapped) snapped.position = m_snapPoint;
+    snappedSamples.push_back(snapped);
+  }
+
+  m_inputmanager.trackEvents(e.isTablet() ? 1 : 0, 0, snappedSamples.data(),
+                             (int)snappedSamples.size());
+  m_inputmanager.processTracks();
 }
 
 //--------------------------------------------------------------------------------------------------

@@ -4,7 +4,7 @@
 #define MODIFIERTANGENTS_INCLUDED
 
 // TnzTools includes
-#include <tools/inputmanager.h>
+#include <tools/modifiers/modifierfreehand.h>
 
 
 #undef DVAPI
@@ -21,24 +21,9 @@
 //===================================================================
 
 //*****************************************************************************************
-//    TModifierTangents definition
+//    Compatibility name
 //*****************************************************************************************
 
-class DVAPI TModifierTangents: public TInputModifier {
-public:
-  typedef TSubTrackHandler Handler;
-  class DVAPI Interpolator: public TTrackInterpolator {
-  public:
-    TTrackTangentList tangents;
-    using TTrackInterpolator::TTrackInterpolator;
-    TTrackPoint interpolate(double index) override;
-  };
-
-  static TTrackTangent calcTangent(const TTrack &track, int index);
-
-  void modifyTrack(
-    const TTrack &track,
-    TTrackList &outTracks ) override;
-};
+using TModifierTangents = TModifierFreehand;
 
 #endif

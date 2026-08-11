@@ -789,7 +789,7 @@ ToonzRasterBrushTool::ToonzRasterBrushTool(std::string name, int targetType)
 
   m_inputmanager.setHandler(this);
   m_modifierLine               = new TModifierLine();
-  m_modifierTangents           = new TModifierTangents();
+  m_modifierFreehand           = new TModifierFreehand();
   m_modifierAssistants         = new TModifierAssistants();
   m_modifierSegmentation       = new TModifierSegmentation();
   m_modifierSmoothSegmentation = new TModifierSegmentation(TPointD(1, 1), 3);
@@ -1073,7 +1073,7 @@ void ToonzRasterBrushTool::updateModifiers() {
                                  true, false, false, nullptr);
 
   m_inputmanager.clearModifiers();
-  m_inputmanager.addModifier(TInputModifierP(m_modifierTangents.getPointer()));
+  m_inputmanager.addModifier(TInputModifierP(m_modifierFreehand.getPointer()));
   if (smoothRadius > 0) {
     m_inputmanager.addModifier(
         TInputModifierP(m_modifierSmoothSegmentation.getPointer()));
@@ -1113,7 +1113,7 @@ bool ToonzRasterBrushTool::preLeftButtonDown() {
 void ToonzRasterBrushTool::handleMouseEvent(MouseEventType type,
                                             const TPointD &pos,
                                             const TMouseEvent &e) {
-  TTimerTicks t    = TToolTimer::ticks();
+  TTimerTicks t    = e.time() > 0 ? e.time() : TToolTimer::ticks();
   bool alt         = e.getModifiersMask() & TMouseEvent::ALT_KEY;
   bool shift       = e.getModifiersMask() & TMouseEvent::SHIFT_KEY;
   bool control     = e.getModifiersMask() & TMouseEvent::CTRL_KEY;
@@ -1151,8 +1151,8 @@ void ToonzRasterBrushTool::handleMouseEvent(MouseEventType type,
     bool hasPressure   = e.isTablet();
     double pressure    = hasPressure ? e.m_pressure : defPressure;
     bool final         = type == ME_UP;
-    m_inputmanager.trackEvent(deviceId, 0, fixedPos, pressure, TPointD(),
-                              hasPressure, false, final, t);
+    m_inputmanager.trackEvent(deviceId, 0, fixedPos, pressure, e.m_tilt,
+                              hasPressure, e.isTablet(), final, t);
     m_inputmanager.processTracks();
   }
 }
@@ -1167,12 +1167,51 @@ void ToonzRasterBrushTool::leftButtonDrag(const TPointD &pos,
                                           const TMouseEvent &e) {
   handleMouseEvent(ME_DRAG, pos, e);
 }
+void ToonzRasterBrushTool::leftButtonDrag(
+    const std::vector<TToolInputSample> &samples, const TMouseEvent &e) {
+  if (samples.size() <= 1) {
+    if (!samples.empty()) leftButtonDrag(samples.front().position, e);
+    return;
+  }
+  handleMouseSamples(samples, e);
+}
 void ToonzRasterBrushTool::leftButtonUp(const TPointD &pos,
                                         const TMouseEvent &e) {
   handleMouseEvent(ME_UP, pos, e);
 }
 void ToonzRasterBrushTool::mouseMove(const TPointD &pos, const TMouseEvent &e) {
   handleMouseEvent(ME_MOVE, pos, e);
+}
+
+void ToonzRasterBrushTool::handleMouseSamples(
+    const std::vector<TToolInputSample> &samples, const TMouseEvent &e) {
+  if (samples.empty()) return;
+
+  TTimerTicks t = samples.front().timestamp > 0 ? samples.front().timestamp
+                                                : TToolTimer::ticks();
+  bool alt      = e.getModifiersMask() & TMouseEvent::ALT_KEY;
+  bool shift    = e.getModifiersMask() & TMouseEvent::SHIFT_KEY;
+  bool control  = e.getModifiersMask() & TMouseEvent::CTRL_KEY;
+  if (alt != m_inputmanager.state.isKeyPressed(TKey::alt))
+    m_inputmanager.keyEvent(alt, TKey::alt, t, nullptr);
+  if (shift != m_inputmanager.state.isKeyPressed(TKey::shift))
+    m_inputmanager.keyEvent(shift, TKey::shift, t, nullptr);
+  if (control != m_inputmanager.state.isKeyPressed(TKey::control))
+    m_inputmanager.keyEvent(control, TKey::control, t, nullptr);
+
+  std::vector<TToolInputSample> fixedSamples = samples;
+  for (TToolInputSample &sample : fixedSamples) {
+    if (!sample.isTablet && m_isMyPaintStyleSelected)
+      sample.pressure = 0.5;
+    if (m_pencil.getValue()) {
+      sample.position = getCenteredCursorPos(sample.position);
+      sample.position = TPointD(tround(sample.position.x),
+                                tround(sample.position.y));
+    }
+  }
+  m_inputmanager.trackEvents(e.isTablet() ? 1 : 0, 0, fixedSamples.data(),
+                             (int)fixedSamples.size());
+  m_inputmanager.processTracks();
 }
 
 //--------------------------------------------------------------------------------------------------
