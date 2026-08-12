@@ -23,6 +23,8 @@ void assertFinite(const TPointD &p) {
   assert(std::isfinite(p.y));
 }
 
+double length2(const TPointD &p) { return p.x * p.x + p.y * p.y; }
+
 void testCircle(int count) {
   constexpr double pi = 3.14159265358979323846;
   std::vector<TPointD> points;
@@ -72,8 +74,31 @@ void testCornersAndDegenerateSamples() {
                          TPointD(0, 0), TPointD(0, 0)});
   TTrackList degenerateOutput;
   modifier.modifyTrack(degenerate, degenerateOutput);
-  for (int i = 0; i < degenerateOutput.front()->size(); ++i)
+  for (int i = 0; i < degenerateOutput.front()->size(); ++i) {
     assertFinite(degenerateOutput.front()->point(i).position);
+    assertFinite(TModifierFreehand::calcTangent(degenerate, i).position);
+  }
+}
+
+void testUnevenSpacingAndCuspBoundary() {
+  TTrack uneven;
+  fillTrack(uneven, {TPointD(0, 0), TPointD(0.01, 0.02),
+                     TPointD(20, 0.5), TPointD(20.1, 8)});
+  for (int i = 0; i < uneven.size(); ++i)
+    assertFinite(TModifierFreehand::calcTangent(uneven, i).position);
+
+  constexpr double pi = 3.14159265358979323846;
+  const auto tangentAtAngle = [=](double degrees) {
+    const double radians = degrees * pi / 180.0;
+    TTrack track;
+    fillTrack(track,
+              {TPointD(0, 0), TPointD(1, 0),
+               TPointD(1 + std::cos(radians), std::sin(radians))});
+    return TModifierFreehand::calcTangent(track, 1).position;
+  };
+
+  assert(length2(tangentAtAngle(79.999)) > TConsts::epsilon);
+  assert(length2(tangentAtAngle(80.001)) <= TConsts::epsilon);
 }
 
 void testPressureAndLookahead() {
@@ -125,6 +150,7 @@ int main() {
   testCircle(8);
   testCircle(12);
   testCornersAndDegenerateSamples();
+  testUnevenSpacingAndCuspBoundary();
   testPressureAndLookahead();
   return 0;
 }

@@ -5,8 +5,7 @@
 
 namespace {
 
-constexpr double kCuspAngleDegrees = 80.0;
-constexpr double kPi               = 3.14159265358979323846;
+constexpr double kCuspCosine = 0.17364817766693033;  // cos(80 degrees)
 
 double monotonePressureTangent(const TTrack &track, int index) {
   if (track.size() < 2) return 0.0;
@@ -77,10 +76,12 @@ TTrackTangent TModifierFreehand::calcTangent(const TTrack &track, int index) {
       const TPointD &p1 = track[1].position;
       if (track.size() < 3) return TTrackTangent(p1 - p0, pressure);
       const TPointD &p2 = track[2].position;
-      if (tdistance2(p0, p1) <= TConsts::epsilon * TConsts::epsilon)
+      const double l0   = track[1].length - track[0].length;
+      const double l1   = track[2].length - track[1].length;
+      if (l0 <= TConsts::epsilon)
         return TTrackTangent(TPointD(), pressure);
-      const double a = sqrt(std::max(tdistance(p0, p1), TConsts::epsilon));
-      const double b = sqrt(std::max(tdistance(p1, p2), TConsts::epsilon));
+      const double a = sqrt(l0);
+      const double b = sqrt(std::max(l1, TConsts::epsilon));
       return TTrackTangent(
           p0 * (-(2.0 * a + b) / (a + b)) +
           p1 * ((a + b) / b) - p2 * (a * a / (b * (a + b))), pressure);
@@ -88,11 +89,15 @@ TTrackTangent TModifierFreehand::calcTangent(const TTrack &track, int index) {
     const TPointD &pm = track[track.size() - 2].position;
     const TPointD &p2 = track[track.size() - 1].position;
     if (track.size() < 3) return TTrackTangent(p2 - pm, pressure);
-    if (tdistance2(pm, p2) <= TConsts::epsilon * TConsts::epsilon)
+    const double l0 = track[track.size() - 2].length -
+                      track[track.size() - 3].length;
+    const double l1 = track[track.size() - 1].length -
+                      track[track.size() - 2].length;
+    if (l1 <= TConsts::epsilon)
       return TTrackTangent(TPointD(), pressure);
     const TPointD &pp = track[track.size() - 3].position;
-    const double a = sqrt(std::max(tdistance(pp, pm), TConsts::epsilon));
-    const double b = sqrt(std::max(tdistance(pm, p2), TConsts::epsilon));
+    const double a = sqrt(std::max(l0, TConsts::epsilon));
+    const double b = sqrt(l1);
     return TTrackTangent(
         pp * (b * b / (a * (a + b))) -
         pm * ((a + b) / a) + p2 * ((a + 2.0 * b) / (a + b)), pressure);
@@ -104,8 +109,8 @@ TTrackTangent TModifierFreehand::calcTangent(const TTrack &track, int index) {
 
   TPointD d0 = p1.position - p0.position;
   TPointD d1 = p2.position - p1.position;
-  double l0 = sqrt(d0.x * d0.x + d0.y * d0.y);
-  double l1 = sqrt(d1.x * d1.x + d1.y * d1.y);
+  const double l0 = p1.length - p0.length;
+  const double l1 = p2.length - p1.length;
   const double pressure = monotonePressureTangent(track, index);
   if (l0 <= TConsts::epsilon || l1 <= TConsts::epsilon)
     return TTrackTangent(TPointD(), pressure);
@@ -120,7 +125,7 @@ TTrackTangent TModifierFreehand::calcTangent(const TTrack &track, int index) {
 
   // Preserve intentional cusps while smoothing ordinary circular turns.
   double cosine = (d0.x * d1.x + d0.y * d1.y) / (l0 * l1);
-  if (cosine <= std::cos(kCuspAngleDegrees * kPi / 180.0))
+  if (cosine <= kCuspCosine)
     return TTrackTangent(TPointD(), pressure);
 
   // Non-uniform Catmull-Rom/Hermite derivative for alpha = 0.5.
