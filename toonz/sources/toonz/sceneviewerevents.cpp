@@ -74,6 +74,26 @@ extern QString updateToolEnableStatus(TTool *tool);
 namespace {
 //-----------------------------------------------------------------------------
 
+void mapTabletTimestamp(TMouseEvent &event, qint64 sourceTimestamp,
+                        qint64 &sourceAnchor, TTimerTicks &tickAnchor,
+                        TTimerTicks &lastTime) {
+  if (sourceTimestamp < 0) return;
+
+  if (sourceAnchor < 0 || sourceTimestamp < sourceAnchor ||
+      sourceTimestamp - sourceAnchor > 60000) {
+    sourceAnchor = sourceTimestamp;
+    tickAnchor   = event.m_time;
+  }
+
+  TTimerTicks mapped =
+      tickAnchor + (sourceTimestamp - sourceAnchor) * 1000000;
+  if (mapped <= lastTime) mapped = lastTime + 1;
+  event.m_time = mapped;
+  lastTime     = mapped;
+}
+
+//-----------------------------------------------------------------------------
+
 void initToonzEvent(TMouseEvent &toonzEvent, QMouseEvent *event,
                     int widgetHeight, double pressure, int devPixRatio) {
   toonzEvent.m_pos      = TPointD(event->pos().x() * devPixRatio,
@@ -81,6 +101,7 @@ void initToonzEvent(TMouseEvent &toonzEvent, QMouseEvent *event,
   toonzEvent.m_mousePos = event->pos();
   toonzEvent.m_pressure = 1.0;
   toonzEvent.m_tilt     = TPointD();
+  toonzEvent.m_time     = TToolTimer::ticks();
 
   toonzEvent.setModifiers(event->modifiers() & Qt::ShiftModifier,
                           event->modifiers() & Qt::AltModifier,
@@ -102,6 +123,7 @@ void initToonzEvent(TMouseEvent &toonzEvent, QTabletEvent *event,
   toonzEvent.m_mousePos = event->posF();
   toonzEvent.m_pressure = pressure;
   toonzEvent.m_tilt = TPointD(event->xTilt() / 90.0, event->yTilt() / 90.0);
+  toonzEvent.m_time = TToolTimer::ticks();
 
   toonzEvent.setModifiers(event->modifiers() & Qt::ShiftModifier,
                           event->modifiers() & Qt::AltModifier,
@@ -282,6 +304,8 @@ void SceneViewer::tabletEvent(QTabletEvent *e) {
   }
   switch (e->type()) {
   case QEvent::TabletPress: {
+    m_tabletTimestampAnchor = -1;
+    m_lastTabletTime        = 0;
 #ifdef MACOSX
     // In OSX tablet action may cause only tabletEvent, not followed by
     // mousePressEvent.
@@ -289,6 +313,8 @@ void SceneViewer::tabletEvent(QTabletEvent *e) {
     if (e->button() == Qt::LeftButton) m_tabletState = Touched;
     TMouseEvent mouseEvent;
     initToonzEvent(mouseEvent, e, height(), m_pressure, getDevPixRatio());
+    mapTabletTimestamp(mouseEvent, e->timestamp(), m_tabletTimestampAnchor,
+                       m_tabletTickAnchor, m_lastTabletTime);
     onPress(mouseEvent);
 
     // create context menu on right click here
@@ -310,6 +336,8 @@ void SceneViewer::tabletEvent(QTabletEvent *e) {
       if (m_tabletState == Released || m_tabletState == None) {
         TMouseEvent mouseEvent;
         initToonzEvent(mouseEvent, e, height(), m_pressure, getDevPixRatio());
+        mapTabletTimestamp(mouseEvent, e->timestamp(), m_tabletTimestampAnchor,
+                           m_tabletTickAnchor, m_lastTabletTime);
         m_tabletState = Touched;
         onPress(mouseEvent);
       } else if (m_tabletState == Touched) {
@@ -336,6 +364,8 @@ void SceneViewer::tabletEvent(QTabletEvent *e) {
 
     TMouseEvent mouseEvent;
     initToonzEvent(mouseEvent, e, height(), m_pressure, getDevPixRatio());
+    mapTabletTimestamp(mouseEvent, e->timestamp(), m_tabletTimestampAnchor,
+                       m_tabletTickAnchor, m_lastTabletTime);
     onRelease(mouseEvent);
 
     if (TApp::instance()->getCurrentTool()->isToolBusy())
@@ -345,6 +375,8 @@ void SceneViewer::tabletEvent(QTabletEvent *e) {
       m_tabletState = Released;
       TMouseEvent mouseEvent;
       initToonzEvent(mouseEvent, e, height(), m_pressure, getDevPixRatio());
+      mapTabletTimestamp(mouseEvent, e->timestamp(), m_tabletTimestampAnchor,
+                         m_tabletTickAnchor, m_lastTabletTime);
       onRelease(mouseEvent);
     } else
       m_tabletEvent = false;
@@ -373,6 +405,8 @@ void SceneViewer::tabletEvent(QTabletEvent *e) {
         (fullTabletRate || !m_isBusyOnTabletMove)) {
       TMouseEvent mouseEvent;
       initToonzEvent(mouseEvent, e, height(), m_pressure, getDevPixRatio());
+      mapTabletTimestamp(mouseEvent, e->timestamp(), m_tabletTimestampAnchor,
+                         m_tabletTickAnchor, m_lastTabletTime);
       if (!fullTabletRate) {
         m_isBusyOnTabletMove = true;
         QTimer::singleShot(20, this, SLOT(releaseBusyOnTabletMove()));
