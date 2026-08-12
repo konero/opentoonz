@@ -409,14 +409,10 @@ int main(int argc, char *argv[]) {
   // Enable to render smooth icons on high dpi monitors
   a.setAttribute(Qt::AA_UseHighDpiPixmaps);
 #if defined(_WIN32)
-  // Keep Qt's high-frequency compression for non-drawing UI events. Tablet
-  // compression is intentionally left disabled below so drawing receives all
-  // distinct samples!
+  // Keep Qt's high-frequency compression for non-drawing UI events. Do not
+  // enable Qt's tablet compression: Brush tools choose whether to receive
+  // every tablet sample in SceneViewer::tabletEvent().
   a.setAttribute(Qt::AA_CompressHighFrequencyEvents);
-  // Tablet samples are part of the drawing signal. Compressing them here
-  // discards the intermediate positions that are needed to reconstruct fast
-  // strokes. Expensive tools use TMouseEvent::isHighFrequent() to throttle
-  // themselves instead!
 #endif
 
 #ifdef _WIN32

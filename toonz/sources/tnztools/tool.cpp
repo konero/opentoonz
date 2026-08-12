@@ -178,23 +178,6 @@ TTool::TTool(std::string name)
 
 //-------------------------------------------------------------------
 
-void TTool::leftButtonDrag(const std::vector<TToolInputSample> &samples,
-                           const TMouseEvent &event) {
-  TMouseEvent sampleEvent = event;
-  sampleEvent.m_coalescedSamples.clear();
-  for (const TToolInputSample &sample : samples) {
-    sampleEvent.m_pos             = sample.position;
-    sampleEvent.m_pressure        = sample.pressure;
-    sampleEvent.m_tilt            = sample.tilt;
-    sampleEvent.m_time            = sample.timestamp;
-    sampleEvent.m_isTablet        = sample.isTablet;
-    sampleEvent.m_isHighFrequent = sample.isHighFrequent;
-    leftButtonDrag(sample.position, sampleEvent);
-  }
-}
-
-//-------------------------------------------------------------------
-
 unsigned int TTool::getToolHints() const
   { return HintAssistants | HintAssistantsGuidelines | HintReplicators; }
 

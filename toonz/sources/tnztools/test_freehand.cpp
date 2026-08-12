@@ -118,62 +118,6 @@ void testPressureAndLookahead() {
   assert(twoOutput.front()->previewSize() == 0);
 }
 
-struct CaptureHandler : TInputHandler {
-  std::vector<TPointD> committed;
-
-  void inputPaintTrackPoint(const TTrackPoint &point, const TTrack &, bool,
-                            bool preview) override {
-    if (!preview) committed.push_back(point.position);
-  }
-};
-
-std::vector<TPointD> runInputSequence(const std::vector<TPointD> &positions,
-                                      bool batched) {
-  TInputManager manager;
-  CaptureHandler handler;
-  manager.setHandler(&handler);
-  manager.addModifier(new TModifierFreehand());
-
-  const TTimerTicks start = TToolTimer::ticks();
-  std::vector<TToolInputSample> samples;
-  for (int i = 0; i < (int)positions.size(); ++i) {
-    TToolInputSample sample;
-    sample.position  = positions[i];
-    sample.timestamp = start + i + 1;
-    samples.push_back(sample);
-  }
-
-  if (batched) {
-    manager.trackEvents(0, 0, samples.data(), (int)samples.size());
-    manager.processTracks();
-  } else {
-    for (const TToolInputSample &sample : samples) {
-      manager.trackEvent(0, 0, sample.position, sample.pressure, sample.tilt,
-                         false, false, false, sample.timestamp);
-      manager.processTracks();
-    }
-  }
-
-  // Release supplies the final point and flushes the provisional segment.
-  const TToolInputSample &last = samples.back();
-  manager.trackEvent(0, 0, last.position, last.pressure, last.tilt, false,
-                    false, true, last.timestamp + 1);
-  manager.processTracks();
-  return handler.committed;
-}
-
-void testBatchedAndIndividualInput() {
-  const std::vector<TPointD> positions = {
-      TPointD(0, 0), TPointD(1, 0.5), TPointD(2, 1.0), TPointD(3, 0.25)};
-  std::vector<TPointD> individual = runInputSequence(positions, false);
-  std::vector<TPointD> batched    = runInputSequence(positions, true);
-  assert(individual.size() == batched.size());
-  for (int i = 0; i < (int)individual.size(); ++i) {
-    assert(std::abs(individual[i].x - batched[i].x) < 1e-9);
-    assert(std::abs(individual[i].y - batched[i].y) < 1e-9);
-  }
-}
-
 }  // namespace
 
 int main() {
@@ -182,6 +126,5 @@ int main() {
   testCircle(12);
   testCornersAndDegenerateSamples();
   testPressureAndLookahead();
-  testBatchedAndIndividualInput();
   return 0;
 }

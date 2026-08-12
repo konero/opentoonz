@@ -368,7 +368,7 @@ bool FullColorBrushTool::preLeftButtonDown() {
 void FullColorBrushTool::handleMouseEvent(MouseEventType type,
                                           const TPointD &pos,
                                           const TMouseEvent &e) {
-  TTimerTicks t = e.time() > 0 ? e.time() : TToolTimer::ticks();
+  TTimerTicks t = TToolTimer::ticks();
   bool alt      = e.getModifiersMask() & TMouseEvent::ALT_KEY;
   bool shift    = e.getModifiersMask() & TMouseEvent::SHIFT_KEY;
   bool control  = e.getModifiersMask() & TMouseEvent::CTRL_KEY;
@@ -419,46 +419,12 @@ void FullColorBrushTool::leftButtonDrag(const TPointD &pos,
                                         const TMouseEvent &e) {
   handleMouseEvent(ME_DRAG, pos, e);
 }
-void FullColorBrushTool::leftButtonDrag(
-    const std::vector<TToolInputSample> &samples, const TMouseEvent &e) {
-  if (samples.size() <= 1) {
-    if (!samples.empty()) leftButtonDrag(samples.front().position, e);
-    return;
-  }
-  handleMouseSamples(samples, e);
-}
 void FullColorBrushTool::leftButtonUp(const TPointD &pos,
                                       const TMouseEvent &e) {
   handleMouseEvent(ME_UP, pos, e);
 }
 void FullColorBrushTool::mouseMove(const TPointD &pos, const TMouseEvent &e) {
   handleMouseEvent(ME_MOVE, pos, e);
-}
-
-void FullColorBrushTool::handleMouseSamples(
-    const std::vector<TToolInputSample> &samples, const TMouseEvent &e) {
-  if (samples.empty()) return;
-
-  TTimerTicks t = samples.front().timestamp > 0 ? samples.front().timestamp
-                                                : TToolTimer::ticks();
-  bool alt      = e.getModifiersMask() & TMouseEvent::ALT_KEY;
-  bool shift    = e.getModifiersMask() & TMouseEvent::SHIFT_KEY;
-  bool control  = e.getModifiersMask() & TMouseEvent::CTRL_KEY;
-  if (alt != m_inputmanager.state.isKeyPressed(TKey::alt))
-    m_inputmanager.keyEvent(alt, TKey::alt, t, nullptr);
-  if (shift != m_inputmanager.state.isKeyPressed(TKey::shift))
-    m_inputmanager.keyEvent(shift, TKey::shift, t, nullptr);
-  if (control != m_inputmanager.state.isKeyPressed(TKey::control))
-    m_inputmanager.keyEvent(control, TKey::control, t, nullptr);
-
-  std::vector<TToolInputSample> inputSamples = samples;
-  const bool isMyPaint =
-      getApplication()->getCurrentLevelStyle()->getTagId() == 4001;
-  for (TToolInputSample &sample : inputSamples)
-    if (!sample.isTablet && isMyPaint) sample.pressure = 0.5;
-  m_inputmanager.trackEvents(e.isTablet() ? 1 : 0, 0, inputSamples.data(),
-                             (int)inputSamples.size());
-  m_inputmanager.processTracks();
 }
 
 //---------------------------------------------------------------------------------------------------------------

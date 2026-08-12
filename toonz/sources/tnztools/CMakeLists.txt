@@ -49,7 +49,6 @@ set(HEADERS
     ../include/tools/tooltimer.h
     ../include/tools/keyhistory.h
     ../include/tools/inputstate.h
-    ../include/tools/inputsample.h
     ../include/tools/track.h
     ../include/tools/inputmanager.h
     ../include/tools/assistant.h
@@ -198,8 +197,7 @@ _find_toonz_library(EXTRA_LIBS "tnzcore;tnzbase;tnzext;toonzlib;toonzqt")
 target_link_libraries(tnztools Qt5::Core Qt5::Gui Qt5::Widgets Qt5::Network Qt5::OpenGL ${GLUT_LIB} ${EXTRA_LIBS} ${GL_LIB} ${MYPAINT_LIB_LDFLAGS})
 
 if(BUILD_TESTING)
-    add_executable(tnztools_freehand_tests test_freehand.cpp
-                   inputmanager.cpp tooltimer.cpp)
+    add_executable(tnztools_freehand_tests test_freehand.cpp tooltimer.cpp)
     target_include_directories(tnztools_freehand_tests PRIVATE ../include)
     target_link_libraries(tnztools_freehand_tests PRIVATE tnztools Qt5::Core Qt5::Gui Qt5::Widgets)
     add_test(NAME tnztools_freehand_tests COMMAND tnztools_freehand_tests)

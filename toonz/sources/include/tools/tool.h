@@ -9,7 +9,6 @@
 #include "toonz/imagepainter.h"
 #include "toonz/tapplication.h"
 #include "tools/cursors.h"
-#include "tools/inputsample.h"
 
 // TnzCore includes
 #include "tcommon.h"
@@ -104,9 +103,6 @@ public:
   Qt::MouseButton m_button;
   QPointF m_mousePos;  // mouse position obtained with QMouseEvent::pos() or
                        // QTabletEvent::pos()
-  TTimerTicks m_time;
-  qint64 m_sourceTimestamp;
-  std::vector<TNativeInputSample> m_coalescedSamples;
   bool m_isTablet;
   bool m_isHighFrequent;
 
@@ -117,8 +113,6 @@ public:
       , m_modifiersMask(NO_KEY)
       , m_buttons(Qt::NoButton)
       , m_button(Qt::NoButton)
-      , m_time(0)
-      , m_sourceTimestamp(-1)
       , m_isTablet(false)
       , m_isHighFrequent(false) {}
 
@@ -130,8 +124,6 @@ public:
   Qt::MouseButtons buttons() const { return m_buttons; }
   Qt::MouseButton button() const { return m_button; }
   QPointF mousePos() const { return m_mousePos; }
-  TTimerTicks time() const { return m_time; }
-  qint64 sourceTimestamp() const { return m_sourceTimestamp; }
   bool isTablet() const { return m_isTablet; }
   bool isHighFrequent() const { return m_isHighFrequent; }
 
@@ -421,9 +413,7 @@ return true if the method execution can have changed the current tool
   virtual void mouseMove(const TPointD &, const TMouseEvent &) {}
   virtual void leftButtonDown(const TPointD &, const TMouseEvent &) {}
   virtual void leftButtonDrag(const TPointD &, const TMouseEvent &) {}
-  virtual bool wantsCoalescedMouseSamples() const { return false; }
-  virtual void leftButtonDrag(const std::vector<TToolInputSample> &samples,
-                              const TMouseEvent &event);
+  virtual bool wantsFullTabletSampleRate() const { return false; }
   virtual void leftButtonUp(const TPointD &, const TMouseEvent &) {}
   virtual void leftButtonDoubleClick(const TPointD &, const TMouseEvent &) {}
   virtual void rightButtonDown(const TPointD &, const TMouseEvent &) {}

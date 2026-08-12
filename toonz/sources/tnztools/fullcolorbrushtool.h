@@ -76,9 +76,7 @@ public:
   bool preLeftButtonDown() override;
   void leftButtonDown(const TPointD &pos, const TMouseEvent &e) override;
   void leftButtonDrag(const TPointD &pos, const TMouseEvent &e) override;
-  bool wantsCoalescedMouseSamples() const override { return true; }
-  void leftButtonDrag(const std::vector<TToolInputSample> &samples,
-                      const TMouseEvent &e) override;
+  bool wantsFullTabletSampleRate() const override { return true; }
   void leftButtonUp(const TPointD &pos, const TMouseEvent &e) override;
   void mouseMove(const TPointD &pos, const TMouseEvent &e) override;
 
@@ -122,8 +120,6 @@ private:
   enum MouseEventType { ME_DOWN, ME_DRAG, ME_UP, ME_MOVE };
   void handleMouseEvent(MouseEventType type, const TPointD &pos,
                         const TMouseEvent &e);
-  void handleMouseSamples(const std::vector<TToolInputSample> &samples,
-                          const TMouseEvent &e);
 
 protected:
   TInputManager m_inputmanager;

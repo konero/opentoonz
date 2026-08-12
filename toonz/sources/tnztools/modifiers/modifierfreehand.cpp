@@ -5,6 +5,9 @@
 
 namespace {
 
+constexpr double kCuspAngleDegrees = 80.0;
+constexpr double kPi               = 3.14159265358979323846;
+
 double monotonePressureTangent(const TTrack &track, int index) {
   if (track.size() < 2) return 0.0;
   if (index <= 0) return track[1].pressure - track[0].pressure;
@@ -117,7 +120,7 @@ TTrackTangent TModifierFreehand::calcTangent(const TTrack &track, int index) {
 
   // Preserve intentional cusps while smoothing ordinary circular turns.
   double cosine = (d0.x * d1.x + d0.y * d1.y) / (l0 * l1);
-  if (cosine <= std::cos(80.0 * 3.14159265358979323846 / 180.0))
+  if (cosine <= std::cos(kCuspAngleDegrees * kPi / 180.0))
     return TTrackTangent(TPointD(), pressure);
 
   // Non-uniform Catmull-Rom/Hermite derivative for alpha = 0.5.

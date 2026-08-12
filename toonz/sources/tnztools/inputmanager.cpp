@@ -517,28 +517,6 @@ TInputManager::trackEvent(
   }
 }
 
-void TInputManager::trackEvents(
-    TInputState::DeviceId deviceId,
-    TInputState::TouchId touchId,
-    const TToolInputSample *samples,
-    int sampleCount) {
-  if (!samples || sampleCount <= 0) return;
-
-#ifndef NDEBUG
-  if (qEnvironmentVariableIsSet("OPENTOONZ_POINTER_TRACE"))
-    qDebug() << "[pointer] submitted batch samples=" << sampleCount;
-#endif
-
-  for (int i = 0; i < sampleCount; ++i) {
-    const TToolInputSample &sample = samples[i];
-    TTimerTicks ticks = sample.timestamp;
-    if (ticks <= 0) ticks = TToolTimer::ticks();
-    trackEvent(deviceId, touchId, sample.position, sample.pressure,
-               sample.tilt, sample.isTablet, sample.isTablet, false, ticks);
-  }
-}
-
-
 bool
 TInputManager::keyEvent(
   bool press,

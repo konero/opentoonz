@@ -138,10 +138,8 @@ public:
 
   bool preLeftButtonDown() override;
   void leftButtonDown(const TPointD &pos, const TMouseEvent &e) override;
-  bool wantsCoalescedMouseSamples() const override { return true; }
+  bool wantsFullTabletSampleRate() const override { return true; }
   void leftButtonDrag(const TPointD &pos, const TMouseEvent &e) override;
-  void leftButtonDrag(const std::vector<TToolInputSample> &samples,
-                      const TMouseEvent &e) override;
   void leftButtonUp(const TPointD &pos, const TMouseEvent &e) override;
   void mouseMove(const TPointD &pos, const TMouseEvent &e) override;
   bool keyDown(QKeyEvent *event) override;
@@ -207,8 +205,6 @@ protected:
   enum MouseEventType { ME_DOWN, ME_DRAG, ME_UP, ME_MOVE };
   void handleMouseEvent(MouseEventType type, const TPointD &pos,
                         const TMouseEvent &e);
-  void handleMouseSamples(const std::vector<TToolInputSample> &samples,
-                          const TMouseEvent &e);
 
 protected:
   TPropertyGroup m_prop[2];

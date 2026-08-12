@@ -6,7 +6,6 @@
 // TnzTools includes
 #include <tools/tooltimer.h>
 #include <tools/inputstate.h>
-#include <tools/inputsample.h>
 #include <tools/track.h>
 
 // TnzCore includes
@@ -242,11 +241,6 @@ public:
     bool hasTilt,
     bool final,
     TTimerTicks ticks );
-  void trackEvents(
-    TInputState::DeviceId deviceId,
-    TInputState::TouchId touchId,
-    const TToolInputSample *samples,
-    int sampleCount );
   bool keyEvent(
     bool press,
     TInputState::Key key,
