@@ -196,6 +196,23 @@ class SceneViewer final : public TToolViewer, public Previewer::Listener {
 
   bool m_firstInitialized = true;
 
+  // Opt-in release-build diagnostics for input-to-presentation latency.
+  // Enabled with OPENTOONZ_VIEWER_LATENCY_TRACE=1.
+  bool m_latencyTraceEnabled = false;
+  quint64 m_latencyInputSequence = 0;
+  quint64 m_latencyPaintSequence = 0;
+  quint64 m_latencyLastSwappedSequence = 0;
+  qint64 m_latencyInputTimeNs = 0;
+  qint64 m_latencyTraceActiveUntilNs = 0;
+  QPointF m_latencyInputPos;
+
+  qint64 latencyTraceNow() const;
+  void traceLatency(const char *event, const QString &details = QString()) const;
+  void traceLatencyInput(const char *source, const QPointF &position);
+  void traceLatencyCallback(const char *route, qint64 startedNs) const;
+  void traceLatencyInvalidate(const char *kind, const TRectD *rect = nullptr) const;
+  void traceLatencyFrameSwapped();
+
 public:
   enum ReferenceMode {
     NORMAL_REFERENCE   = 1,

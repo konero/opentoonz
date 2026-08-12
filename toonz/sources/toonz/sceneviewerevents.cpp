@@ -517,6 +517,7 @@ void SceneViewer::onMove(const TMouseEvent &event) {
   QPointF curPos  = event.mousePos() * devPixRatio;
   bool cursorSet  = false;
   m_lastMousePos  = curPos;
+  traceLatencyInput(event.isTablet() ? "tablet" : "mouse", curPos);
 
   if (event.buttons() == Qt::LeftButton && m_mouseScrubbing > 0) {
     if (m_mouseScrubbing == 1) {
@@ -649,17 +650,31 @@ void SceneViewer::onMove(const TMouseEvent &event) {
     if (m_tabletEvent &&
         (m_tabletState == OnStroke || m_tabletState == StartStroke) &&
         m_tabletMove) {
-      if (m_toolSwitched) tool->leftButtonDown(pos, event);
+      if (m_toolSwitched) {
+        qint64 startedNs = latencyTraceNow();
+        tool->leftButtonDown(pos, event);
+        traceLatencyCallback("left_down", startedNs);
+      }
+      qint64 startedNs = latencyTraceNow();
       tool->leftButtonDrag(pos, event);
+      traceLatencyCallback("tablet_drag", startedNs);
       m_tabletState = OnStroke;
     } else if (m_mouseButton == Qt::LeftButton) {
       // Sometimes the mousePressedEvent is postponed to a wrong mouse move
       // event.
-      if (m_toolSwitched) tool->leftButtonDown(pos, event);
+      if (m_toolSwitched) {
+        qint64 startedNs = latencyTraceNow();
+        tool->leftButtonDown(pos, event);
+        traceLatencyCallback("left_down", startedNs);
+      }
+      qint64 startedNs = latencyTraceNow();
       tool->leftButtonDrag(pos, event);
+      traceLatencyCallback("mouse_drag", startedNs);
       m_mouseState = OnStroke;
     } else if (m_pressure == 0.0) {
+      qint64 startedNs = latencyTraceNow();
       tool->mouseMove(pos, event);
+      traceLatencyCallback("hover", startedNs);
     }
     // Set the cursor of the current tool,
     // when tool don't draw its own cursor (setToolCursor to None)

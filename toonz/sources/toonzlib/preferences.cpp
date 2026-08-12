@@ -698,6 +698,12 @@ void Preferences::definePreferenceItems() {
   // This option will be shown & available only when WITH_WINTAB is defined
   define(useQtNativeWinInk, "useQtNativeWinInk", QMetaType::Bool, false);
 
+#ifdef _WIN32
+  // Experimental
+  define(lowLatencySceneViewer, "lowLatencySceneViewer", QMetaType::Bool,
+         false);
+#endif
+
   // Others (not appearing in the popup)
   // Shortcut popup settings
   define(shortcutPreset, "shortcutPreset", QMetaType::QString, "defopentoonz");

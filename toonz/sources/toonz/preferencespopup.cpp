@@ -1471,7 +1471,14 @@ QString PreferencesPopup::getUIString(PreferencesItemId id) {
        tr("Use Qt's Native Windows Ink Support*\n(CAUTION: This options is "
           "for "
           "maintenance purpose. \n Do not activate this option or the tablet "
-          "won't work properly.)")}};
+          "won't work properly.)")},
+
+#ifdef _WIN32
+      // Experimental
+      {lowLatencySceneViewer,
+       tr("Low-Latency Scene Viewer* (EXPERIMENTAL)")}
+#endif
+  };
 
   return uiStringTable.value(id, QString());
 }
@@ -1635,6 +1642,7 @@ PreferencesPopup::PreferencesPopup()
              << tr("Vector Visualize") << tr("Version Control")
              << tr("Touch/Tablet Settings");
 #ifdef _WIN32
+  categories << tr("Experimental");
   categories << tr("Addons");
 #endif
   categoryList->addItems(categories);
@@ -1660,6 +1668,7 @@ PreferencesPopup::PreferencesPopup()
   stackedWidget->addWidget(createVersionControlPage());
   stackedWidget->addWidget(createTouchTabletPage());
 #ifdef _WIN32
+  stackedWidget->addWidget(createExperimentalPage());
   stackedWidget->addWidget(createAddonsPage());
 #endif  // WIN32
 
@@ -2582,6 +2591,19 @@ QWidget* PreferencesPopup::createTouchTabletPage() {
 }
 
 #ifdef _WIN32
+QWidget* PreferencesPopup::createExperimentalPage() {
+  QWidget* widget  = new QWidget(this);
+  QGridLayout* lay = new QGridLayout();
+  setupLayout(lay);
+
+  insertUI(lowLatencySceneViewer, lay);
+  lay->setRowStretch(lay->rowCount(), 1);
+  insertFootNote(lay);
+  widget->setLayout(lay);
+
+  return widget;
+}
+
 #include <windows.h>
 QWidget* PreferencesPopup::createAddonsPage() {
   QWidget* widget  = new QWidget(this);

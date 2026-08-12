@@ -88,6 +88,13 @@
 #include <QGLContext>
 #include <QOpenGLFramebufferObject>
 #include <QMainWindow>
+#include <QElapsedTimer>
+#include <QDir>
+#include <QDebug>
+#include <QFile>
+#include <QScreen>
+#include <QStandardPaths>
+#include <QWindow>
 
 #include "sceneviewer.h"
 
@@ -109,6 +116,39 @@ int l_mainDisplayListsSpaceId =
     -1;  //!< Display lists space id associated with SceneViewers
 std::set<TGlContext>
     l_contexts;  //!< Stores every SceneViewer context (see ~SceneViewer)
+
+qint64 latencyTraceNowNs() {
+  static QElapsedTimer timer;
+  if (!timer.isValid()) timer.start();
+  return timer.nsecsElapsed();
+}
+
+void writeLatencyTrace(const QByteArray &line) {
+  static QFile file;
+  static bool initialized = false;
+  static int lineCount = 0;
+  constexpr int kMaxLines = 100000;
+
+  if (lineCount >= kMaxLines) return;
+  if (!initialized) {
+    initialized = true;
+    QString directory =
+        QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+    if (directory.isEmpty()) directory = QDir::tempPath();
+    file.setFileName(QDir(directory).filePath("opentoonz_viewer_latency.log"));
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text))
+      return;
+    qInfo() << "Viewer latency trace:" << file.fileName();
+  }
+
+  if (!file.isOpen()) return;
+  file.write(line);
+  file.write("\n");
+  ++lineCount;
+  if (lineCount == kMaxLines) {
+    file.write("TRACE_STOP reason=max_lines\n");
+  }
+}
 
 //-------------------------------------------------------------------------------
 
@@ -828,6 +868,24 @@ SceneViewer::SceneViewer(ImageUtils::FullScreenWidget *parent)
     , m_isLocator(false)
     , m_isBusyOnTabletMove(false)
     , m_mouseScrubbing(0) {
+  m_latencyTraceEnabled =
+      qEnvironmentVariableIsSet("OPENTOONZ_VIEWER_LATENCY_TRACE");
+  if (m_latencyTraceEnabled) {
+#ifdef _WIN32
+    const bool lowLatencyEnabled =
+        Preferences::instance()->isLowLatencySceneViewerEnabled();
+#else
+    const bool lowLatencyEnabled = false;
+#endif
+    traceLatency("TRACE_START",
+                 QString("enabled=1 low_latency_enabled=%1 "
+                         "requested_swap_interval=%2")
+                     .arg(lowLatencyEnabled ? 1 : 0)
+                     .arg(QSurfaceFormat::defaultFormat().swapInterval()));
+    connect(this, &QOpenGLWidget::frameSwapped, this,
+            [this]() { traceLatencyFrameSwapped(); });
+  }
+
   m_visualSettings.m_sceneProperties =
       TApp::instance()->getCurrentScene()->getScene()->getProperties();
 #if defined(x64)
@@ -863,6 +921,88 @@ SceneViewer::SceneViewer(ImageUtils::FullScreenWidget *parent)
     m_lutCalibrator = new LutCalibrator();
   if (Preferences::instance()->is30bitDisplayEnabled())
     setTextureFormat(TGL_TexFmt10);
+}
+
+//-----------------------------------------------------------------------------
+
+qint64 SceneViewer::latencyTraceNow() const { return latencyTraceNowNs(); }
+
+//-----------------------------------------------------------------------------
+
+void SceneViewer::traceLatency(const char *event, const QString &details) const {
+  if (!m_latencyTraceEnabled) return;
+
+  qint64 nowNs = latencyTraceNow();
+  QByteArray line(event);
+  line += " t_us=" + QByteArray::number(nowNs / 1000);
+  line += " seq=" + QByteArray::number(m_latencyInputSequence);
+  if (m_latencyInputTimeNs)
+    line += " input_age_us=" +
+            QByteArray::number((nowNs - m_latencyInputTimeNs) / 1000);
+  if (!details.isEmpty()) {
+    line += ' ';
+    line += details.toUtf8();
+  }
+  writeLatencyTrace(line);
+}
+
+//-----------------------------------------------------------------------------
+
+void SceneViewer::traceLatencyInput(const char *source,
+                                    const QPointF &position) {
+  if (!m_latencyTraceEnabled) return;
+
+  m_latencyInputTimeNs        = latencyTraceNow();
+  m_latencyTraceActiveUntilNs = m_latencyInputTimeNs + 500000000;
+  ++m_latencyInputSequence;
+  m_latencyInputPos = position;
+
+  TTool *tool = TApp::instance()->getCurrentTool()->getTool();
+  QString details = QString("source=%1 pos_x=%2 pos_y=%3 tool=%4")
+                        .arg(source)
+                        .arg(position.x(), 0, 'f', 2)
+                        .arg(position.y(), 0, 'f', 2)
+                        .arg(tool ? QString::fromStdString(tool->getName())
+                                  : QString("none"));
+  traceLatency("INPUT", details);
+}
+
+//-----------------------------------------------------------------------------
+
+void SceneViewer::traceLatencyCallback(const char *route,
+                                       qint64 startedNs) const {
+  if (!m_latencyTraceEnabled) return;
+  qint64 elapsedUs = (latencyTraceNow() - startedNs) / 1000;
+  traceLatency("CALLBACK",
+               QString("route=%1 duration_us=%2").arg(route).arg(elapsedUs));
+}
+
+//-----------------------------------------------------------------------------
+
+void SceneViewer::traceLatencyInvalidate(const char *kind,
+                                         const TRectD *rect) const {
+  if (!m_latencyTraceEnabled || !m_latencyInputTimeNs) return;
+  QString details = QString("kind=%1").arg(kind);
+  if (rect) {
+    details += QString(" x0=%1 y0=%2 x1=%3 y1=%4")
+                   .arg(rect->x0, 0, 'f', 2)
+                   .arg(rect->y0, 0, 'f', 2)
+                   .arg(rect->x1, 0, 'f', 2)
+                   .arg(rect->y1, 0, 'f', 2);
+  }
+  traceLatency("INVALIDATE", details);
+}
+
+//-----------------------------------------------------------------------------
+
+void SceneViewer::traceLatencyFrameSwapped() {
+  if (!m_latencyTraceEnabled ||
+      m_latencyPaintSequence == m_latencyLastSwappedSequence)
+    return;
+
+  m_latencyLastSwappedSequence = m_latencyPaintSequence;
+  traceLatency("FRAME_SWAPPED",
+               QString("paint_seq=%1").arg(m_latencyPaintSequence));
 }
 
 //-----------------------------------------------------------------------------
@@ -1306,6 +1446,39 @@ void SceneViewer::onPreferenceChanged(const QString &prefName) {
 //-----------------------------------------------------------------------------
 void SceneViewer::initializeGL() {
   initializeOpenGLFunctions();
+
+  if (m_latencyTraceEnabled) {
+    QSurfaceFormat actualFormat = format();
+    QScreen *screen = nullptr;
+    if (QWindow *window = this->window()->windowHandle())
+      screen = window->screen();
+    if (!screen) screen = QGuiApplication::primaryScreen();
+    const char *renderer =
+        reinterpret_cast<const char *>(glGetString(GL_RENDERER));
+    const char *vendor = reinterpret_cast<const char *>(glGetString(GL_VENDOR));
+#ifdef _WIN32
+    const bool lowLatencyEnabled =
+        Preferences::instance()->isLowLatencySceneViewerEnabled();
+#else
+    const bool lowLatencyEnabled = false;
+#endif
+    traceLatency(
+        "GL_CONTEXT",
+        QString("swap_interval=%1 samples=%2 version=%3.%4 update_behavior=%5 "
+                "low_latency_enabled=%6 requested_swap_interval=%7 "
+                "screen_refresh_hz=%8 renderer=%9 vendor=%10")
+            .arg(actualFormat.swapInterval())
+            .arg(actualFormat.samples())
+            .arg(actualFormat.majorVersion())
+            .arg(actualFormat.minorVersion())
+            .arg(updateBehavior() == QOpenGLWidget::PartialUpdate ? "partial"
+                                                                  : "full")
+            .arg(lowLatencyEnabled ? 1 : 0)
+            .arg(QSurfaceFormat::defaultFormat().swapInterval())
+            .arg(screen ? screen->refreshRate() : 0.0, 0, 'f', 2)
+            .arg(renderer ? QString::fromLatin1(renderer) : QString("unknown"))
+            .arg(vendor ? QString::fromLatin1(vendor) : QString("unknown")));
+  }
 
   registerContext();
 
@@ -2027,6 +2200,14 @@ static void drawFpsGraph(int t0, int t1) {
 // #define FPS_HISTOGRAM
 
 void SceneViewer::paintGL() {
+  qint64 paintStartedNs = 0;
+  bool tracePaint       = false;
+  if (m_latencyTraceEnabled && m_latencyInputTimeNs) {
+    paintStartedNs = latencyTraceNow();
+    tracePaint = paintStartedNs <= m_latencyTraceActiveUntilNs;
+    if (tracePaint) traceLatency("PAINT_BEGIN");
+  }
+
 #ifdef _DEBUG
   if (!check_framebuffer_status()) {
     /* QGLWidget's widget creation/destruction timing (depending on platform?)
@@ -2128,6 +2309,12 @@ void SceneViewer::paintGL() {
 
   if (!m_isPicking && m_lutCalibrator && m_lutCalibrator->isValid())
     m_lutCalibrator->onEndDraw(m_fbo);
+
+  if (tracePaint) {
+    m_latencyPaintSequence = m_latencyInputSequence;
+    qint64 durationUs       = (latencyTraceNow() - paintStartedNs) / 1000;
+    traceLatency("PAINT_END", QString("duration_us=%1").arg(durationUs));
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -2474,6 +2661,7 @@ bool SceneViewer::is3DView() const {
 //-----------------------------------------------------------------------------
 
 void SceneViewer::invalidateAll() {
+  traceLatencyInvalidate("ALL");
   m_clipRect = InvalidateAllRect;
   update();
   if (m_vRuler) m_vRuler->update();
@@ -2491,6 +2679,7 @@ void SceneViewer::navigatorPan(const QPoint &delta) {
 //-----------------------------------------------------------------------------
 
 void SceneViewer::GLInvalidateAll() {
+  traceLatencyInvalidate("ALL");
   m_clipRect = InvalidateAllRect;
   update();
   if (m_vRuler) m_vRuler->update();
@@ -2502,9 +2691,10 @@ void SceneViewer::GLInvalidateAll() {
 void SceneViewer::GLInvalidateRect(const TRectD &rect) {
   // in case that GLInvalidateAll is called just before coming here,
   // ignore the clip rect and refresh entire viewer
-  if (m_clipRect == InvalidateAllRect)
+  if (m_clipRect == InvalidateAllRect) {
+    traceLatencyInvalidate("RECT_IGNORED_AFTER_ALL", &rect);
     return;
-  else if (rect.isEmpty())
+  } else if (rect.isEmpty())
     m_clipRect = InvalidateAllRect;
   else {
     m_clipRect += rect;
@@ -2515,6 +2705,8 @@ void SceneViewer::GLInvalidateRect(const TRectD &rect) {
       m_clipRect += TRectD(topLeft, bottomRight);
     }
   }
+  traceLatencyInvalidate(rect.isEmpty() ? "ALL_FROM_EMPTY_RECT" : "RECT",
+                         &rect);
   update();
   if (m_vRuler) m_vRuler->update();
   if (m_hRuler) m_hRuler->update();

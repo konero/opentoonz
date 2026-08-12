@@ -540,6 +540,12 @@ public:
     return getBoolValue(useQtNativeWinInk);
   }
 
+#ifdef _WIN32
+  bool isLowLatencySceneViewerEnabled() const {
+    return getBoolValue(lowLatencySceneViewer);
+  }
+#endif
+
   // Others (not appeared in the popup)
   // Shortcut popup settings
   QString getShortcutPreset() { return getStringValue(shortcutPreset); }

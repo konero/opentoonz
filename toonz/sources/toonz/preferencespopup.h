@@ -119,6 +119,7 @@ private:
   QWidget* createVersionControlPage();
   QWidget* createTouchTabletPage();
 #ifdef _WIN32
+  QWidget* createExperimentalPage();
   QWidget* createAddonsPage();
 #endif
   //--- callbacks ---

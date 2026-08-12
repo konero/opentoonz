@@ -213,6 +213,12 @@ enum PreferencesItemId {
   // This option will be shown & available only when WITH_WINTAB is defined
   useQtNativeWinInk,
 
+#ifdef _WIN32
+  //----------
+  // Experimental
+  lowLatencySceneViewer,
+#endif
+
   //----------
   // Others (not appeared in the popup)
   // Shortcut popup settings

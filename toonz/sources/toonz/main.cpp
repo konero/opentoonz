@@ -81,6 +81,7 @@
 #include <QSettings>
 #include <QLibraryInfo>
 #include <QHash>
+#include <QSurfaceFormat>
 
 #ifdef _WIN32
 #ifndef x64
@@ -509,15 +510,32 @@ int main(int argc, char *argv[]) {
   // Toonz environment
   initToonzEnv(argumentPathValues);
 
-  // prepare for 30bit display
+  // Configure OpenGL surfaces before the main window creates the SceneViewer.
+  // QOpenGLWidget renders into an offscreen FBO and the top-level window owns
+  // composition and presentation, so Qt cannot apply this policy only to the
+  // embedded SceneViewer. Normal QWidget painting is unaffected, but OpenGL
+  // widgets in the same window must use a compatible format.
+  QSurfaceFormat sFmt = QSurfaceFormat::defaultFormat();
+  bool updateSurfaceFormat = false;
+
   if (Preferences::instance()->is30bitDisplayEnabled()) {
-    QSurfaceFormat sFmt = QSurfaceFormat::defaultFormat();
     sFmt.setRedBufferSize(10);
     sFmt.setGreenBufferSize(10);
     sFmt.setBlueBufferSize(10);
     sFmt.setAlphaBufferSize(2);
-    QSurfaceFormat::setDefaultFormat(sFmt);
+    updateSurfaceFormat = true;
   }
+
+#ifdef _WIN32
+  if (Preferences::instance()->isLowLatencySceneViewerEnabled()) {
+    // Request unsynchronised presentation for lower interactive Viewer latency.
+    // Drivers may ignore this request; the normal interval remains the default.
+    sFmt.setSwapInterval(0);
+    updateSurfaceFormat = true;
+  }
+#endif
+
+  if (updateSurfaceFormat) QSurfaceFormat::setDefaultFormat(sFmt);
 
   // Initialize thread components
   TThread::init();
