@@ -1,5 +1,6 @@
 
 #include <algorithm>
+#include <cmath>
 
 #include "mypainttoonzbrush.h"
 #include "tropcm.h"
@@ -9,6 +10,8 @@
 #include <QColor>
 
 namespace {
+constexpr double minMyPaintDtime = 0.001;  // Qt source time: ms.
+
 void putOnRasterCM(const TRasterCM32P &out, const TRaster32P &in, int styleId,
                    bool lockAlpha) {
   if (!out.getPointer() || !in.getPointer()) return;
@@ -159,6 +162,10 @@ void MyPaintToonzBrush::strokeTo(const TPointD &position, double pressure,
     m_brush.setState(MYPAINT_BRUSH_STATE_ACTUAL_Y, m_current.y);
     return;
   }
+
+  // Reject ordering-only deltas.
+  if (!std::isfinite(dtime) || dtime < minMyPaintDtime)
+    dtime = minMyPaintDtime;
 
   if (m_interpolation) {
     next.time = m_current.time + dtime;

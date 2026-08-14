@@ -77,17 +77,29 @@ namespace {
 void mapTabletTimestamp(TMouseEvent &event, qint64 sourceTimestamp,
                         qint64 &sourceAnchor, TTimerTicks &tickAnchor,
                         TTimerTicks &lastTime) {
-  if (sourceTimestamp < 0) return;
+  const TTimerTicks dispatchTime = event.m_time;
+  if (sourceTimestamp < 0) {
+    sourceAnchor = -1;
+    lastTime     = dispatchTime;
+    return;
+  }
 
   if (sourceAnchor < 0 || sourceTimestamp < sourceAnchor ||
       sourceTimestamp - sourceAnchor > 60000) {
     sourceAnchor = sourceTimestamp;
-    tickAnchor   = event.m_time;
+    tickAnchor   = dispatchTime;
   }
 
   TTimerTicks mapped =
       tickAnchor + (sourceTimestamp - sourceAnchor) * 1000000;
-  if (mapped <= lastTime) mapped = lastTime + 1;
+
+  // Source time: spacing only, never future.
+  if (mapped > dispatchTime) {
+    tickAnchor -= mapped - dispatchTime;
+    mapped = dispatchTime;
+  }
+  if (mapped < lastTime) mapped = lastTime;
+
   event.m_time = mapped;
   lastTime     = mapped;
 }
