@@ -78,8 +78,13 @@ void mapTabletTimestamp(TMouseEvent &event, qint64 sourceTimestamp,
                         qint64 &sourceAnchor, TTimerTicks &tickAnchor,
                         TTimerTicks &lastTime) {
   const TTimerTicks dispatchTime = event.m_time;
-  if (sourceTimestamp < 0) {
+  // QTabletEvent timestamps are unsigned ms counters. Zero means the tablet
+  // backend did not provide usable source timing. Use the local monotonic
+  // dispatch time for this event and clear the source anchor. The next valid
+  // tablet timestamp will establish a new tablet-to-application clock mapping.
+  if (sourceTimestamp <= 0) {
     sourceAnchor = -1;
+    event.m_time = dispatchTime;
     lastTime     = dispatchTime;
     return;
   }
@@ -98,7 +103,18 @@ void mapTabletTimestamp(TMouseEvent &event, qint64 sourceTimestamp,
     tickAnchor -= mapped - dispatchTime;
     mapped = dispatchTime;
   }
-  if (mapped < lastTime) mapped = lastTime;
+  if (mapped <= lastTime) {
+    // Tablet timestamps have millisecond resolution, so consecutive samples
+    // may map to the same time. Event delivery can also make source time
+    // fall behind the last accepted sample. Brush times must remain strictly
+    // increasing, prefer the dispatch time when it has advanced, otherwise
+    // move ahead one nanosecond. Apply the same correction to the anchor so
+    // following samples continue from the adjusted timeline.
+    const TTimerTicks fallback =
+        dispatchTime > lastTime ? dispatchTime : lastTime + 1;
+    tickAnchor += fallback - mapped;
+    mapped = fallback;
+  }
 
   event.m_time = mapped;
   lastTime     = mapped;
