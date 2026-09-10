@@ -92,20 +92,16 @@ protected:
   void premultiToUnpremulti(TRasterPT<T> dn_ras, const TRasterPT<T>& up_ras,
                             const double colorSpaceGamma);
 
-  // Blend the premultiplied foreground and background values.  When clipping
+  // Blend the premultiplied foreground and background values. When clipping
   // mask is enabled, the caller supplies an opaque, unpremultiplied working
-  // background and restores the original background alpha unless the effect
-  // explicitly propagates its kernel alpha.  When computing in xyz color
-  // space, do not clamp channel values in the kernel.
+  // background and scales the premultiplied result by the original background
+  // alpha afterwards. When computing in xyz color space, do not clamp channel
+  // values in the kernel.
   virtual void brendKernel(double& dnr, double& dng, double& dnb, double& dna,
                            const double up_, double upg, double upb, double upa,
                            const double upopacity,
                            const bool alpha_rendering_sw = true,
                            const bool do_clamp           = true) = 0;
-
-  // Most clipped blend modes use Back alpha strictly as a mask. Effects with
-  // an explicit alpha operation can opt into kernel-alpha propagation.
-  virtual bool propagatesClippingMaskAlpha() const { return false; }
 
   void computeUpAndDown(TTile& tile, double frame, const TRenderSettings& rs,
                         TRasterP& dn_ras, TRasterP& up_ras,

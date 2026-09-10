@@ -11,9 +11,6 @@ class ino_blend_cross_dissolve final : public TBlendForeBackRasterFx {
 public:
   ino_blend_cross_dissolve() : TBlendForeBackRasterFx(false) {}
   ~ino_blend_cross_dissolve() {}
-
-  bool propagatesClippingMaskAlpha() const override { return true; }
-
   void brendKernel(double& dnr, double& dng, double& dnb, double& dna,
                    const double upr, double upg, double upb, double upa,
                    const double up_opacity,
