@@ -763,9 +763,13 @@ void TBlendForeBackRasterFx::nonlinearTmpl<TPixelF, float>(
         continue;
       }
 
+      const bool partialMask = clipping_mask_sw && clipped.inputAlpha() < 1.0;
       clipped.prepare(dnr, dng, dnb, dna);
+      // Float rasters otherwise retain HDR blend results. At a soft clipping
+      // edge, bound the working color before restoring partial coverage.
       brendKernel(dnr, dng, dnb, dna, up_pix->r, up_pix->g, up_pix->b,
-                  up_pix->m, up_opacity, alpha_rendering_sw, false);
+                  up_pix->m, up_opacity, alpha_rendering_sw,
+                  partialMask);
       clipped.restore(dnr, dng, dnb, dna);
       out_pix->r = dnr;
       out_pix->g = dng;
@@ -957,6 +961,15 @@ void TBlendForeBackRasterFx::linearTmpl<TPixelF, float>(TRasterFP dn_ras_out,
           to_nonlinear_color_space(dnBGR[1] / dna, 1.0, gammaDif) * outputAlpha;
       double nonlinear_r =
           to_nonlinear_color_space(dnBGR[2] / dna, 1.0, gammaDif) * outputAlpha;
+
+      if (clipping_mask_sw && clipped.inputAlpha() < 1.0) {
+        // Match the nonlinear method: after a masked blend, the restored
+        // premultiplied color cannot exceed the mask coverage.
+        const double colorLimit = clipped.inputAlpha();
+        nonlinear_r             = clamp(nonlinear_r, 0.0, colorLimit);
+        nonlinear_g             = clamp(nonlinear_g, 0.0, colorLimit);
+        nonlinear_b             = clamp(nonlinear_b, 0.0, colorLimit);
+      }
 
       out_pix->r = nonlinear_r;
       out_pix->g = nonlinear_g;
