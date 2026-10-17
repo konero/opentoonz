@@ -13,8 +13,7 @@
 #include "toonz/txshcell.h"
 
 #include "toonz/txsheetexpr.h"
-#include "toonz/columnfan.h"
-#include "../include/orientation.h"
+#include "toonz/columnfoldstate.h"
 
 using namespace TSyntax;
 
@@ -402,8 +401,11 @@ void TStageObjectTree::loadData(TIStream &is, TXsheet *xsh) {
       if (id.isCamera()) {
         if (is.getTagAttribute("columnLocked") == "yes")
           xsh->setCameraColumnLocked(true);
-        if (is.getTagAttribute("columnFolded") == "yes")
-          xsh->getColumnFan(Orientations::topToBottom())->deactivate(-1);
+        if (is.getTagAttribute("columnFolded") == "yes") {
+          ColumnFoldState folded = xsh->getColumnFoldState();
+          folded.setFolded(-1, true);
+          xsh->setColumnFoldState(folded);
+        }
       }
 
       TStageObject *pegbar =
@@ -464,8 +466,7 @@ void TStageObjectTree::saveData(TOStream &os, int occupiedColumnCount,
     if ((objectId == m_imp->m_currentCameraId ||
          objectId == m_imp->m_currentPreviewCameraId)) {
       if (xsh->isCameraColumnLocked()) attr["columnLocked"] = "yes";
-      if (!xsh->getColumnFan(Orientations::topToBottom())->isActive(-1))
-        attr["columnFolded"] = "yes";
+      if (xsh->getColumnFoldState().isFolded(-1)) attr["columnFolded"] = "yes";
     }
 
     os.openChild("pegbar", attr);

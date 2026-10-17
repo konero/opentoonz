@@ -24,14 +24,13 @@
 #include "toonz/txshsoundcolumn.h"
 #include "toonz/sceneproperties.h"
 #include "toonz/toonzscene.h"
-#include "toonz/columnfan.h"
+#include "toonz/columnfoldstate.h"
 #include "toonz/txshleveltypes.h"
 #include "toonz/txshnoteset.h"
 #include "toonz/txshsimplelevel.h"
 #include "toonz/stage.h"
 #include "toonz/textureutils.h"
 #include "xshhandlemanager.h"
-#include "orientation.h"
 #include "toonz/expressionreferencemonitor.h"
 #include "toonz/navigationtags.h"
 
@@ -106,7 +105,7 @@ struct TXsheet::TXsheetImp {
   int m_viewColumn;
 
   TSoundTrackP m_mixedSound;
-  ColumnFan m_columnFans[Orientations::COUNT];
+  ColumnFoldState m_columnFolds;
   ToonzScene *m_scene;
 
 public:
@@ -118,10 +117,8 @@ public:
     return ++currentId;
   }
 
-  void copyFoldedState();
 
 private:
-  void initColumnFans();
 
   // not copyable
   TXsheetImp(const TXsheetImp &)            = delete;
@@ -162,26 +159,11 @@ TXsheet::TXsheetImp::TXsheetImp()
     , m_viewColumn(-1)
     , m_mixedSound(nullptr)
     , m_scene(nullptr) {
-  initColumnFans();
   // m_handleManager->setXsheet(nullptr);  // will be set later
   m_pegTree->setHandleManager(m_handleManager.get());
 }
 
 //-----------------------------------------------------------------------------
-
-void TXsheet::TXsheetImp::initColumnFans() {
-  for (auto o : Orientations::all()) {
-    int index = o->dimension(PredefinedDimension::INDEX);
-    m_columnFans[index].setDimensions(
-        o->dimension(PredefinedDimension::LAYER),
-        o->dimension(PredefinedDimension::CAMERA_LAYER));
-  }
-}
-
-void TXsheet::TXsheetImp::copyFoldedState() {
-  for (int i = 1; i < Orientations::COUNT; i++)
-    m_columnFans[i].copyFoldedStateFrom(m_columnFans[0]);
-}
 
 //=============================================================================
 // TXsheet
@@ -1164,6 +1146,7 @@ void TXsheet::updateFrameCount() {
 
 void TXsheet::loadData(TIStream &is) {
   clearAll();
+  m_imp->m_columnFolds      = ColumnFoldState();
   TStageObjectId cameraId   = TStageObjectId::CameraId(0);
   TStageObject *firstCamera = getStageObject(cameraId);
   m_imp->m_pegTree->removeStageObject(cameraId);
@@ -1247,8 +1230,7 @@ void TXsheet::loadData(TIStream &is) {
       TFxSet fxSet;
       fxSet.loadData(is);
     } else if (tagName == "columnFan") {
-      m_imp->m_columnFans[0].loadData(is);
-      m_imp->copyFoldedState();
+      m_imp->m_columnFolds.loadData(is);
     } else if (tagName == "noteSet") {
       m_notes->loadData(is);
     } else if (tagName == "navigationTags") {
@@ -1259,6 +1241,7 @@ void TXsheet::loadData(TIStream &is) {
     is.closeChild();
   }
   updateFrameCount();
+  notify(TXsheetColumnChange(TXsheetColumnChange::Fold, -1));
 }
 
 //-----------------------------------------------------------------------------
@@ -1287,11 +1270,9 @@ void TXsheet::saveData(TOStream &os) {
   fxDag->saveData(os, getFirstFreeColumnIndex());
   os.closeChild();
 
-  // does not matter which Orientation to take, as all fans share folded data
-  ColumnFan *columnFan = getColumnFan(Orientations::topToBottom());
-  if (!columnFan->isEmpty()) {
+  if (m_imp->m_columnFolds.hasFoldedColumns()) {
     os.openChild("columnFan");
-    columnFan->saveData(os);
+    m_imp->m_columnFolds.saveData(os);
     os.closeChild();
   }
 
@@ -1334,10 +1315,7 @@ void TXsheet::insertColumn(int col, TXshColumn *column) {
     if (fx) getFxDag()->addToXsheet(fx);
   }
 
-  for (ColumnFan &columnFan : m_imp->m_columnFans) {
-    columnFan.rollRightFoldedState(col,
-                                   m_imp->m_columnSet.getColumnCount() - col);
-  }
+  m_imp->m_columnFolds.insertColumn(col);
 
   notify(TXsheetColumnChange(TXsheetColumnChange::Insert, col));
 }
@@ -1359,10 +1337,7 @@ void TXsheet::removeColumn(int col) {
   m_imp->m_columnSet.removeColumn(col);
   m_imp->m_pegTree->removeColumn(col);
 
-  for (ColumnFan &columnFan : m_imp->m_columnFans) {
-    columnFan.rollLeftFoldedState(col,
-                                  m_imp->m_columnSet.getColumnCount() - col);
-  }
+  m_imp->m_columnFolds.removeColumn(col);
 
   notify(TXsheetColumnChange(TXsheetColumnChange::Remove, col));
 }
@@ -1392,16 +1367,14 @@ void TXsheet::moveColumn(int srcIndex, int dstIndex) {
     int c1 = dstIndex;
     assert(c0 < c1);
     m_imp->m_columnSet.rollLeft(c0, c1 - c0 + 1);
-    for (ColumnFan &columnFan : m_imp->m_columnFans)
-      columnFan.rollLeftFoldedState(c0, c1 - c0 + 1);
+    m_imp->m_columnFolds.moveColumn(srcIndex, dstIndex);
     for (int c = c0; c < c1; ++c) m_imp->m_pegTree->swapColumns(c, c + 1);
   } else {
     int c0 = dstIndex;
     int c1 = srcIndex;
     assert(c0 < c1);
     m_imp->m_columnSet.rollRight(c0, c1 - c0 + 1);
-    for (ColumnFan &columnFan : m_imp->m_columnFans)
-      columnFan.rollRightFoldedState(c0, c1 - c0 + 1);
+    m_imp->m_columnFolds.moveColumn(srcIndex, dstIndex);
     for (int c = c1 - 1; c >= c0; --c) m_imp->m_pegTree->swapColumns(c, c + 1);
   }
 
@@ -1547,9 +1520,24 @@ FxDag *TXsheet::getFxDag() const { return m_imp->m_fxDag.get(); }
 
 //-----------------------------------------------------------------------------
 
-ColumnFan *TXsheet::getColumnFan(const Orientation *o) const {
-  int index = o->dimension(PredefinedDimension::INDEX);
-  return &m_imp->m_columnFans[index];
+const ColumnFoldState& TXsheet::getColumnFoldState() const {
+  return m_imp->m_columnFolds;
+}
+
+bool TXsheet::setColumnFoldState(const ColumnFoldState& state) {
+  if (m_imp->m_columnFolds.columns() == state.columns()) return false;
+  m_imp->m_columnFolds = state;
+  notify(TXsheetColumnChange(TXsheetColumnChange::Fold, -1));
+  return true;
+}
+
+void TXsheet::addColumnChangeListener(TXsheetColumnChangeListener* listener) {
+  m_columnListeners.insert(listener);
+}
+
+void TXsheet::removeColumnChangeListener(
+    TXsheetColumnChangeListener* listener) {
+  m_columnListeners.erase(listener);
 }
 
 //-----------------------------------------------------------------------------
@@ -1807,7 +1795,11 @@ void TXsheet::setObserver(TXsheetColumnChangeObserver *observer) {
 //---------------------------------------------------------
 
 void TXsheet::notify(const TXsheetColumnChange &change) {
-  if (m_observer) m_observer->onChange(change);
+  if (m_observer && change.m_type != TXsheetColumnChange::Fold)
+    m_observer->onChange(change);
+  const auto listeners = m_columnListeners;
+  for (auto* listener : listeners)
+    if (m_columnListeners.count(listener)) listener->onColumnChange(change);
 }
 void TXsheet::notifyFxAdded(const std::vector<TFx *> &fxs) {
   if (m_observer) m_observer->onFxAdded(fxs);

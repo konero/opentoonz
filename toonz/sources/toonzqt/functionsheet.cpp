@@ -1,6 +1,7 @@
 
 
 #include "toonzqt/functionsheet.h"
+#include "orientation.h"
 
 // TnzQt includes
 #include "toonzqt/gutil.h"
@@ -1233,7 +1234,6 @@ void FunctionSheet::setSelection(FunctionSelection *selection) {
 //-----------------------------------------------------------------------------
 
 void FunctionSheet::showEvent(QShowEvent *e) {
-  m_frameScroller.registerFrameScroller();
   SpreadsheetViewer::showEvent(e);
 
   if (m_xshHandle && m_syncSize) {
@@ -1241,6 +1241,7 @@ void FunctionSheet::showEvent(QShowEvent *e) {
             SLOT(onZoomScaleChanged()));
     onZoomScaleChanged();
   }
+  m_frameScroller.registerFrameScroller();
 }
 
 //-----------------------------------------------------------------------------
@@ -1414,8 +1415,7 @@ void FunctionSheet::setSyncSize(bool on) {
 
 int FunctionSheet::getFrameZoomFactor() const {
   if (m_syncSize && m_xshHandle) {
-    int zoomFactor = m_xshHandle->getZoomFactor();
-    return 50 + (zoomFactor - 20) * 5 / 8;
+    return m_xshHandle->getZoomFactor();
   }
   return 100;
 }
@@ -1440,9 +1440,12 @@ void FunctionSheet::onSyncSizeBtnToggled(bool on) {
 //-----------------------------------------------------------------------------
 
 void FunctionSheet::onZoomScaleChanged() {
+  const bool syncing = m_frameScroller.isSyncing();
+  m_frameScroller.setSyncing(true);
   QPoint xyOrig = positionToXY(CellPosition(getCurrentFrame(), -1));
   setScaleFactor(getFrameZoomFactor());
   QPoint xyNew = positionToXY(CellPosition(getCurrentFrame(), -1));
   scroll(xyNew - xyOrig);
   update();
+  m_frameScroller.setSyncing(syncing);
 }

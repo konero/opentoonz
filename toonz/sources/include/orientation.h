@@ -3,16 +3,6 @@
 #ifndef ORIENTATION_INCLUDED
 #define ORIENTATION_INCLUDED
 
-#undef DVAPI
-#undef DVVAR
-#ifdef TOONZLIB_EXPORTS
-#define DVAPI DV_EXPORT_API
-#define DVVAR DV_EXPORT_VAR
-#else
-#define DVAPI DV_IMPORT_API
-#define DVVAR DV_IMPORT_VAR
-#endif
-
 #include "tcommon.h"
 #include "cellposition.h"
 #include "toonz/cellpositionratio.h"
@@ -22,6 +12,16 @@
 #include <QPainterPath>
 #include <map>
 #include <vector>
+
+#undef DVAPI
+#undef DVVAR
+#ifdef TOONZQT_EXPORTS
+#define DVAPI DV_EXPORT_API
+#define DVVAR DV_EXPORT_VAR
+#else
+#define DVAPI DV_IMPORT_API
+#define DVVAR DV_IMPORT_VAR
+#endif
 
 // Defines timeline direction: top to bottom;  left to right.
 // old (vertical timeline) = new (universal)    = old (kept)
@@ -260,7 +260,6 @@ public:
 
   virtual QString name() const            = 0;
   virtual QString caption() const         = 0;
-  virtual const Orientation *next() const = 0;
 
   const QRect &rect(PredefinedRect which) const { return _rects.at(which); }
   const QLine &line(PredefinedLine which) const { return _lines.at(which); }
@@ -292,26 +291,11 @@ protected:
   void addFlag(PredefinedFlag which, const bool &flag);
 };
 
-// Enumerates all orientations available in the system as global const objects.
+// Fixed, independently initialized geometry providers. No switching API.
 class DVAPI Orientations {
-  const Orientation *_topToBottom, *_leftToRight;
-  std::vector<const Orientation *> _all;
-
-  Orientations();
-
 public:
-  ~Orientations();
-
-  static const Orientations &instance();
-
-  static const int COUNT = 2;
-
   static const Orientation *topToBottom();
   static const Orientation *leftToRight();
-
-  static const std::vector<const Orientation *> &all();
-
-  static const Orientation *byName(const QString &name);
 };
 
 #endif

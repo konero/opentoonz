@@ -84,7 +84,7 @@ class KeyframeMoverTool final : public XsheetGUI::DragTool {
   void rectSelect(int row, int col);
 
 public:
-  KeyframeMoverTool(XsheetViewer *viewer, bool justMovement = false);
+  KeyframeMoverTool(XsheetViewer* viewer, bool justMovement = false);
 
   bool canMove(const TPoint &pos);
 

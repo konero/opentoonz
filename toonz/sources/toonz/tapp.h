@@ -84,7 +84,7 @@ class TApp final : public QObject,
   QMainWindow *m_mainWindow;
 
   SceneViewer *m_activeViewer;
-  XsheetViewer *m_xsheetViewer;
+  XsheetViewer* m_sheetViewer = nullptr;
   LocatorPopup *m_activeLocator;
 
   int m_autosavePeriod;  // minutes
@@ -209,9 +209,9 @@ public:
 
   void writeSettings();
 
-  void setCurrentXsheetViewer(XsheetViewer *viewer) { m_xsheetViewer = viewer; }
+  void setCurrentSheetViewer(XsheetViewer* viewer);
 
-  XsheetViewer *getCurrentXsheetViewer() const { return m_xsheetViewer; }
+  XsheetViewer* getCurrentSheetViewer() const { return m_sheetViewer; }
 
   bool isSaveInProgress() { return m_saveInProgress; }
   void setSaveInProgress(bool inProgress) { m_saveInProgress = inProgress; }

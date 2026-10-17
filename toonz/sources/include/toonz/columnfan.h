@@ -4,19 +4,17 @@
 #define COLUMNFAN_INCLUDED
 
 #include "tcommon.h"
+#include "toonz/columnfoldstate.h"
 
 #undef DVAPI
 #undef DVVAR
-#ifdef TOONZLIB_EXPORTS
+#ifdef TOONZQT_EXPORTS
 #define DVAPI DV_EXPORT_API
 #define DVVAR DV_EXPORT_VAR
 #else
 #define DVAPI DV_IMPORT_API
 #define DVVAR DV_IMPORT_VAR
 #endif
-
-class TOStream;
-class TIStream;
 
 //=============================================================================
 //! The ColumnFan class is used to menage display columns.
@@ -31,6 +29,9 @@ class TIStream;
 */
 //=============================================================================
 
+using ColumnFoldStateChangeCallback =
+    void (*)(void*, const ColumnFoldState&);
+
 class DVAPI ColumnFan {
   class Column {
   public:
@@ -38,16 +39,24 @@ class DVAPI ColumnFan {
     int m_pos;
     Column() : m_active(true), m_pos(0) {}
   };
+  // Cached from the shared fold state so paint-time queries stay O(1).
   std::vector<Column> m_columns;
   std::map<int, int> m_table;
   int m_firstFreePos;
   int m_unfolded, m_folded;
-  bool m_cameraActive;
+  bool m_cameraVisible = false;
   int m_cameraColumnDim;
+  ColumnFoldState m_localFoldState;
+  const ColumnFoldState* m_foldState = nullptr;
+  void* m_foldStateContext = nullptr;
+  ColumnFoldStateChangeCallback m_onFoldStateChange = nullptr;
   /*!
   Called by activate() and deactivate() to update columns coordinates.
   */
   void update();
+  const ColumnFoldState& foldStateData() const {
+    return m_foldState ? *m_foldState : m_localFoldState;
+  }
 
 public:
   /*!
@@ -55,8 +64,16 @@ Constructs a ColumnFan with default value.
 */
   ColumnFan();
 
-  //! Adjust column sizes when switching orientation
+  //! Set layer-axis dimensions for this panel's geometry projection.
   void setDimensions(int unfolded, int cameraColumn);
+  void setCameraVisible(bool visible) { m_cameraVisible = visible; }
+  ColumnFoldState foldedState() const;
+  void setFoldedState(const ColumnFoldState& state);
+  //! Share logical folding while keeping this fan's geometry panel-specific.
+  void setSharedFoldState(
+      const ColumnFoldState& state, void* context,
+      ColumnFoldStateChangeCallback onChange);
+  void refreshProjection();
 
   /*!
 Set column \b col not folded.
@@ -87,15 +104,6 @@ of column identified by \b col.
 */
   int colToLayerAxis(int col) const;
 
-  void copyFoldedStateFrom(const ColumnFan &from);
-
-  bool isEmpty() const;
-
-  void saveData(TOStream &os);
-  void loadData(TIStream &is);
-
-  void rollLeftFoldedState(int index, int count);
-  void rollRightFoldedState(int index, int count);
 };
 
 #endif

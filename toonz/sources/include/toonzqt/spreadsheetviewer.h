@@ -72,7 +72,8 @@ private:
 
   void handleScroll(QPoint &offset, int senderMaximum, int senderValue);
   void onScroll(const CellPositionRatio &offset);
-  bool exactScroll(const int senderMaximum, const int senderValue);
+  double framePixelSize();
+  bool exactScroll(int senderMaximum, int senderValue, double senderFrameSize);
 
   void prepareToScrollRatio(const CellPositionRatio &offset);
 

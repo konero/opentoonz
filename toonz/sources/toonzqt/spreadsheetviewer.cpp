@@ -23,6 +23,8 @@
 
 namespace Spreadsheet {
 
+static QList<FrameScroller*> frameScrollers;
+
 //=============================================================================
 FrameScroller::FrameScroller()
     : m_orientation(Orientations::topToBottom())
@@ -31,9 +33,9 @@ FrameScroller::FrameScroller()
     , m_lastY(0)
     , m_syncing(false) {}
 
-FrameScroller::~FrameScroller() {}
+FrameScroller::~FrameScroller() { unregisterFrameScroller(); }
 
-void FrameScroller::setFrameScrollArea(QScrollArea *scrollArea) {
+void FrameScroller::setFrameScrollArea(QScrollArea* scrollArea) {
   disconnectScrollbars();
   m_scrollArea = scrollArea;
   connectScrollbars();
@@ -59,11 +61,11 @@ void FrameScroller::connectScrollbars() {
 
 void FrameScroller::onVScroll(int y) {
   QPoint offset(0, y - m_lastY);
-  if (isSyncing()) return;
   m_lastY = y;
+  if (isSyncing()) return;
 
   int senderMaximum     = 0;
-  QScrollBar *scrollBar = dynamic_cast<QScrollBar *>(sender());
+  QScrollBar* scrollBar = dynamic_cast<QScrollBar*>(sender());
   if (scrollBar) senderMaximum = scrollBar->maximum();
 
   setSyncing(true);
@@ -72,11 +74,11 @@ void FrameScroller::onVScroll(int y) {
 }
 void FrameScroller::onHScroll(int x) {
   QPoint offset(x - m_lastX, 0);
-  if (isSyncing()) return;
   m_lastX = x;
+  if (isSyncing()) return;
 
   int senderMaximum     = 0;
-  QScrollBar *scrollBar = dynamic_cast<QScrollBar *>(sender());
+  QScrollBar* scrollBar = dynamic_cast<QScrollBar*>(sender());
   if (scrollBar) senderMaximum = scrollBar->maximum();
 
   setSyncing(true);
@@ -84,60 +86,51 @@ void FrameScroller::onHScroll(int x) {
   setSyncing(false);
 }
 
-static QList<FrameScroller *> frameScrollers;
-
-void FrameScroller::handleScroll(QPoint &offset, int senderMaximum,
+void FrameScroller::handleScroll(QPoint& offset, int senderMaximum,
                                  int senderValue) {
+  if (!frameScrollers.contains(this)) return;
   if ((m_orientation->isVerticalTimeline() && offset.x()) ||
       (!m_orientation->isVerticalTimeline() &&
        offset.y()))  // only synchronize changes by frames axis
     return;
-
-  // If the scroller has the same maximum size, assume it as the scroll bar in
-  // the neighbor panel with the same height & scale. In such case just set the
-  // same value as the sender without zoom adjusting whichi may cause error due
-  // to rounding off.
-  QList<FrameScroller *> scrollBarCue;
-  for (auto frameScroller : frameScrollers)
-    if (frameScroller != this) {
-      if (!frameScroller->isSyncing()) {
-        if (!frameScroller->exactScroll(senderMaximum, senderValue)) {
-          // If the size is different from the sender, then put it in the cue
-          // for adjusting offset and scrolling.
-          scrollBarCue.append(frameScroller);
-        }
-      }
-    }
-
-  if (scrollBarCue.isEmpty()) return;
 
   QPointF offsetF(offset);
   // In case of a zoomed viewer is sending this out, adjust the
   // zoomed offset back to a standardized offset
   emit zoomScrollAdjust(offsetF, false);
 
-  CellPositionRatio ratio = orientation()->xyToPositionRatio(offsetF);
+  CellPositionRatio ratio      = orientation()->xyToPositionRatio(offsetF);
+  const double senderFrameSize = framePixelSize();
 
-  for (auto frameScroller : scrollBarCue)
-    if (frameScroller != this) {
-      if (!frameScroller->isSyncing()) {
+  for (auto frameScroller : frameScrollers) {
+    if (frameScroller != this && !frameScroller->isSyncing()) {
+      // Apply once to every peer; receiving scrollbar signals must not echo.
+      frameScroller->setSyncing(true);
+      if (!frameScroller->exactScroll(senderMaximum, senderValue,
+                                      senderFrameSize))
         frameScroller->onScroll(ratio);
-        break;
-      }
+      frameScroller->setSyncing(false);
     }
+  }
 }
 
-void adjustScrollbar(QScrollBar *scrollBar, int add);
+void adjustScrollbar(QScrollBar* scrollBar, int add);
 
-// Check if the scroll bar has the same size as the sender and just put the
-// value
-bool FrameScroller::exactScroll(const int senderMaximum,
-                                const int senderValue) {
-  QScrollBar *scrollBar = (m_orientation->isVerticalTimeline())
+double FrameScroller::framePixelSize() {
+  QPointF size = orientation()->positionRatioToXY(CellPositionRatio(1, 0));
+  emit zoomScrollAdjust(size, true);
+  return orientation()->isVerticalTimeline() ? size.y() : size.x();
+}
+
+// Match absolute positions only for equal ranges AND equal frame spacing.
+bool FrameScroller::exactScroll(int senderMaximum, int senderValue,
+                                double senderFrameSize) {
+  QScrollBar* scrollBar = (m_orientation->isVerticalTimeline())
                               ? m_scrollArea->verticalScrollBar()
                               : m_scrollArea->horizontalScrollBar();
 
-  if (scrollBar->maximum() == senderMaximum) {
+  if (scrollBar->maximum() == senderMaximum &&
+      qFuzzyCompare(framePixelSize(), senderFrameSize)) {
     scrollBar->setValue(senderValue);
     return true;
   }
@@ -145,7 +138,7 @@ bool FrameScroller::exactScroll(const int senderMaximum,
   return false;
 }
 
-void FrameScroller::onScroll(const CellPositionRatio &ratio) {
+void FrameScroller::onScroll(const CellPositionRatio& ratio) {
   QPointF offset = orientation()->positionRatioToXY(ratio);
 
   // In case of a zoomed viewer is receiving this, adjust the
@@ -165,7 +158,7 @@ void FrameScroller::onScroll(const CellPositionRatio &ratio) {
     adjustScrollbar(m_scrollArea->verticalScrollBar(), (int)offset.y());
 }
 
-void adjustScrollbar(QScrollBar *scrollBar, int add) {
+void adjustScrollbar(QScrollBar* scrollBar, int add) {
   scrollBar->setValue(scrollBar->value() + add);
 }
 
@@ -177,13 +170,13 @@ void FrameScroller::unregisterFrameScroller() {
   if (frameScrollers.contains(this)) frameScrollers.removeAll(this);
 }
 
-void FrameScroller::prepareToScrollOthers(const QPointF &offset) {
+void FrameScroller::prepareToScrollOthers(const QPointF& offset) {
   CellPositionRatio ratio = orientation()->xyToPositionRatio(offset);
   for (int i = 0; i < frameScrollers.size(); i++)
     if (frameScrollers[i] != this)
       frameScrollers[i]->prepareToScrollRatio(ratio);
 }
-void FrameScroller::prepareToScrollRatio(const CellPositionRatio &ratio) {
+void FrameScroller::prepareToScrollRatio(const CellPositionRatio& ratio) {
   QPointF offset = orientation()->positionRatioToXY(ratio);
   emit prepareToScrollOffset(offset);
 }

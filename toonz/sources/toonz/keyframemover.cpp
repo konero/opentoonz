@@ -269,7 +269,7 @@ public:
 // KeyframeMoverTool
 //-----------------------------------------------------------------------------
 
-KeyframeMoverTool::KeyframeMoverTool(XsheetViewer *viewer, bool justMovement)
+KeyframeMoverTool::KeyframeMoverTool(XsheetViewer* viewer, bool justMovement)
     : XsheetGUI::DragTool(viewer)
     , m_startSelection()
     , m_offset(0)

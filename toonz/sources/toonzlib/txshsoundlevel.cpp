@@ -12,6 +12,12 @@
 
 //-----------------------------------------------------------------------------
 
+namespace {
+constexpr int WaveformBlockSize = 256;
+constexpr int WaveformCacheBlocks =
+    128;  // At most 512 KiB of envelope samples.
+}  // namespace
+
 DEFINE_CLASS_CODE(TXshSoundLevel, 53)
 
 PERSIST_IDENTIFIER(TXshSoundLevel, "soundLevel")
@@ -35,13 +41,12 @@ TXshSoundLevel::~TXshSoundLevel() {}
 //-----------------------------------------------------------------------------
 
 TXshSoundLevel *TXshSoundLevel::clone() const {
+  std::lock_guard<std::mutex> lock(m_valuesMutex);
   TXshSoundLevel *sound = new TXshSoundLevel();
-  sound->setSoundTrack(m_soundTrack->clone());
-  sound->m_duration        = m_duration;
-  sound->m_path            = m_path;
-  sound->m_samplePerFrame  = m_samplePerFrame;
-  sound->m_frameSoundCount = m_frameSoundCount;
-  sound->m_fps             = m_fps;
+  sound->setFrameRate(m_fps);
+  sound->setSoundTrack(m_soundTrack ? m_soundTrack->clone() : TSoundTrackP());
+  sound->m_duration = m_duration;
+  sound->m_path     = m_path;
   return sound;
 }
 
@@ -145,92 +150,91 @@ void TXshSoundLevel::saveData(TOStream &os) {
 
 //-----------------------------------------------------------------------------
 
-void TXshSoundLevel::computeValuesFor(const Orientation *o) {
-  int frameHeight = o->dimension(PredefinedDimension::FRAME);  // time axis
-  int index       = o->dimension(PredefinedDimension::INDEX);
-  std::map<int, DoublePair> &values = m_values[index];
-
-  if (frameHeight == 0) frameHeight = 1;
-  values.clear();
-  if (!m_soundTrack) {
-    m_frameSoundCount = 0;
-    m_samplePerFrame  = 0;
-    return;
+const std::vector<DoublePair>& TXshSoundLevel::valuesFor(int pixelsPerFrame,
+                                                         int block) const {
+  const auto key = std::make_pair(pixelsPerFrame, block);
+  auto found     = m_values.find(key);
+  if (found != m_values.end()) return found->second;
+  if (m_values.size() >= WaveformCacheBlocks) m_values.erase(m_values.begin());
+  auto& values = m_values[key];
+  if (!m_soundTrack || m_pressureScale == 0 || m_frameSoundCount <= 0)
+    return values;
+  const qint64 first    = qint64(block) * WaveformBlockSize;
+  const qint64 endPixel = std::min(first + WaveformBlockSize,
+                                   qint64(m_frameSoundCount) * pixelsPerFrame);
+  if (first >= endPixel) return values;
+  values.resize(size_t(endPixel - first), DoublePair(0, 0));
+  const int sampleCount       = m_soundTrack->getSampleCount();
+  const double samplePerPixel = m_samplePerFrame / pixelsPerFrame;
+  for (qint64 index = first; index < endPixel; ++index) {
+    const qint64 frame = index / pixelsPerFrame;
+    const int pixel    = int(index % pixelsPerFrame);
+    const int begin    = int(frame * m_samplePerFrame + pixel * samplePerPixel);
+    const double endSample =
+        pixel + 1 == pixelsPerFrame
+            ? (frame + 1) * m_samplePerFrame - 1
+            : frame * m_samplePerFrame + (pixel + 1) * samplePerPixel - 1;
+    const int end = std::min(sampleCount - 1, int(endSample));
+    if (begin >= sampleCount || end < begin) continue;
+    double minimum = 0, maximum = 0;
+    m_soundTrack->getMinMaxPressure(begin, end, TSound::MONO, minimum, maximum);
+    values[size_t(index - first)] =
+        DoublePair(minimum * m_pressureScale, maximum * m_pressureScale);
   }
-
-  m_samplePerFrame      = m_soundTrack->getSampleRate() / m_fps;
-  double samplePerPixel = m_samplePerFrame / frameHeight;
-
-  int sampleCount = m_soundTrack->getSampleCount();
-  if (sampleCount <= 0)  // This was if(!sampleCount)  :(
-    return;              //
-
-  m_frameSoundCount = tceil(sampleCount / m_samplePerFrame);
-
-  double maxPressure = 0.0;
-  double minPressure = 0.0;
-
-  m_soundTrack->getMinMaxPressure(TINT32(0), (TINT32)sampleCount, TSound::LEFT,
-                                  minPressure, maxPressure);
-
-  double absMaxPressure = std::max(fabs(minPressure), fabs(maxPressure));
-
-  if (absMaxPressure <= 0) return;
-
-  // Adjusting using a fixed scaleFactor
-  int desiredAmplitude = o->dimension(PredefinedDimension::SOUND_AMPLITUDE);
-  // results will be in range -desiredAmplitude .. +desiredAmplitude
-  double weightA = desiredAmplitude / absMaxPressure;
-
-  long i = 0, j;
-  long p = 0;  // se p parte da zero notazione per pixel,
-  // se parte da 1 notazione per frame
-  while (i < m_frameSoundCount) {
-    for (j = 0; j < frameHeight - 1; ++j) {
-      double min = 0.0;
-      double max = 0.0;
-      m_soundTrack->getMinMaxPressure(
-          (TINT32)(i * m_samplePerFrame + j * samplePerPixel),
-          (TINT32)(i * m_samplePerFrame + (j + 1) * samplePerPixel - 1),
-          TSound::MONO, min, max);
-      values.insert(std::pair<int, std::pair<double, double>>(
-          p + j, std::pair<double, double>(min * weightA, max * weightA)));
-    }
-
-    double min = 0.0;
-    double max = 0.0;
-    m_soundTrack->getMinMaxPressure(
-        (TINT32)(i * m_samplePerFrame + j * samplePerPixel),
-        (TINT32)((i + 1) * m_samplePerFrame - 1), TSound::MONO, min, max);
-    values.insert(std::pair<int, std::pair<double, double>>(
-        p + j, std::pair<double, double>(min * weightA, max * weightA)));
-
-    ++i;
-    p += frameHeight;
-  }
+  return values;
 }
 
 //-----------------------------------------------------------------------------
 
 void TXshSoundLevel::computeValues() {
-  for (auto o : Orientations::all()) computeValuesFor(o);
+  std::lock_guard<std::mutex> lock(m_valuesMutex);
+  resetValues();
+}
+
+void TXshSoundLevel::setSoundTrack(TSoundTrackP track) {
+  std::lock_guard<std::mutex> lock(m_valuesMutex);
+  m_soundTrack = track;
+  resetValues();
+}
+
+void TXshSoundLevel::resetValues() {
+  m_values.clear();
+  m_pressureScale   = 0;
+  m_samplePerFrame  = 0;
+  m_frameSoundCount = 0;
+  if (!m_soundTrack || m_fps <= 0) return;
+  m_samplePerFrame      = m_soundTrack->getSampleRate() / m_fps;
+  const int sampleCount = m_soundTrack->getSampleCount();
+  if (sampleCount <= 0 || m_samplePerFrame <= 0) return;
+  m_frameSoundCount = tceil(sampleCount / m_samplePerFrame);
+  double minimum = 0, maximum = 0;
+  m_soundTrack->getMinMaxPressure(0, sampleCount, TSound::LEFT, minimum,
+                                  maximum);
+  const double pressure = std::max(fabs(minimum), fabs(maximum));
+  if (pressure > 0) m_pressureScale = 1.0 / pressure;
 }
 
 //-----------------------------------------------------------------------------
 
-void TXshSoundLevel::getValueAtPixel(const Orientation *o, int pixel,
-                                     DoublePair &values) const {
-  int index = o->dimension(PredefinedDimension::INDEX);
-  std::map<int, DoublePair>::const_iterator it = m_values[index].find(pixel);
-  if (it != m_values[index].end()) values = it->second;
+void TXshSoundLevel::getValueAtPixel(int pixelsPerFrame, int pixel,
+                                     DoublePair& values) const {
+  std::lock_guard<std::mutex> lock(m_valuesMutex);
+  values = DoublePair(0, 0);
+  if (pixelsPerFrame <= 0 || pixel < 0 ||
+      qint64(pixel) >= qint64(m_frameSoundCount) * pixelsPerFrame)
+    return;
+  const auto& block   = valuesFor(pixelsPerFrame, pixel / WaveformBlockSize);
+  const size_t offset = pixel % WaveformBlockSize;
+  if (offset < block.size()) values = block[offset];
 }
 
 //-----------------------------------------------------------------------------
 
 void TXshSoundLevel::setFrameRate(double fps) {
+  std::lock_guard<std::mutex> lock(m_valuesMutex);
   if (m_fps != fps) {
     m_fps = fps;
-    computeValues();
+    resetValues();
   }
 }
 

@@ -4,6 +4,7 @@
 
 // Tnz6 includes
 #include "tapp.h"
+#include "toonz/tstageobject.h"
 #include "iocommand.h"
 #include "menubarcommandids.h"
 
@@ -30,7 +31,6 @@
 // TnzCore includes
 #include "filebrowsermodel.h"
 #include "xsheetdragtool.h"
-#include "xsheetviewer.h"
 #include "historytypes.h"
 #include "tsystem.h"
 #include "tenv.h"
@@ -646,7 +646,6 @@ void AutoLipSyncPopup::refreshSoundLevels() {
     currentIndex = m_soundLevels->currentIndex();
   }
 
-  XsheetViewer *viewer = TApp::instance()->getCurrentXsheetViewer();
   // Enumerate all sound columns
   TXsheet *xsh = TApp::instance()->getCurrentXsheet()->getXsheet();
   m_soundLevels->clear();
@@ -654,13 +653,11 @@ void AutoLipSyncPopup::refreshSoundLevels() {
   int colCount = xsh->getColumnCount();
   for (int i = 0; i < colCount; i++) {
     TXshColumn *col     = xsh->getColumn(i);
-    TXshSoundColumn *sc = col->getSoundColumn();
+    TXshSoundColumn* sc = col ? col->getSoundColumn() : nullptr;
     if (sc) {
       QString colname = "Col" + QString::number(i + 1);
-      if (viewer) {
-        TStageObject *pegbar = xsh->getStageObject(viewer->getObjectId(i));
-        if (pegbar) colname = QString::fromStdString(pegbar->getName());
-      }
+      TStageObject* pegbar = xsh->getStageObject(TStageObjectId::ColumnId(i));
+      if (pegbar) colname = QString::fromStdString(pegbar->getName());
       m_soundLevels->addItem(colname, QVariant(i));
     }
   }

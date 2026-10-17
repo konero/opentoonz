@@ -68,7 +68,7 @@
 // XsheetGUI DragTool
 //-----------------------------------------------------------------------------
 
-XsheetGUI::DragTool::DragTool(XsheetViewer *viewer) : m_viewer(viewer) {}
+XsheetGUI::DragTool::DragTool(XsheetViewer* viewer) : m_viewer(viewer) {}
 
 //-----------------------------------------------------------------------------
 
@@ -119,7 +119,7 @@ class XsheetSelectionDragTool final : public XsheetGUI::DragTool {
   Qt::KeyboardModifiers m_modifier;
 
 public:
-  XsheetSelectionDragTool(XsheetViewer *viewer)
+  XsheetSelectionDragTool(XsheetViewer* viewer)
       : DragTool(viewer), m_firstRow(0), m_firstCol(0), m_modifier() {}
   // activate when clicked the cell
   void onClick(const QMouseEvent *event) override {
@@ -206,8 +206,8 @@ public:
 
 //-----------------------------------------------------------------------------
 
-XsheetGUI::DragTool *XsheetGUI::DragTool::makeSelectionTool(
-    XsheetViewer *viewer) {
+XsheetGUI::DragTool* XsheetGUI::DragTool::makeSelectionTool(
+    XsheetViewer* viewer) {
   return new XsheetSelectionDragTool(viewer);
 }
 
@@ -309,8 +309,8 @@ namespace {
 
 //-----------------------------------------------------------------------------
 
-XsheetGUI::DragTool *XsheetGUI::DragTool::makeLevelMoverTool(
-    XsheetViewer *viewer) {
+XsheetGUI::DragTool* XsheetGUI::DragTool::makeLevelMoverTool(
+    XsheetViewer* viewer) {
   return new LevelMoverTool(viewer);
 }
 
@@ -662,7 +662,7 @@ class LevelExtenderTool final : public XsheetGUI::DragTool {
   bool m_refreshSound;
 
 public:
-  LevelExtenderTool(XsheetViewer *viewer, bool insert = true,
+  LevelExtenderTool(XsheetViewer* viewer, bool insert = true,
                     bool invert = false, bool refreshSound = false)
       : XsheetGUI::DragTool(viewer)
       , m_colCount(0)
@@ -872,8 +872,8 @@ public:
 
 //-----------------------------------------------------------------------------
 
-XsheetGUI::DragTool *XsheetGUI::DragTool::makeLevelExtenderTool(
-    XsheetViewer *viewer, bool insert, bool invert) {
+XsheetGUI::DragTool* XsheetGUI::DragTool::makeLevelExtenderTool(
+    XsheetViewer* viewer, bool insert, bool invert) {
   return new LevelExtenderTool(viewer, insert, invert);
 }
 
@@ -957,7 +957,7 @@ class SoundLevelModifierTool final : public XsheetGUI::DragTool {
   } m_modifierType;
 
 public:
-  SoundLevelModifierTool(XsheetViewer *viewer)
+  SoundLevelModifierTool(XsheetViewer* viewer)
       : XsheetGUI::DragTool(viewer)
       , m_col(-1)
       , m_firstRow(-1)
@@ -1054,8 +1054,8 @@ public:
 
 //-----------------------------------------------------------------------------
 
-XsheetGUI::DragTool *XsheetGUI::DragTool::makeSoundLevelModifierTool(
-    XsheetViewer *viewer) {
+XsheetGUI::DragTool* XsheetGUI::DragTool::makeSoundLevelModifierTool(
+    XsheetViewer* viewer) {
   return new SoundLevelModifierTool(viewer);
 }
 
@@ -1063,8 +1063,8 @@ XsheetGUI::DragTool *XsheetGUI::DragTool::makeSoundLevelModifierTool(
 // KeyFrame Mover DragTool
 //-----------------------------------------------------------------------------
 
-XsheetGUI::DragTool *XsheetGUI::DragTool::makeKeyframeMoverTool(
-    XsheetViewer *viewer) {
+XsheetGUI::DragTool* XsheetGUI::DragTool::makeKeyframeMoverTool(
+    XsheetViewer* viewer) {
   return new KeyframeMoverTool(viewer);
 }
 
@@ -1082,7 +1082,7 @@ protected:
   }
 
 public:
-  CellKeyframeMoverTool(XsheetViewer *viewer) : LevelMoverTool(viewer) {
+  CellKeyframeMoverTool(XsheetViewer* viewer) : LevelMoverTool(viewer) {
     m_keyframeMoverTool = new KeyframeMoverTool(viewer, true);
   }
 
@@ -1113,8 +1113,8 @@ public:
 
 //=============================================================================
 
-XsheetGUI::DragTool *XsheetGUI::DragTool::makeCellKeyframeMoverTool(
-    XsheetViewer *viewer) {
+XsheetGUI::DragTool* XsheetGUI::DragTool::makeCellKeyframeMoverTool(
+    XsheetViewer* viewer) {
   return new CellKeyframeMoverTool(viewer);
 }
 
@@ -1192,7 +1192,7 @@ private:
   bool m_enable;
 
 public:
-  KeyFrameHandleMoverTool(XsheetViewer *viewer, HandleType handleType,
+  KeyFrameHandleMoverTool(XsheetViewer* viewer, HandleType handleType,
                           int keyRow)
       : XsheetGUI::DragTool(viewer)
       , m_stageObject(0)
@@ -1259,8 +1259,8 @@ public:
 }  // namespace
 //-----------------------------------------------------------------------------
 
-XsheetGUI::DragTool *XsheetGUI::DragTool::makeKeyFrameHandleMoverTool(
-    XsheetViewer *viewer, bool isEaseOut, int keyRow) {
+XsheetGUI::DragTool* XsheetGUI::DragTool::makeKeyFrameHandleMoverTool(
+    XsheetViewer* viewer, bool isEaseOut, int keyRow) {
   return new KeyFrameHandleMoverTool(viewer,
                                      isEaseOut
                                          ? KeyFrameHandleMoverTool::EaseOut
@@ -1283,7 +1283,7 @@ class NoteMoveTool final : public XsheetGUI::DragTool {
   int m_startRow, m_startCol;
 
 public:
-  NoteMoveTool(XsheetViewer *viewer) : DragTool(viewer) {}
+  NoteMoveTool(XsheetViewer* viewer) : DragTool(viewer) {}
 
   void onClick(const QMouseEvent *e) override {
     TXshNoteSet *notes = getViewer()->getXsheet()->getNotes();
@@ -1348,8 +1348,8 @@ public:
 }  // namespace
 //-----------------------------------------------------------------------------
 
-XsheetGUI::DragTool *XsheetGUI::DragTool::makeNoteMoveTool(
-    XsheetViewer *viewer) {
+XsheetGUI::DragTool* XsheetGUI::DragTool::makeNoteMoveTool(
+    XsheetViewer* viewer) {
   return new NoteMoveTool(viewer);
 }
 
@@ -1368,7 +1368,7 @@ class OnionSkinMaskModifierTool final : public XsheetGUI::DragTool {
   bool m_isFos;
 
 public:
-  OnionSkinMaskModifierTool(XsheetViewer *viewer, bool isFos)
+  OnionSkinMaskModifierTool(XsheetViewer* viewer, bool isFos)
       : DragTool(viewer)
       , m_modifier(TApp::instance()->getCurrentOnionSkin()->getOnionSkinMask(),
                    TApp::instance()->getCurrentFrame()->getFrame())
@@ -1408,8 +1408,8 @@ public:
 }  // namespace
 //-----------------------------------------------------------------------------
 
-XsheetGUI::DragTool *XsheetGUI::DragTool::makeKeyOnionSkinMaskModifierTool(
-    XsheetViewer *viewer, bool isFos) {
+XsheetGUI::DragTool* XsheetGUI::DragTool::makeKeyOnionSkinMaskModifierTool(
+    XsheetViewer* viewer, bool isFos) {
   return new OnionSkinMaskModifierTool(viewer, isFos);
 }
 
@@ -1425,7 +1425,7 @@ namespace {
 
 class CurrentFrameModifier final : public XsheetGUI::DragTool {
 public:
-  CurrentFrameModifier(XsheetViewer *viewer) : DragTool(viewer) {}
+  CurrentFrameModifier(XsheetViewer* viewer) : DragTool(viewer) {}
 
   void onClick(const CellPosition &pos) override {
     int row = pos.frame();
@@ -1458,8 +1458,8 @@ public:
 }  // namespace
 //-----------------------------------------------------------------------------
 
-XsheetGUI::DragTool *XsheetGUI::DragTool::makeCurrentFrameModifierTool(
-    XsheetViewer *viewer) {
+XsheetGUI::DragTool* XsheetGUI::DragTool::makeCurrentFrameModifierTool(
+    XsheetViewer* viewer) {
   return new CurrentFrameModifier(viewer);
 }
 
@@ -1478,7 +1478,7 @@ class PlayRangeModifier final : public XsheetGUI::DragTool {
   int m_oldR0, m_oldR1, m_oldStep;
 
 public:
-  PlayRangeModifier(XsheetViewer *viewer)
+  PlayRangeModifier(XsheetViewer* viewer)
       : DragTool(viewer), m_movingFirst(false) {}
 
   void onClick(const CellPosition &pos) override {
@@ -1537,8 +1537,8 @@ public:
 }  // namespace
 //-----------------------------------------------------------------------------
 
-XsheetGUI::DragTool *XsheetGUI::DragTool::makePlayRangeModifierTool(
-    XsheetViewer *viewer) {
+XsheetGUI::DragTool* XsheetGUI::DragTool::makePlayRangeModifierTool(
+    XsheetViewer* viewer) {
   return new PlayRangeModifier(viewer);
 }
 
@@ -1553,7 +1553,7 @@ class ColumnSelectionTool final : public XsheetGUI::DragTool {
   bool m_enabled;
 
 public:
-  ColumnSelectionTool(XsheetViewer *viewer)
+  ColumnSelectionTool(XsheetViewer* viewer)
       : DragTool(viewer), m_firstColumn(-1), m_enabled(false) {}
 
   void onClick(const QMouseEvent *event) override {
@@ -1611,8 +1611,8 @@ public:
 }  // namespace
 //-----------------------------------------------------------------------------
 
-XsheetGUI::DragTool *XsheetGUI::DragTool::makeColumnSelectionTool(
-    XsheetViewer *viewer) {
+XsheetGUI::DragTool* XsheetGUI::DragTool::makeColumnSelectionTool(
+    XsheetViewer* viewer) {
   return new ColumnSelectionTool(viewer);
 }
 
@@ -1690,7 +1690,7 @@ class ColumnMoveDragTool final : public XsheetGUI::DragTool {
   int m_offset, m_firstCol, m_lastCol, m_origOffset;
 
 public:
-  ColumnMoveDragTool(XsheetViewer *viewer)
+  ColumnMoveDragTool(XsheetViewer* viewer)
       : XsheetGUI::DragTool(viewer)
       , m_firstCol(-1)
       , m_lastCol(-1)
@@ -1755,11 +1755,8 @@ public:
     // ignore if the cursor moves in the drag-starting column
     if (dCol == 0) return;
 
-    if (dCol < 0 &&
-        !xsh->getColumnFan(getViewer()->orientation())->isActive(col)) {
-      while (
-          col != 0 &&
-          !xsh->getColumnFan(getViewer()->orientation())->isActive(col - 1)) {
+    if (dCol < 0 && !getViewer()->columnFan()->isActive(col)) {
+      while (col != 0 && !getViewer()->columnFan()->isActive(col - 1)) {
         col--;
         dCol--;
       }
@@ -1806,8 +1803,8 @@ public:
   }
 };
 
-XsheetGUI::DragTool *XsheetGUI::DragTool::makeColumnMoveTool(
-    XsheetViewer *viewer) {
+XsheetGUI::DragTool* XsheetGUI::DragTool::makeColumnMoveTool(
+    XsheetViewer* viewer) {
   return new ColumnMoveDragTool(viewer);
 }
 
@@ -1852,7 +1849,7 @@ class ChangePegbarParentDragTool final : public XsheetGUI::DragTool {
   int m_firstCol, m_lastCol;
 
 public:
-  ChangePegbarParentDragTool(XsheetViewer *viewer)
+  ChangePegbarParentDragTool(XsheetViewer* viewer)
       : XsheetGUI::DragTool(viewer), m_firstCol(-1), m_lastCol(-1) {}
 
   void onClick(const CellPosition &pos) override {
@@ -1898,8 +1895,8 @@ public:
 
 //-----------------------------------------------------------------------------
 
-XsheetGUI::DragTool *XsheetGUI::DragTool::makeColumnLinkTool(
-    XsheetViewer *viewer) {
+XsheetGUI::DragTool* XsheetGUI::DragTool::makeColumnLinkTool(
+    XsheetViewer* viewer) {
   return new ChangePegbarParentDragTool(viewer);
 }
 
@@ -1914,7 +1911,7 @@ class VolumeDragTool final : public XsheetGUI::DragTool {
   bool m_enabled;
 
 public:
-  VolumeDragTool(XsheetViewer *viewer)
+  VolumeDragTool(XsheetViewer* viewer)
       : DragTool(viewer)
       , m_index(TApp::instance()->getCurrentColumn()->getColumnIndex())
       , m_enabled(false) {
@@ -1966,8 +1963,8 @@ public:
 }  // namespace
 //-----------------------------------------------------------------------------
 
-XsheetGUI::DragTool *XsheetGUI::DragTool::makeVolumeDragTool(
-    XsheetViewer *viewer) {
+XsheetGUI::DragTool* XsheetGUI::DragTool::makeVolumeDragTool(
+    XsheetViewer* viewer) {
   return new VolumeDragTool(viewer);
 }
 
@@ -1985,7 +1982,7 @@ class SoundScrubTool final : public XsheetGUI::DragTool {
   int m_timerId;
 
 public:
-  SoundScrubTool(XsheetViewer *viewer, TXshSoundColumn *sc)
+  SoundScrubTool(XsheetViewer* viewer, TXshSoundColumn* sc)
       : DragTool(viewer)
       , m_soundColumn(sc)
       , m_startRow(-1)
@@ -2029,8 +2026,8 @@ public:
 }  // namespace
 //-----------------------------------------------------------------------------
 
-XsheetGUI::DragTool *XsheetGUI::DragTool::makeSoundScrubTool(
-    XsheetViewer *viewer, TXshSoundColumn *sc) {
+XsheetGUI::DragTool* XsheetGUI::DragTool::makeSoundScrubTool(
+    XsheetViewer* viewer, TXshSoundColumn* sc) {
   return new SoundScrubTool(viewer, sc);
 }
 
@@ -2106,7 +2103,7 @@ protected:
   }
 
 public:
-  DataDragTool(XsheetViewer *viewer)
+  DataDragTool(XsheetViewer* viewer)
       : DragTool(viewer)
       , m_data(new DragAndDropData())
       , m_valid(false)
@@ -2246,8 +2243,8 @@ public:
 }  // namespace
 //-----------------------------------------------------------------------------
 
-XsheetGUI::DragTool *XsheetGUI::DragTool::makeDragAndDropDataTool(
-    XsheetViewer *viewer) {
+XsheetGUI::DragTool* XsheetGUI::DragTool::makeDragAndDropDataTool(
+    XsheetViewer* viewer) {
   return new DataDragTool(viewer);
 }
 
@@ -2261,7 +2258,7 @@ class NavigationTagDragTool final : public XsheetGUI::DragTool {
   int m_taggedRow;
 
 public:
-  NavigationTagDragTool(XsheetViewer *viewer) : DragTool(viewer) {}
+  NavigationTagDragTool(XsheetViewer* viewer) : DragTool(viewer) {}
 
   void onClick(const CellPosition &pos) override {
     int row     = pos.frame();
@@ -2292,7 +2289,7 @@ public:
 }  // namespace
 //-----------------------------------------------------------------------------
 
-XsheetGUI::DragTool *XsheetGUI::DragTool::makeNavigationTagDragTool(
-    XsheetViewer *viewer) {
+XsheetGUI::DragTool* XsheetGUI::DragTool::makeNavigationTagDragTool(
+    XsheetViewer* viewer) {
   return new NavigationTagDragTool(viewer);
 }

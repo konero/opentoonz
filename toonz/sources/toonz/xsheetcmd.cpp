@@ -2215,7 +2215,7 @@ public:
                                        navTags->isTagged(frame));
     CommandManager::instance()->enable(MI_ClearTags, (navTags->getCount() > 0));
 
-    TApp::instance()->getCurrentXsheetViewer()->update();
+    TApp::instance()->getCurrentXsheet()->notifyNavigationTagsChanged();
   }
 } ToggleTaggedFrame;
 
@@ -2253,8 +2253,7 @@ public:
 
     NavigationTags *navTags = xsh->getNavigationTags();
     int nextFrame           = navTags->getNextTag(frame);
-    if (nextFrame != -1)
-      app->getCurrentXsheetViewer()->setCurrentRow(nextFrame);
+    if (nextFrame != -1) app->getCurrentFrame()->setFrame(nextFrame);
   }
 } NextTaggedFrame;
 
@@ -2271,8 +2270,7 @@ public:
 
     NavigationTags *navTags = xsh->getNavigationTags();
     int prevFrame           = navTags->getPrevTag(frame);
-    if (prevFrame != -1)
-      app->getCurrentXsheetViewer()->setCurrentRow(prevFrame);
+    if (prevFrame != -1) app->getCurrentFrame()->setFrame(prevFrame);
   }
 } PrevTaggedFrame;
 
@@ -2295,6 +2293,6 @@ public:
     CommandManager::instance()->enable(MI_EditTaggedFrame, false);
     CommandManager::instance()->enable(MI_ClearTags, false);
 
-    TApp::instance()->getCurrentXsheetViewer()->update();
+    TApp::instance()->getCurrentXsheet()->notifyNavigationTagsChanged();
   }
 } ClearTags;

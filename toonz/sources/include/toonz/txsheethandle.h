@@ -39,7 +39,10 @@ public:
   void notifyXsheetChanged() { emit xsheetChanged(); }
   void notifyXsheetSwitched() { emit xsheetSwitched(); }
   void notifyXsheetSoundChanged() { emit xsheetSoundChanged(); }
+  void notifyNavigationTagsChanged() { emit navigationTagsChanged(); }
   void changeXsheetCamera(int index) { emit xsheetCameraChange(index); }
+  // Vertical XSheet frame spacing, relative to the standard 20-pixel frame.
+  // Used by Function Editor's optional size sync; Timeline never publishes it.
   void notifyZoomScaleChanged(int factor) {
     m_zoomFactor = factor;
     emit zoomScaleChanged();
@@ -50,6 +53,7 @@ signals:
   void xsheetSwitched();
   void xsheetChanged();
   void xsheetSoundChanged();
+  void navigationTagsChanged();
   void xsheetCameraChange(int);
   void zoomScaleChanged();
 };

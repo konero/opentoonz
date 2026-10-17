@@ -36,7 +36,7 @@ namespace XsheetGUI {
 
 class NotePopup final : public DVGui::Dialog {
   Q_OBJECT
-  XsheetViewer *m_viewer;
+  XsheetViewer* m_viewer;
   int m_noteIndex;
   DVGui::DvTextEdit *m_textEditor;
   int m_currentColorIndex;
@@ -45,7 +45,7 @@ class NotePopup final : public DVGui::Dialog {
   bool m_isOneButtonPressed;
 
 public:
-  NotePopup(XsheetViewer *viewer, int noteIndex);
+  NotePopup(XsheetViewer* viewer, int noteIndex);
   ~NotePopup() {}
 
   void setCurrentNoteIndex(int index);
@@ -88,13 +88,13 @@ protected slots:
 
 class NoteWidget final : public QWidget {
   Q_OBJECT
-  XsheetViewer *m_viewer;
+  XsheetViewer* m_viewer;
   int m_noteIndex;
   std::unique_ptr<NotePopup> m_noteEditor;
   bool m_isHovered;
 
 public:
-  NoteWidget(XsheetViewer *parent = 0, int noteIndex = -1);
+  NoteWidget(XsheetViewer* parent = 0, int noteIndex = -1);
 
   int getNoteIndex() const { return m_noteIndex; }
   void setNoteIndex(int index) {
@@ -118,9 +118,7 @@ class NoteArea final : public QFrame {
   Q_OBJECT
 
   std::unique_ptr<NotePopup> m_newNotePopup;  // Popup used to create new note
-  XsheetViewer *m_viewer;
-
-  QPushButton *m_flipOrientationButton;
+  XsheetViewer* m_viewer;
 
   QToolButton *m_noteButton;
   QToolButton *m_nextNoteButton;
@@ -132,27 +130,27 @@ class NoteArea final : public QFrame {
 
   QPushButton *m_hamburgerButton;
   QWidget *m_popup;
-  QLayout *m_currentLayout;
 
 public:
-  NoteArea(XsheetViewer *parent = 0, Qt::WindowFlags flags = Qt::WindowFlags());
+  NoteArea(XsheetViewer* parent = 0, Qt::WindowFlags flags = Qt::WindowFlags());
 
-  void updatePopup() { m_newNotePopup->update(); }
+  void updatePopup() {
+    if (m_newNotePopup) m_newNotePopup->update();
+  }
   void updateButtons();
+  void resetInteraction();
+  void setFrameDisplayStyle(int style);
 
 protected slots:
-  void flipOrientation();
   void toggleNewNote();
   void nextNote();
   void precNote();
 
   void onFrameDisplayStyleChanged(int id);
-  void onXsheetOrientationChanged(const Orientation *orientation);
 
   void onClickHamburger();
 
 protected:
-  void removeLayout();
   void createLayout();
 };
 

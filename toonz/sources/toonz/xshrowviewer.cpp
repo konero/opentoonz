@@ -234,7 +234,7 @@ void OnionSkinOpacityPopup::onAutoClicked(bool checked) {
 // RowArea
 //-----------------------------------------------------------------------------
 
-RowArea::RowArea(XsheetViewer *parent, Qt::WindowFlags flags)
+RowArea::RowArea(XsheetViewer* parent, Qt::WindowFlags flags)
     : QWidget(parent, flags)
     , m_viewer(parent)
     , m_row(-1)
@@ -1159,7 +1159,7 @@ void RowArea::paintEvent(QPaintEvent *event) {
   r0 = cellRange.from().frame();
   r1 = cellRange.to().frame();
 
-  p.setClipRect(toBeUpdated);
+  p.setClipRegion(event->region());
 
   // fill background
   p.fillRect(toBeUpdated, m_viewer->getBGColor());
@@ -1209,9 +1209,9 @@ void RowArea::paintEvent(QPaintEvent *event) {
   p.setPen(m_viewer->getVerticalLineColor());
   p.setBrush(Qt::NoBrush);
   if (m_viewer->orientation()->isVerticalTimeline())
-    p.drawRect(toBeUpdated.adjusted(-1, -1, -1, 0));
+    p.drawRect(rect().adjusted(-1, -1, -1, 0));
   else
-    p.drawRect(toBeUpdated.adjusted(-1, -1, 0, -1));
+    p.drawRect(rect().adjusted(-1, -1, 0, -1));
 }
 
 //-----------------------------------------------------------------------------

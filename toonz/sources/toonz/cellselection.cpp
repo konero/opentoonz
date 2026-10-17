@@ -1845,7 +1845,7 @@ void TCellSelection::pasteCells() {
   QClipboard *clipboard     = QApplication::clipboard();
   const QMimeData *mimeData = clipboard->mimeData();
   TXsheet *xsh              = TApp::instance()->getCurrentXsheet()->getXsheet();
-  XsheetViewer *viewer      = TApp::instance()->getCurrentXsheetViewer();
+  XsheetViewer* viewer       = TApp::instance()->getCurrentSheetViewer();
   ToolHandle *toolHandle    = TApp::instance()->getCurrentTool();
 
   bool initUndo = false;
@@ -1863,8 +1863,8 @@ void TCellSelection::pasteCells() {
       return;
     }
 
-    if (viewer && !viewer->orientation()->isVerticalTimeline()) {
-      int cAdj = cellData->getColCount() - 1;
+    if (viewer) {
+      int cAdj = c0 - viewer->pasteColumnStart(c0, cellData->getColCount());
       c0 -= cAdj;
       c1 -= cAdj;
     }
@@ -1969,8 +1969,9 @@ void TCellSelection::pasteCells() {
       // (r0,c0)
       std::set<TKeyframeSelection::Position> positions;
       int newC0 = c0;
-      if (viewer && !viewer->orientation()->isVerticalTimeline() && !cellData)
-        newC0 = c0 - keyframeData->getColumnSpanCount() + 1;
+      if (viewer && !cellData)
+        newC0 =
+            viewer->pasteColumnStart(c0, keyframeData->getColumnSpanCount());
       TKeyframeSelection::Position offset(keyframeData->getKeyframesOffset());
       positions.insert(TKeyframeSelection::Position(r0 + offset.first,
                                                     newC0 + offset.second));
@@ -2237,7 +2238,7 @@ void TCellSelection::pasteDuplicateCells() {
   const QMimeData *mimeData = clipboard->mimeData();
 
   TXsheet *xsh         = TApp::instance()->getCurrentXsheet()->getXsheet();
-  XsheetViewer *viewer = TApp::instance()->getCurrentXsheetViewer();
+  XsheetViewer* viewer  = TApp::instance()->getCurrentSheetViewer();
 
   bool initUndo = false;
   const TCellKeyframeData *cellKeyframeData =
@@ -2263,8 +2264,8 @@ void TCellSelection::pasteDuplicateCells() {
     // To paste in the frames the user would expect, we need to adjust the
     // "column" placement if using the timeline.
 
-    if (viewer && !viewer->orientation()->isVerticalTimeline()) {
-      int cAdj = cellData->getColCount() - 1;
+    if (viewer) {
+      int cAdj = c0 - viewer->pasteColumnStart(c0, cellData->getColCount());
       c0 -= cAdj;
       c1 -= cAdj;
     }
@@ -2523,8 +2524,9 @@ void TCellSelection::pasteDuplicateCells() {
       // by (r0,c0)
       std::set<TKeyframeSelection::Position> positions;
       int newC0 = c0;
-      if (viewer && !viewer->orientation()->isVerticalTimeline() && !cellData)
-        newC0 = c0 - keyframeData->getColumnSpanCount() + 1;
+      if (viewer && !cellData)
+        newC0 =
+            viewer->pasteColumnStart(c0, keyframeData->getColumnSpanCount());
       TKeyframeSelection::Position offset(keyframeData->getKeyframesOffset());
       positions.insert(TKeyframeSelection::Position(r0 + offset.first,
                                                     newC0 + offset.second));
@@ -2730,11 +2732,12 @@ void TCellSelection::pasteKeyframesInto() {
     } else {
       // Retrieves all keyframe positions from mime data and translates them
       // by (r0,c0)
-      XsheetViewer *viewer = TApp::instance()->getCurrentXsheetViewer();
+      XsheetViewer* viewer = TApp::instance()->getCurrentSheetViewer();
       std::set<TKeyframeSelection::Position> positions;
       int newC0 = c0;
-      if (viewer && !viewer->orientation()->isVerticalTimeline())
-        newC0 = c0 - keyframeData->getColumnSpanCount() + 1;
+      if (viewer)
+        newC0 =
+            viewer->pasteColumnStart(c0, keyframeData->getColumnSpanCount());
       positions.insert(TKeyframeSelection::Position(r0, newC0));
       keyframeData->getKeyframes(positions);
       selection.select(positions);
@@ -3372,9 +3375,9 @@ void TCellSelection::overWritePasteCells() {
       return;
     }
 
-    XsheetViewer *viewer = TApp::instance()->getCurrentXsheetViewer();
-    if (viewer && !viewer->orientation()->isVerticalTimeline()) {
-      int cAdj = cellData->getColCount() - 1;
+    XsheetViewer* viewer = TApp::instance()->getCurrentSheetViewer();
+    if (viewer) {
+      int cAdj = c0 - viewer->pasteColumnStart(c0, cellData->getColCount());
       c0 -= cAdj;
       c1 -= cAdj;
     }
@@ -3478,9 +3481,9 @@ void TCellSelection::overwritePasteNumbers() {
       return;
     }
 
-    XsheetViewer *viewer = TApp::instance()->getCurrentXsheetViewer();
-    if (viewer && !viewer->orientation()->isVerticalTimeline()) {
-      int cAdj = cellData->getColCount() - 1;
+    XsheetViewer* viewer = TApp::instance()->getCurrentSheetViewer();
+    if (viewer) {
+      int cAdj = c0 - viewer->pasteColumnStart(c0, cellData->getColCount());
       c0 -= cAdj;
       c1 -= cAdj;
     }

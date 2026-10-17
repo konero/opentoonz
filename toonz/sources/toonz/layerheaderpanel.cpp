@@ -17,7 +17,7 @@
 
 using XsheetGUI::ColumnArea;
 
-LayerHeaderPanel::LayerHeaderPanel(XsheetViewer *viewer, QWidget *parent,
+LayerHeaderPanel::LayerHeaderPanel(XsheetViewer* viewer, QWidget* parent,
                                    Qt::WindowFlags flags)
     : QWidget(parent, flags), m_viewer(viewer) {
   QHBoxLayout *layout = new QHBoxLayout(this);
@@ -69,33 +69,19 @@ LayerHeaderPanel::~LayerHeaderPanel() {}
 //-----------------------------------------------------------------------------
 
 void LayerHeaderPanel::toggleColumnVisibility(int visibilityFlag) {
-  TApp *app    = TApp::instance();
-  TXsheet *xsh = m_viewer->getXsheet();
-  int col, totcols = xsh->getColumnCount();
-  bool sound_changed = false;
-
-  if (totcols > 0) {
-    int startCol =
-        Preferences::instance()->isXsheetCameraColumnVisible() ? -1 : 0;
-    for (col = startCol; col < totcols; col++) {
-      if (startCol < 0 || !xsh->isColumnEmpty(col)) {
-        TXshColumn *column = xsh->getColumn(col);
-
-        if (visibilityFlag == ToggleAllPreviewVisible) {
-          column->setPreviewVisible(!column->isPreviewVisible());
-        } else if (visibilityFlag == ToggleAllTransparency) {
-          column->setCamstandVisible(!column->isCamstandVisible());
-          if (column->getSoundColumn()) sound_changed = true;
-        } else if (visibilityFlag == ToggleAllLock) {
-          column->lock(!column->isLocked());
-        }
-      }
-    }
-
-    if (sound_changed) {
-      app->getCurrentXsheet()->notifyXsheetSoundChanged();
-    }
-
+  TApp* app         = TApp::instance();
+  const auto toggle = visibilityFlag == ToggleAllLock
+                          ? XsheetEngine::ColumnToggle::Lock
+                      : visibilityFlag == ToggleAllTransparency
+                          ? XsheetEngine::ColumnToggle::Camstand
+                          : XsheetEngine::ColumnToggle::Preview;
+  const bool camera = Preferences::instance()->isXsheetCameraColumnVisible();
+  const auto result = XsheetEngine::toggleColumns(
+      m_viewer->getXsheet(), toggle, camera, false, false,
+      camera ? XsheetEngine::ColumnTargets::Existing
+             : XsheetEngine::ColumnTargets::NonEmpty);
+  if (result.soundChanged) app->getCurrentXsheet()->notifyXsheetSoundChanged();
+  if (result.changed) {
     app->getCurrentScene()->notifySceneChanged();
     app->getCurrentXsheet()->notifyXsheetChanged();
   }

@@ -73,13 +73,13 @@ public slots:
 class BreadcrumbArea final : public QFrame {
   Q_OBJECT
 
-  XsheetViewer *m_viewer;
+  XsheetViewer* m_viewer;
   std::vector<Breadcrumb *> m_breadcrumbWidgets;
 
   QHBoxLayout *m_breadcrumbLayout;
 
 public:
-  BreadcrumbArea(XsheetViewer *parent  = 0,
+  BreadcrumbArea(XsheetViewer* parent   = 0,
                  Qt::WindowFlags flags = Qt::WindowFlags());
   static void toggleBreadcrumbArea();
   void showBreadcrumbs(bool show);

@@ -4,7 +4,6 @@
 #include "tapp.h"
 #include "toonzqt/tselectionhandle.h"
 #include "keyframeselection.h"
-#include "xsheetviewer.h"
 
 #include "toonz/txsheet.h"
 #include "toonz/tstageobjecttree.h"
@@ -102,7 +101,6 @@ bool TKeyframeData::getKeyframes(std::set<Position> &positions,
       itL->second = c0;
   }
 
-  XsheetViewer *viewer = TApp::instance()->getCurrentXsheetViewer();
 
   positions.clear();
   TStageObjectId cameraId =

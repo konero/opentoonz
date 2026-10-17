@@ -75,29 +75,6 @@
 
 namespace {
 
-const bool checkContainsSingleLevel(TXshColumn *column,
-                                    const std::string &columnName) {
-  TXshLevel *level           = nullptr;
-  TXshCellColumn *cellColumn = column->getCellColumn();
-  if (cellColumn) {
-    int i, r0, r1;
-    cellColumn->getRange(r0, r1);
-    for (i = r0; i <= r1; i++) {
-      TXshCell cell = cellColumn->getCell(i);
-      if (cell.isEmpty()) continue;
-      TXshLevel *lvl = cell.m_level.getPointer();
-      if (!level)
-        level = lvl;
-      else if (lvl != level)
-        return false;
-    }
-    // column name should be unspecified or same as the content level
-    return level != nullptr &&
-           (columnName.empty() || level->getName() == to_wstring(columnName));
-  }
-  return false;
-}
-
 bool selectionContainTlvImage(TCellSelection *selection, TXsheet *xsheet,
                               bool onlyTlv = false) {
   int r0, r1, c0, c1;
@@ -556,7 +533,6 @@ public:
 };
 
 // display upper-directional smart tab only when pressing ctrl key
-bool isCtrlPressed = false;
 
 //-----------------------------------------------------------------------------
 }  // namespace
@@ -619,7 +595,7 @@ int SetCellMarkUndo::getHistoryType() { return HistoryType::Xsheet; }
 // RenameCellField
 //-----------------------------------------------------------------------------
 
-RenameCellField::RenameCellField(QWidget *parent, XsheetViewer *viewer)
+RenameCellField::RenameCellField(QWidget* parent, XsheetViewer* viewer)
     : QLineEdit(parent), m_viewer(viewer), m_row(-1), m_col(-1) {
   // Modern Qt5 signal-slot syntax
   connect(this, &QLineEdit::returnPressed, this,
@@ -631,6 +607,12 @@ RenameCellField::RenameCellField(QWidget *parent, XsheetViewer *viewer)
 }
 
 //-----------------------------------------------------------------------------
+
+void RenameCellField::cancel() {
+  m_initialText = text();
+  hide();
+  m_row = m_col = -1;
+}
 
 void RenameCellField::showInRowCol(int row, int col, bool multiColumnSelected) {
   // keep the initial text when showing the field
@@ -1094,7 +1076,7 @@ void RenameCellField::keyPressEvent(QKeyEvent *event) {
   case Qt::Key_Left:
   case Qt::Key_Right:
     // ctrl+left/right arrow for moving cursor to the end in the field
-    if (isCtrlPressed &&
+    if (m_viewer->isControlPressed() &&
         !Preferences::instance()->isUseArrowKeyToShiftCellSelectionEnabled()) {
       QLineEdit::keyPressEvent(event);
       return;
@@ -1112,7 +1094,7 @@ void RenameCellField::keyPressEvent(QKeyEvent *event) {
     break;
   }
 
-  if (isCtrlPressed &&
+  if (m_viewer->isControlPressed() &&
       Preferences::instance()->isUseArrowKeyToShiftCellSelectionEnabled()) {
     if (r0 == r1 && offset.frame() == -1) return;
     if (c0 == c1 && offset.layer() == -1) return;
@@ -1173,7 +1155,7 @@ void RenameCellField::onXsheetChanged() {
 // CellArea
 //-----------------------------------------------------------------------------
 
-CellArea::CellArea(XsheetViewer *parent, Qt::WindowFlags flags)
+CellArea::CellArea(XsheetViewer* parent, Qt::WindowFlags flags)
     : QWidget(parent, flags)
     , m_viewer(parent)
     , m_levelExtenderRect()
@@ -1193,6 +1175,16 @@ CellArea::CellArea(XsheetViewer *parent, Qt::WindowFlags flags)
 //-----------------------------------------------------------------------------
 
 CellArea::~CellArea() {}
+
+void CellArea::resetInteraction() {
+  m_renameCell->cancel();
+  m_soundLevelModifyRects.clear();
+  m_levelExtenderRect      = QRect();
+  m_upperLevelExtenderRect = QRect();
+  m_isPanning = m_isMousePressed = m_isControlPressed = false;
+  m_pos                                               = QPoint(-1, -1);
+  m_tooltip.clear();
+}
 
 //-----------------------------------------------------------------------------
 
@@ -1265,7 +1257,7 @@ void CellArea::drawFrameSeparator(QPainter &p, int row, int col,
 void CellArea::drawCells(QPainter &p, const QRect toBeUpdated) {
   TXsheet *xsh         = m_viewer->getXsheet();
   const Orientation *o = m_viewer->orientation();
-  ColumnFan *columnFan = xsh->getColumnFan(o);
+  ColumnFan* columnFan = m_viewer->columnFan();
 
   // selected cells range
   TCellSelection *cellSelection = m_viewer->getCellSelection();
@@ -1300,7 +1292,11 @@ void CellArea::drawCells(QPainter &p, const QRect toBeUpdated) {
   NumberRange frameSide = m_viewer->orientation()->frameSide(drawingArea);
 
   // for each layer
-  m_soundLevelModifyRects.clear();
+  const QRegion visibleRegionNow = visibleRegion();
+  for (int i = m_soundLevelModifyRects.size() - 1; i >= 0; --i)
+    if (toBeUpdated.intersects(m_soundLevelModifyRects[i]) ||
+        !visibleRegionNow.intersects(m_soundLevelModifyRects[i]))
+      m_soundLevelModifyRects.removeAt(i);
   for (col = c0; col <= c1; col++) {
     // x in vertical timeline / y in horizontal
     int layerAxis = m_viewer->columnToLayerAxis(col);
@@ -1344,7 +1340,10 @@ void CellArea::drawCells(QPainter &p, const QRect toBeUpdated) {
               xsh->getStageObject(TStageObjectId::ColumnId(col))->getName();
         showLevelName =
             (isSoundColumn || isPaletteColumn || isSoundTextColumn ||
-             !checkContainsSingleLevel(column, columnName));
+             !(m_viewer->engine().singleLevel(xsh, col) &&
+               (columnName.empty() ||
+                m_viewer->engine().singleLevel(xsh, col)->getName() ==
+                    to_wstring(columnName))));
       }
     }
     // check if the column is reference
@@ -1383,8 +1382,6 @@ void CellArea::drawCells(QPainter &p, const QRect toBeUpdated) {
           drawSoundCell(p, row, col, isReference);
         else if (isPaletteColumn)
           drawPaletteCell(p, row, col, isReference);
-        // else if (isSoundTextColumn) // I left these lines just in case
-        //  drawSoundTextCell(p, row, col);
         else
           drawLevelCell(p, row, col, isReference, showLevelName);
       }
@@ -1425,7 +1422,7 @@ void CellArea::drawNonEmptyBackground(QPainter &p) const {
   } else {
     xyTop          = m_viewer->positionToXY(CellPosition(0, lastNonEmptyCol));
     xyBottom       = m_viewer->positionToXY(CellPosition(totalFrames, -1));
-    ColumnFan *fan = xsh->getColumnFan(o);
+    ColumnFan* fan = m_viewer->columnFan();
     xyBottom.setY(xyBottom.y() +
                   ((fan ? fan->isActive(0) : true) ? o->cellHeight() : 9));
   }
@@ -1499,7 +1496,7 @@ void CellArea::drawExtenderHandles(QPainter &p) {
       CellPosition(selRow0, selCol0), CellPosition(selRow1 + 1, selCol1 + 1)));
   if (!o->isVerticalTimeline()) {
     TXsheet *xsh         = m_viewer->getXsheet();
-    ColumnFan *columnFan = xsh->getColumnFan(o);
+    ColumnFan* columnFan = m_viewer->columnFan();
     int topAdj           = columnFan->isActive(selCol0) ? o->cellHeight() : 9;
     int bottomAdj        = columnFan->isActive(selCol1) ? o->cellHeight() : 9;
     selected.adjust(0, topAdj, 0, bottomAdj);
@@ -1539,7 +1536,8 @@ void CellArea::drawExtenderHandles(QPainter &p) {
   p.drawLine(extenderLine.translated(selected.bottomRight()));
 
   // up / left extender handle
-  if (isCtrlPressed && selRow0 > 0 && !m_viewer->areCellsSelectedEmpty()) {
+  if (m_viewer->isControlPressed() && selRow0 > 0 &&
+      !m_viewer->areCellsSelectedEmpty()) {
     QPoint properPoint       = o->topRightCorner(selected);
     m_upperLevelExtenderRect = o->rect(PredefinedRect::BEGIN_EXTENDER)
                                    .translated(properPoint + smartTabPosOffset);
@@ -1688,10 +1686,12 @@ void CellArea::drawSoundCell(QPainter &p, int row, int col, bool isReference) {
 
   int trackWidth = trackBounds.length();
   DoublePair minmax;
-  soundLevel->getValueAtPixel(o, soundPixel, minmax);
+  soundLevel->getValueAtPixel(o->dimension(PredefinedDimension::FRAME),
+                              soundPixel, minmax);
 
-  double pmin = minmax.first;
-  double pmax = minmax.second;
+  const int amplitude = o->dimension(PredefinedDimension::SOUND_AMPLITUDE);
+  double pmin         = minmax.first * amplitude;
+  double pmax         = minmax.second * amplitude;
 
   int center = trackBounds.middle();
 
@@ -1700,11 +1700,12 @@ void CellArea::drawSoundCell(QPainter &p, int row, int col, bool isReference) {
   int i;
   int z = 100 / frameZoomF;
   for (i = begin; i <= end; i++) {
-    soundLevel->getValueAtPixel(o, soundPixel, minmax);
+    soundLevel->getValueAtPixel(o->dimension(PredefinedDimension::FRAME),
+                                soundPixel, minmax);
     soundPixel += z;  // ++;
     int min, max;
-    pmin = minmax.first;
-    pmax = minmax.second;
+    pmin = minmax.first * amplitude;
+    pmax = minmax.second * amplitude;
 
     min = tcrop((int)pmin, -trackWidth / 2, 0) + center;
     max = tcrop((int)pmax, 0, trackWidth / 2 - 1) + center;
@@ -1742,7 +1743,8 @@ void CellArea::drawSoundCell(QPainter &p, int row, int col, bool isReference) {
                              ->rect(PredefinedRect::BEGIN_SOUND_EDIT)
                              .translated(xy);
     if (r0 != r0WithoutOff) p.fillRect(modifierRect, SoundColumnExtenderColor);
-    m_soundLevelModifyRects.append(modifierRect);  // list of clipping rects
+    if (!m_soundLevelModifyRects.contains(modifierRect))
+      m_soundLevelModifyRects.append(modifierRect);  // list of clipping rects
   }
   if (isLastRow) {
     QRect modifierRect = m_viewer->orientation()
@@ -1750,7 +1752,8 @@ void CellArea::drawSoundCell(QPainter &p, int row, int col, bool isReference) {
                              .translated(-frameAdj)
                              .translated(xy);
     if (r1 != r1WithoutOff) p.fillRect(modifierRect, SoundColumnExtenderColor);
-    m_soundLevelModifyRects.append(modifierRect);
+    if (!m_soundLevelModifyRects.contains(modifierRect))
+      m_soundLevelModifyRects.append(modifierRect);
   }
 
   // cell mark
@@ -2204,188 +2207,7 @@ void CellArea::drawLevelCell(QPainter &p, int row, int col, bool isReference,
 
 //-----------------------------------------------------------------------------
 
-void CellArea::drawSoundTextCell(QPainter &p, int row, int col) {
-  const Orientation *o = m_viewer->orientation();
-  TXsheet *xsh         = m_viewer->getXsheet();
-  TXshCell cell        = xsh->getCell(row, col);
-  TXshCell prevCell;
 
-  TCellSelection *cellSelection     = m_viewer->getCellSelection();
-  TColumnSelection *columnSelection = m_viewer->getColumnSelection();
-  bool isSelected                   = cellSelection->isCellSelected(row, col) ||
-                    columnSelection->isColumnSelected(col);
-
-  if (row > 0)
-    prevCell = xsh->getCell(row - 1, col);  // cell in previous frame
-                                            // nothing to draw
-
-  bool sameLevel = prevCell.m_level.getPointer() == cell.m_level.getPointer();
-
-  QPoint xy = m_viewer->positionToXY(CellPosition(row, col));
-  int x     = xy.x();
-  int y     = xy.y();
-  if (row == 0) {
-    if (o->isVerticalTimeline())
-      xy.setY(xy.y() + 1);
-    else
-      xy.setX(xy.x() + 1);
-  }
-
-  TXshCell nextCell = xsh->getCell(row + 1, col);
-  QPoint frameAdj   = m_viewer->getFrameZoomAdjustment();
-  QRect cellRect    = o->rect(PredefinedRect::CELL).translated(QPoint(x, y));
-  cellRect.adjust(0, 0, -frameAdj.x(), -frameAdj.y());
-  QRect rect = cellRect.adjusted(
-      1, 1,
-      (!m_viewer->orientation()->isVerticalTimeline() && !nextCell.isEmpty()
-           ? 2
-           : 0),
-      0);
-  int markId = xsh->getColumn(col)->getCellColumn()->getCellMark(row);
-  QColor markColor;
-  if (markId >= 0) {
-    TPixel32 col = TApp::instance()
-                       ->getCurrentScene()
-                       ->getScene()
-                       ->getProperties()
-                       ->getCellMark(markId)
-                       .color;
-    markColor = QColor(col.r, col.g, col.b, 196);  // semi transparent
-  }
-  QRect markRect =
-      o->rect(PredefinedRect::CELL_MARK_AREA)
-          .adjusted(0, -std::round(double(frameAdj.y()) * 0.1), -frameAdj.y(),
-                    -std::round(double(frameAdj.y()) * 0.9))
-          .translated(xy);
-  if (markRect.right() > rect.right()) markRect.setRight(rect.right());
-
-  if (cell.isEmpty() && prevCell.isEmpty()) {
-    drawFrameSeparator(p, row, col, true);
-    if (TApp::instance()->getCurrentFrame()->isEditingScene() &&
-        row == m_viewer->getCurrentRow() &&
-        Preferences::instance()->isCurrentTimelineIndicatorEnabled())
-      drawCurrentTimeIndicator(p, xy, col);
-
-    // only draw mark
-    if (markId >= 0) {
-      p.setBrush(markColor);
-      p.setPen(Qt::NoPen);
-      p.drawEllipse(markRect);
-    }
-    return;
-  }
-
-  bool heldFrame = (!o->isVerticalTimeline() && sameLevel &&
-                    prevCell.m_frameId == cell.m_frameId);
-
-  if (cell.isEmpty()) {  // diagonal cross meaning end of level
-
-    drawFrameSeparator(p, row, col, false, heldFrame);
-
-    QColor levelEndColor = m_viewer->getLevelEndColor();
-    levelEndColor.setAlphaF(0.3);
-    p.setPen(levelEndColor);
-    p.drawLine(rect.topLeft(), rect.bottomRight());
-    p.drawLine(rect.topRight(), rect.bottomLeft());
-
-    // only draw mark
-    if (markId >= 0) {
-      p.setBrush(markColor);
-      p.setPen(Qt::NoPen);
-      p.drawEllipse(markRect);
-    }
-    if (TApp::instance()->getCurrentFrame()->isEditingScene() &&
-        row == m_viewer->getCurrentRow() &&
-        Preferences::instance()->isCurrentTimelineIndicatorEnabled())
-      drawCurrentTimeIndicator(p, xy, col);
-
-    return;
-  }
-
-  int levelType;
-  QColor cellColor, sideColor;
-  m_viewer->getCellTypeAndColors(levelType, cellColor, sideColor, cell,
-                                 isSelected);
-
-  // paint cell
-  if (o->isVerticalTimeline())
-    // Paint the cell edge-to-edge, we use LightLineColor with low opacity to
-    // pick up the hue of the cell color to make the separator line more
-    // pleasing to the eye.
-    p.fillRect(rect.adjusted(0, 0, 0, 1), QBrush(cellColor));
-  else
-    p.fillRect(rect, QBrush(cellColor));
-
-  if (TApp::instance()->getCurrentFrame()->isEditingScene() &&
-      row == m_viewer->getCurrentRow() &&
-      Preferences::instance()->isCurrentTimelineIndicatorEnabled())
-    drawCurrentTimeIndicator(p, xy, col);
-
-  drawDragHandle(p, xy, sideColor);
-
-  bool isLastRow = nextCell.isEmpty() ||
-                   cell.m_level.getPointer() != nextCell.m_level.getPointer();
-  drawEndOfDragHandle(p, isLastRow, xy, cellColor);
-
-  drawLockedDottedLine(p, xsh->getColumn(col)->isLocked(), xy, cellColor);
-
-  drawFrameSeparator(p, row, col, false, heldFrame);
-
-  // cell mark
-  if (markId >= 0) {
-    p.setBrush(markColor);
-    p.setPen(Qt::NoPen);
-    p.drawEllipse(markRect);
-  }
-
-  TFrameId fid = cell.m_frameId;
-  if (fid.getNumber() - 1 < 0) return;
-
-  p.setPen(Qt::black);
-  QRect nameRect = o->rect(PredefinedRect::CELL_NAME).translated(QPoint(x, y));
-  nameRect.adjust(0, 0, -frameAdj.x(), -frameAdj.y());
-
-  // il nome va scritto se e' diverso dalla cella precedente oppure se
-  // siamo su una marker line
-  QString fontName = Preferences::instance()->getInterfaceFont();
-  if (fontName == "") {
-#ifdef _WIN32
-    fontName = "Arial";
-#else
-    fontName = "Helvetica";
-#endif
-  }
-  static QFont font(fontName, -1, QFont::Normal);
-  font.setPixelSize(XSHEET_FONT_PX_SIZE);
-  p.setFont(font);
-
-  // if the same level & same fId with the previous cell,
-  // draw continue line
-  if (sameLevel && prevCell.m_frameId == cell.m_frameId) {
-    if (!o->isVerticalTimeline()) return;
-    // not on line marker
-    PredefinedLine which =
-        Preferences::instance()->isLevelNameOnEachMarkerEnabled()
-            ? PredefinedLine::CONTINUE_LEVEL_WITH_NAME
-            : PredefinedLine::CONTINUE_LEVEL;
-    QLine continueLine = o->line(which).translated(xy);
-    continueLine.setP2(QPoint(continueLine.x2(), continueLine.y2()) - frameAdj);
-    p.drawLine(continueLine);
-  }
-
-  QString text =
-      cell.getSoundTextLevel()->getFrameText(cell.m_frameId.getNumber() - 1);
-
-  QFontMetrics metric(font);
-
-  int charWidth = metric.horizontalAdvance(text, 1);
-  if ((charWidth * 2) > nameRect.width()) nameRect.adjust(-2, 0, 4, 0);
-
-  QString elidaName = elideText(text, metric, nameRect.width(), "~");
-
-  if (!sameLevel || prevCell.m_frameId != cell.m_frameId)
-    p.drawText(nameRect, Qt::AlignLeft | Qt::AlignBottom, elidaName);
-}
 
 //-----------------------------------------------------------------------------
 
@@ -2917,7 +2739,7 @@ void CellArea::drawKeyframe(QPainter &p, const QRect toBeUpdated) {
       o->rect(PredefinedRect::KEY_ICON).translated(-frameAdj / 2);
 
   TXsheet *xsh         = m_viewer->getXsheet();
-  ColumnFan *columnFan = xsh->getColumnFan(o);
+  ColumnFan* columnFan = m_viewer->columnFan();
   int col;
   for (col = c0; col <= c1; col++) {
     if (!columnFan->isActive(col)) continue;
@@ -3154,7 +2976,7 @@ void CellArea::paintEvent(QPaintEvent *event) {
   QRect toBeUpdated = event->rect();
 
   QPainter p(this);
-  p.setClipRect(toBeUpdated);
+  p.setClipRegion(event->region());
 
   p.fillRect(toBeUpdated, QBrush(m_viewer->getEmptyCellColor()));
 
@@ -3807,13 +3629,14 @@ bool CellArea::event(QEvent *event) {
 //-----------------------------------------------------------------------------
 
 void CellArea::onControlPressed(bool pressed) {
-  isCtrlPressed = pressed;
+  if (m_isControlPressed == pressed) return;
+  m_isControlPressed = pressed;
   update();
 }
 
 //-----------------------------------------------------------------------------
 
-const bool CellArea::isControlPressed() { return isCtrlPressed; }
+bool CellArea::isControlPressed() const { return m_isControlPressed; }
 
 //-----------------------------------------------------------------------------
 

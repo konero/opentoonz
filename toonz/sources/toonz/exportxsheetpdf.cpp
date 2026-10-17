@@ -1115,7 +1115,7 @@ void XSheetPDFTemplate::drawSound(QPainter& painter, int framePage) {
   // return if the current page is out of range
   if (r1 < printFrameR0 || printFrameR1 < r0) return;
 
-  const Orientation* o = Orientations::instance().topToBottom();
+  const Orientation* o = Orientations::topToBottom();
   int oneFrameHeight   = o->dimension(PredefinedDimension::FRAME);
   int trackWidth = o->layerSide(o->rect(PredefinedRect::SOUND_TRACK)).length();
 
@@ -1145,8 +1145,11 @@ void XSheetPDFTemplate::drawSound(QPainter& painter, int framePage) {
 
       for (int i = 0; i < oneFrameHeight; i++) {
         DoublePair minmax;
-        soundLevel->getValueAtPixel(o, soundPixel, minmax);
-        p.drawLine(minmax.first, i, minmax.second, i);
+        soundLevel->getValueAtPixel(o->dimension(PredefinedDimension::FRAME),
+                                    soundPixel, minmax);
+        const int amplitude =
+            o->dimension(PredefinedDimension::SOUND_AMPLITUDE);
+        p.drawLine(minmax.first * amplitude, i, minmax.second * amplitude, i);
         soundPixel++;
       }
     }

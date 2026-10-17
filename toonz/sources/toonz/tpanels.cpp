@@ -13,7 +13,8 @@
 #include "floatingpanelcommand.h"
 #include "subscenecommand.h"
 
-#include "xsheetviewer.h"
+#include "xsheetview.h"
+#include "timelineview.h"
 #include "sceneviewer.h"
 #include "toolbar.h"
 #include "commandbar.h"
@@ -112,7 +113,7 @@ class XsheetViewerFactory final : public TPanelFactory {
 public:
   XsheetViewerFactory() : TPanelFactory("Xsheet") {}
   void initialize(TPanel *panel) override {
-    panel->setWidget(new XsheetViewer(panel));
+    panel->setWidget(new XsheetView(panel));
     panel->resize(500, 300);
   }
 } xsheetViewerFactory;
@@ -125,9 +126,7 @@ class TimelineViewerFactory final : public TPanelFactory {
 public:
   TimelineViewerFactory() : TPanelFactory("Timeline") {}
   void initialize(TPanel *panel) override {
-    panel->setWidget(new XsheetViewer(panel));
-    XsheetViewer *xsh = (XsheetViewer *)panel->widget();
-    xsh->flipOrientation();
+    panel->setWidget(new TimelineView(panel));
     panel->resize(500, 300);
   }
 } timelineViewerFactory;

@@ -28,13 +28,21 @@ class TDoubleParam;
 
 class DVAPI TXsheetColumnChange {
 public:
-  enum OperationType { Insert, Remove, Move } m_type;
+  enum OperationType { Insert, Remove, Move, Fold } m_type;
 
   int m_index1, m_index2;
 
 public:
   TXsheetColumnChange(OperationType type, int index1, int index2 = -1)
       : m_type(type), m_index1(index1), m_index2(index2) {}
+};
+
+// Non-owning listeners for presentation projections and other independent
+// consumers. These do not replace the expression-management observer.
+class DVAPI TXsheetColumnChangeListener {
+public:
+  virtual ~TXsheetColumnChangeListener()                         = default;
+  virtual void onColumnChange(const TXsheetColumnChange& change) = 0;
 };
 
 //*****************************************************************************************

@@ -9,7 +9,9 @@
 #include <QList>
 
 #include "tpersist.h"
-#include "orientation.h"
+#include <map>
+#include <vector>
+#include <mutex>
 
 #undef DVAPI
 #undef DVVAR
@@ -30,12 +32,11 @@ class DVAPI TXshSoundLevel final : public TXshLevel {
   double m_samplePerFrame;
   int m_frameSoundCount;
   double m_fps;
-  //! Values is a map of \b Integer and \b DoublePair.
-  /*! Two maps, one for vertical layout and one for horizontal.
-Integer is pixel number since start of sound.
-DoublePair is computed according to frameRate, frameCount
-and soundtrack pressure. Means sound min and max.*/
-  std::map<int, DoublePair> m_values[Orientations::COUNT];
+  // Normalized min/max time blocks keyed by sampling resolution and block,
+  // never panel ID. Only visible/requested portions of a clip are computed.
+  mutable std::map<std::pair<int, int>, std::vector<DoublePair>> m_values;
+  mutable std::mutex m_valuesMutex;
+  double m_pressureScale = 0;
 
   TFilePath m_path;
 
@@ -62,11 +63,10 @@ public:
   void save() override;
   void save(const TFilePath &path);
 
-  void computeValuesFor(const Orientation *o);
   void computeValues();
 
-  void getValueAtPixel(const Orientation *o, int pixel,
-                       DoublePair &values) const;
+  // Normalized pressure envelope; display amplitude is applied by the caller.
+  void getValueAtPixel(int pixelsPerFrame, int pixel, DoublePair& values) const;
 
   /*! Set frame rate to \b fps. \sa getSamplePerFrame() */
   void setFrameRate(double fps);
@@ -75,10 +75,7 @@ public:
   void setPath(const TFilePath &path) { m_path = path; }
   TFilePath getPath() const override { return m_path; }
 
-  void setSoundTrack(TSoundTrackP st) {
-    m_soundTrack = st;
-    computeValues();
-  }
+  void setSoundTrack(TSoundTrackP st);
   TSoundTrackP getSoundTrack() { return m_soundTrack; }
 
   //! Pay Attention this is the sound frame !!
@@ -91,6 +88,10 @@ public:
   void getFids(std::vector<TFrameId> &fids) const override;
 
 private:
+  const std::vector<DoublePair>& valuesFor(
+      int pixelsPerFrame, int block) const;  // m_valuesMutex held
+  void resetValues();                        // m_valuesMutex held
+
   // not implemented
   TXshSoundLevel(const TXshSoundLevel &);
   TXshSoundLevel &operator=(const TXshSoundLevel &);

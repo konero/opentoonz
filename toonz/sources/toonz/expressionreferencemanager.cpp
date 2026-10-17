@@ -405,6 +405,8 @@ void ExpressionReferenceManager::onChange(const TXsheetColumnChange& change) {
       }
     }
   } break;
+  case TXsheetColumnChange::Fold:
+    return;
   }
 
   // use empty map since the fxs does not transfer

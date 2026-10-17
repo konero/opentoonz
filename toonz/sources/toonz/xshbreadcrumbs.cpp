@@ -137,7 +137,7 @@ void Breadcrumb::onComboBoxIndexChanged(int index) {
 // BreadcrumbArea
 //-----------------------------------------------------------------------------
 
-BreadcrumbArea::BreadcrumbArea(XsheetViewer *parent, Qt::WindowFlags flags)
+BreadcrumbArea::BreadcrumbArea(XsheetViewer* parent, Qt::WindowFlags flags)
     : m_viewer(parent) {
   setObjectName("cornerWidget");
   setFixedHeight(29);

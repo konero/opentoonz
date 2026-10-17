@@ -28,11 +28,12 @@ namespace XsheetGUI {
 class XSheetToolbar final : public CommandBar {
   Q_OBJECT
 
-  XsheetViewer *m_viewer;
+  XsheetViewer* m_viewer;
 
 public:
-  XSheetToolbar(XsheetViewer *parent = 0, Qt::WindowFlags flags = Qt::WindowFlags(),
-                bool isCollapsible = false);
+  XSheetToolbar(XsheetViewer* parent   = 0,
+                Qt::WindowFlags flags = Qt::WindowFlags(),
+                bool isCollapsible    = false);
   static void toggleXSheetToolbar();
   void showToolbar(bool show);
 

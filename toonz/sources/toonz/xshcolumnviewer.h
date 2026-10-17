@@ -38,31 +38,7 @@ namespace XsheetGUI {
 class DragTool;
 
 //=============================================================================
-// MotionPathMenu
-//-----------------------------------------------------------------------------
-
-class MotionPathMenu final : public QWidget {
-  Q_OBJECT
-
-  QRect m_mDeleteRect;
-  QRect m_mNormalRect;
-  QRect m_mRotateRect;
-  QPoint m_pos;
-
-public:
-  MotionPathMenu(QWidget *parent = 0, Qt::WindowFlags flags = Qt::WindowFlags());
-  ~MotionPathMenu();
-
-protected:
-  void paintEvent(QPaintEvent *) override;
-  void mousePressEvent(QMouseEvent *event) override;
-  void mouseMoveEvent(QMouseEvent *event) override;
-  void mouseReleaseEvent(QMouseEvent *event) override;
-  void leaveEvent(QEvent *event) override;
-};
-
-//=============================================================================
-// ChangeParentObjectWidget
+// ChangeObjectWidget
 //-----------------------------------------------------------------------------
 
 class ChangeObjectWidget : public QListWidget {
@@ -148,7 +124,7 @@ class RenameColumnField final : public QLineEdit {
   TXsheetHandle *m_xsheetHandle;
 
 public:
-  RenameColumnField(QWidget *parent, XsheetViewer *viewer);
+  RenameColumnField(QWidget* parent, XsheetViewer* viewer);
   ~RenameColumnField() {}
 
   void setXsheetHandle(TXsheetHandle *xsheetHandle) {
@@ -219,11 +195,11 @@ class ColumnTransparencyPopup final : public QWidget {
 
   QComboBox *m_filterColorCombo;
 
-  XsheetViewer *m_viewer;
+  XsheetViewer* m_viewer;
   QPushButton *m_lockBtn;
 
 public:
-  ColumnTransparencyPopup(XsheetViewer *viewer, QWidget *parent);
+  ColumnTransparencyPopup(XsheetViewer* viewer, QWidget* parent);
   void setColumn(TXshColumn *column);
 
 protected:
@@ -288,27 +264,20 @@ class ColumnArea final : public QWidget {
   ColumnTransparencyPopup *m_columnTransparencyPopup;
   SoundColumnPopup *m_soundColumnPopup;
   QTimer *m_transparencyPopupTimer;
-  int m_doOnRelease;
-  int m_doOnMove;
-  XsheetViewer *m_viewer;
+  int m_doOnRelease = 0;
+  int m_doOnMove    = 0;
+  XsheetViewer* m_viewer;
   int m_col;
-  QRect m_indexBox;
-  QRect m_tabBox;
-  QRect m_nameBox;
-  QRect m_linkBox;
 
   bool m_isPanning;
+  bool m_isControlPressed = false;
 
   QPoint m_pos;
   QString m_tooltip;
 
   RenameColumnField *m_renameColumnField;
-#ifndef LINETEST
   ChangeObjectParent *m_changeObjectParent;
   ChangeObjectHandle *m_changeObjectHandle;
-#else
-  MotionPathMenu *m_motionPathMenu;
-#endif
 
   QAction *m_subsampling1;
   QAction *m_subsampling2;
@@ -319,69 +288,20 @@ class ColumnArea final : public QWidget {
   void setDragTool(DragTool *dragTool);
   void startTransparencyPopupTimer(QMouseEvent *e);
 
-  // extracted all variables of drawSomething methods
-  class DrawHeader {
-    ColumnArea *area;
-    QPainter &p;
-    int col;
-    XsheetViewer *m_viewer;
-    const Orientation *o;
-    TApp *app;
-    TXsheet *xsh;
-    bool isEmpty, isCurrent;
-    TXshColumn *column;
-    QPoint orig;
-    TXshLevel *reservedLevel;
-
-  public:
-    DrawHeader(ColumnArea *area, QPainter &p, int col);
-
-    void prepare() const;
-
-    void levelColors(QColor &columnColor, QColor &dragColor) const;
-    void soundColors(QColor &columnColor, QColor &dragColor) const;
-    void paletteColors(QColor &columnColor, QColor &dragColor) const;
-
-    void drawBaseFill(const QColor &columnColor, const QColor &dragColor) const;
-    void drawEye() const;
-    void drawPreviewToggle(int opacity) const;
-    void drawUnifiedViewToggle(int opacity) const;
-    void drawLock() const;
-    void drawConfig() const;
-    void drawColumnNumber() const;
-    void drawColumnName() const;
-    void drawThumbnail(QPixmap &iconPixmap) const;
-    void drawPegbarName() const;
-    void drawParentHandleName() const;
-    void drawFilterColor() const;
-
-    void drawSoundIcon(bool isPlaying) const;
-    void drawVolumeControl(double volume) const;
-  };
 
 public:
-  ColumnArea(XsheetViewer *parent, Qt::WindowFlags flags = Qt::WindowFlags());
+  ColumnArea(XsheetViewer* parent, Qt::WindowFlags flags = Qt::WindowFlags());
   ~ColumnArea();
 
   void onControlPressed(bool pressed);
-  const bool isControlPressed();
+  void resetInteraction();
+  void prepareThumbnails();
 
   void drawFoldedColumnHead(QPainter &p, int col);
-  void drawLevelColumnHead(QPainter &p, int col);
-  void drawSoundColumnHead(QPainter &p, int col);
-  void drawPaletteColumnHead(QPainter &p, int col);
-  void drawSoundTextColumnHead(QPainter &p, int col);
 
   QPixmap getColumnIcon(int columnIndex);
 
-  class Pixmaps {
-  public:
-    static const QPixmap &sound();
-    static const QPixmap &soundPlaying();
-  };
-
 protected:
-  void select(int columnIndex, QMouseEvent *event);
 
   void paintEvent(QPaintEvent *) override;
 

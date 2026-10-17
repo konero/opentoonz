@@ -66,7 +66,6 @@ set(HEADERS
     sandor_fxs/toonz4_6staff.h
     ../include/convert2tlv.h
     ../include/thirdparty.h
-    ../include/orientation.h
     ../include/toonz/Naa2TlvConverter.h
     ../include/toonz/autoclose.h
     ../include/toonz/boardsettings.h
@@ -74,7 +73,7 @@ set(HEADERS
     ../include/toonz/childstack.h
     ../include/toonz/cleanupcolorstyles.h
     ../include/toonz/cleanupparameters.h
-    ../include/toonz/columnfan.h
+    ../include/toonz/columnfoldstate.h
     ../include/toonz/controlpointobserver.h
     ../include/toonz/customvectorbrushexporter.h
     ../include/toonz/currentimage.h
@@ -177,7 +176,7 @@ set(SOURCES
     cleanupcolorstyles.cpp
     cleanuppalette.cpp
     cleanupparameters.cpp
-    columnfan.cpp
+    columnfoldstate.cpp
     convert2tlv.cpp
     customvectorbrushexporter.cpp
     dpiscale.cpp
@@ -207,7 +206,6 @@ set(SOURCES
     Naa2TlvConverter.cpp
     observer.cpp
     onionskinmask.cpp
-	orientation.cpp
     outputproperties.cpp
     preferences.cpp
     rasterbrush.cpp

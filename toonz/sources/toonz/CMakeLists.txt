@@ -164,7 +164,35 @@ else()
     )
 endif()
 
+option(WITH_XSHEET_TESTS "Build focused sheet editor regression checks" OFF)
+if(WITH_XSHEET_TESTS)
+    find_package(Threads REQUIRED)
+    add_executable(xsheet_tests
+        tests/xsheet_tests.cpp
+        xsheetengine.cpp
+        sheetviewstate.cpp
+        columnheaderresources.cpp
+    )
+    target_link_libraries(xsheet_tests PRIVATE
+        toonzqt toonzlib tnzcore sound Qt5::Widgets Qt5::Svg Threads::Threads
+    )
+    enable_testing()
+    add_test(NAME xsheet_tests COMMAND xsheet_tests)
+    if(TARGET Qt5::QOffscreenIntegrationPlugin)
+        set_tests_properties(xsheet_tests PROPERTIES ENVIRONMENT
+            "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:Qt5::QOffscreenIntegrationPlugin>"
+        )
+    endif()
+endif()
+
 set(HEADERS
+    xsheetengine.h
+    xsheetview.h
+    timelineview.h
+    sheetviewstate.h
+    columnheaderpainter.h
+    xsheetviewgeometry.h
+    timelineviewgeometry.h
     ${MOC_HEADERS}
     celldata.h
     cellkeyframedata.h
@@ -259,6 +287,12 @@ set(SOURCES
     xshcellviewer.cpp
     xshcolumnviewer.cpp
     xsheetdragtool.cpp
+    xsheetengine.cpp
+    xsheetview.cpp
+    timelineview.cpp
+    sheetviewstate.cpp
+    columnheaderpainter.cpp
+    columnheaderresources.cpp
     xsheetviewer.cpp
     xshnoteviewer.cpp
     xshrowviewer.cpp

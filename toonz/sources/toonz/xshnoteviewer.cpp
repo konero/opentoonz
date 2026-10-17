@@ -1,6 +1,7 @@
 
 
 #include "xshnoteviewer.h"
+#include <QSignalBlocker>
 
 // Tnz6 includes
 #include "xsheetviewer.h"
@@ -46,7 +47,7 @@ namespace XsheetGUI {
 // NotePopup
 //-----------------------------------------------------------------------------
 
-NotePopup::NotePopup(XsheetViewer *viewer, int noteIndex)
+NotePopup::NotePopup(XsheetViewer* viewer, int noteIndex)
     : DVGui::Dialog(TApp::instance()->getMainWindow(), false, false,
                     "NotePopup")
     , m_viewer(viewer)
@@ -165,19 +166,15 @@ NotePopup::NotePopup(XsheetViewer *viewer, int noteIndex)
 }
 
 //-----------------------------------------------------------------------------
-
 void NotePopup::setCurrentNoteIndex(int index) { m_noteIndex = index; }
 
 //-----------------------------------------------------------------------------
-
 void NotePopup::update() {
   TPixel32 color = getColors().at(m_currentColorIndex);
   m_textEditor->setStyleSheet(computeBackgroundStyleSheetString(
       QColor(color.r, color.g, color.b, color.m)));
   DVGui::Dialog::update();
 }
-
-//-----------------------------------------------------------------------------
 
 DVGui::ColorField *NotePopup::createColorField(int index) {
   TPixel32 color                = getColors().at(index);
@@ -190,7 +187,6 @@ DVGui::ColorField *NotePopup::createColorField(int index) {
 }
 
 //-----------------------------------------------------------------------------
-
 void NotePopup::updateColorField() {
   int i;
   for (i = 0; i < m_colorFields.size(); i++) {
@@ -205,7 +201,6 @@ void NotePopup::updateColorField() {
 }
 
 //-----------------------------------------------------------------------------
-
 void NotePopup::showEvent(QShowEvent *) {
   if (m_noteIndex == -1) m_textEditor->clear();
   m_isOneButtonPressed = false;
@@ -218,7 +213,6 @@ void NotePopup::showEvent(QShowEvent *) {
 }
 
 //-----------------------------------------------------------------------------
-
 void NotePopup::hideEvent(QHideEvent *) {
   TXsheetHandle *xsheetHandle = TApp::instance()->getCurrentXsheet();
   disconnect(xsheetHandle, SIGNAL(xsheetSwitched()), this,
@@ -226,7 +220,6 @@ void NotePopup::hideEvent(QHideEvent *) {
 }
 
 //-----------------------------------------------------------------------------
-
 void NotePopup::onColorChanged(const TPixel32 &color, bool isDragging) {
   if (!isDragging)
     m_textEditor->setStyleSheet(computeBackgroundStyleSheetString(
@@ -237,18 +230,14 @@ void NotePopup::onColorChanged(const TPixel32 &color, bool isDragging) {
   m_viewer->updateNoteWidgets();
 }
 
-//-----------------------------------------------------------------------------
-
 TXshNoteSet *NotePopup::getNotes() { return m_viewer->getXsheet()->getNotes(); }
 
 //-----------------------------------------------------------------------------
-
 QList<TPixel32> NotePopup::getColors() {
   return m_viewer->getXsheet()->getScene()->getProperties()->getNoteColors();
 }
 
 //-----------------------------------------------------------------------------
-
 void NotePopup::onColorFieldEditingChanged(const TPixel32 &color,
                                            bool isEditing, int index) {
   if (!isEditing) return;
@@ -262,49 +251,41 @@ void NotePopup::onColorFieldEditingChanged(const TPixel32 &color,
 }
 
 //-----------------------------------------------------------------------------
-
 void NotePopup::onColor1Switched(const TPixel32 &color, bool isEditing) {
   onColorFieldEditingChanged(color, isEditing, 0);
 }
 
 //-----------------------------------------------------------------------------
-
 void NotePopup::onColor2Switched(const TPixel32 &color, bool isEditing) {
   onColorFieldEditingChanged(color, isEditing, 1);
 }
 
 //-----------------------------------------------------------------------------
-
 void NotePopup::onColor3Switched(const TPixel32 &color, bool isEditing) {
   onColorFieldEditingChanged(color, isEditing, 2);
 }
 
 //-----------------------------------------------------------------------------
-
 void NotePopup::onColor4Switched(const TPixel32 &color, bool isEditing) {
   onColorFieldEditingChanged(color, isEditing, 3);
 }
 
 //-----------------------------------------------------------------------------
-
 void NotePopup::onColor5Switched(const TPixel32 &color, bool isEditing) {
   onColorFieldEditingChanged(color, isEditing, 4);
 }
 
 //-----------------------------------------------------------------------------
-
 void NotePopup::onColor6Switched(const TPixel32 &color, bool isEditing) {
   onColorFieldEditingChanged(color, isEditing, 5);
 }
 
 //-----------------------------------------------------------------------------
-
 void NotePopup::onColor7Switched(const TPixel32 &color, bool isEditing) {
   onColorFieldEditingChanged(color, isEditing, 6);
 }
 
 //-----------------------------------------------------------------------------
-
 void NotePopup::onNoteAdded() {
   if (m_isOneButtonPressed) return;
   m_isOneButtonPressed = true;
@@ -326,7 +307,6 @@ void NotePopup::onNoteAdded() {
 }
 
 //-----------------------------------------------------------------------------
-
 void NotePopup::onNoteDiscarded() {
   if (m_isOneButtonPressed) return;
   m_isOneButtonPressed = true;
@@ -341,13 +321,11 @@ void NotePopup::onNoteDiscarded() {
 }
 
 //-----------------------------------------------------------------------------
-
 void NotePopup::onTextEditFocusIn() {
   m_viewer->setCurrentNoteIndex(m_noteIndex);
 }
 
 //-----------------------------------------------------------------------------
-
 void NotePopup::onXsheetSwitched() {
   TXshNoteSet *notes = getNotes();
   if (notes->getCount() == 0 || m_noteIndex == -1) return;
@@ -362,7 +340,7 @@ void NotePopup::onXsheetSwitched() {
 // NoteWidget
 //-----------------------------------------------------------------------------
 
-NoteWidget::NoteWidget(XsheetViewer *parent, int noteIndex)
+NoteWidget::NoteWidget(XsheetViewer* parent, int noteIndex)
     : QWidget(parent)
     , m_viewer(parent)
     , m_noteIndex(noteIndex)
@@ -372,7 +350,6 @@ NoteWidget::NoteWidget(XsheetViewer *parent, int noteIndex)
 }
 
 //-----------------------------------------------------------------------------
-
 void NoteWidget::paint(QPainter *painter, QPoint pos, bool isCurrent) {
   painter->translate(pos);
   QRect rect = m_viewer->orientation()->rect(PredefinedRect::NOTE_ICON);
@@ -424,7 +401,6 @@ void NoteWidget::paint(QPainter *painter, QPoint pos, bool isCurrent) {
 }
 
 //-----------------------------------------------------------------------------
-
 void NoteWidget::openNotePopup() {
   if (!m_noteEditor) {
     m_noteEditor.reset(new XsheetGUI::NotePopup(m_viewer, m_noteIndex));
@@ -438,7 +414,6 @@ void NoteWidget::openNotePopup() {
 }
 
 //-----------------------------------------------------------------------------
-
 void NoteWidget::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   paint(&p);
@@ -448,22 +423,19 @@ void NoteWidget::paintEvent(QPaintEvent *event) {
 // NoteArea
 //-----------------------------------------------------------------------------
 
-NoteArea::NoteArea(XsheetViewer *parent, Qt::WindowFlags flags)
+NoteArea::NoteArea(XsheetViewer* parent, Qt::WindowFlags flags)
     : QFrame(parent)
     , m_viewer(parent)
-    , m_flipOrientationButton(nullptr)
     , m_noteButton(nullptr)
     , m_precNoteButton(nullptr)
     , m_nextNoteButton(nullptr)
     , m_frameDisplayStyleCombo(nullptr)
     , m_layerHeaderPanel(nullptr)
     , m_hamburgerButton(nullptr)
-    , m_popup(nullptr)
-    , m_currentLayout(nullptr) {
+    , m_popup(nullptr) {
   setFrameStyle(QFrame::StyledPanel);
   setObjectName("cornerWidget");
 
-  m_flipOrientationButton  = new QPushButton(this);
   m_noteButton             = new QToolButton(this);
   m_precNoteButton         = new QToolButton(this);
   m_nextNoteButton         = new QToolButton(this);
@@ -471,13 +443,6 @@ NoteArea::NoteArea(XsheetViewer *parent, Qt::WindowFlags flags)
   m_layerHeaderPanel       = new LayerHeaderPanel(m_viewer, this);
 
   //-----
-
-  m_flipOrientationButton->setObjectName("flipOrientationButton");
-  m_flipOrientationButton->setFocusPolicy(Qt::FocusPolicy::NoFocus);
-  m_flipOrientationButton->setFixedSize(QSize(70, 23));
-  m_flipOrientationButton->setIconSize(QSize(20, 20));
-  m_flipOrientationButton->setIcon(createQIcon("toggle_xsheet_orientation"));
-  m_flipOrientationButton->setToolTip(tr("Toggle Xsheet/Timeline"));
 
   m_noteButton->setObjectName("ToolbarToolButton");
   m_noteButton->setFixedSize(34, 25);
@@ -508,9 +473,6 @@ NoteArea::NoteArea(XsheetViewer *parent, Qt::WindowFlags flags)
 
   // signal-slot connections
   bool ret = true;
-  ret      = ret && connect(m_flipOrientationButton, SIGNAL(clicked()),
-                            SLOT(flipOrientation()));
-
   ret = ret && connect(m_noteButton, SIGNAL(clicked()), SLOT(toggleNewNote()));
   ret = ret &&
         connect(m_precNoteButton, SIGNAL(clicked()), this, SLOT(precNote()));
@@ -521,39 +483,9 @@ NoteArea::NoteArea(XsheetViewer *parent, Qt::WindowFlags flags)
       ret && connect(m_frameDisplayStyleCombo, SIGNAL(currentIndexChanged(int)),
                      this, SLOT(onFrameDisplayStyleChanged(int)));
 
-  ret = ret && connect(m_viewer, &XsheetViewer::orientationChanged, this,
-                       &NoteArea::onXsheetOrientationChanged);
-
   updateButtons();
 
   assert(ret);
-}
-
-//-----------------------------------------------------------------------------
-
-void NoteArea::removeLayout() {
-  if (!m_currentLayout) return;
-
-  m_currentLayout->removeWidget(m_flipOrientationButton);
-  m_currentLayout->removeWidget(m_noteButton);
-  m_currentLayout->removeWidget(m_precNoteButton);
-  m_currentLayout->removeWidget(m_nextNoteButton);
-  m_currentLayout->removeWidget(m_frameDisplayStyleCombo);
-  m_currentLayout->removeWidget(m_layerHeaderPanel);
-  delete m_currentLayout;
-  m_currentLayout = nullptr;
-
-  const Orientation *o = m_viewer->orientation();
-  bool noteInPopup     = o->flag(PredefinedFlag::NOTE_AREA_IN_POPUP);
-  if (!noteInPopup && m_popup) {
-    QLayout *panelLayout = layout();
-    if (panelLayout) {
-      panelLayout->removeWidget(m_hamburgerButton);
-      delete panelLayout;
-    }
-    m_hamburgerButton->hide();
-    m_popup->hide();
-  }
 }
 
 void NoteArea::createLayout() {
@@ -595,8 +527,6 @@ void NoteArea::createLayout() {
     mainLayout->setContentsMargins(1, 1, 1, 1);
     mainLayout->setSpacing(0);
     {
-      mainLayout->addWidget(m_flipOrientationButton, 0, centerAlign);
-
       mainLayout->addStretch(1);
 
       QHBoxLayout *buttonsLayout = new QHBoxLayout();
@@ -618,13 +548,21 @@ void NoteArea::createLayout() {
     panelLayout->addWidget(m_layerHeaderPanel);
   }
   targetWidget->setLayout(panelLayout);
-  m_currentLayout = panelLayout;
 
   m_layerHeaderPanel->showOrHide(o);
 }
 
-//-----------------------------------------------------------------------------
+void NoteArea::resetInteraction() {
+  m_newNotePopup.reset();
+  if (m_popup) m_popup->hide();
+}
 
+void NoteArea::setFrameDisplayStyle(int style) {
+  const QSignalBlocker blocker(m_frameDisplayStyleCombo);
+  m_frameDisplayStyleCombo->setCurrentIndex(style);
+}
+
+//-----------------------------------------------------------------------------
 void NoteArea::updateButtons() {
   TXshNoteSet *notes = m_viewer->getXsheet()->getNotes();
 
@@ -642,21 +580,6 @@ void NoteArea::updateButtons() {
 }
 
 //-----------------------------------------------------------------------------
-
-void NoteArea::flipOrientation() { m_viewer->flipOrientation(); }
-
-void NoteArea::onXsheetOrientationChanged(const Orientation *newOrientation) {
-  //  m_flipOrientationButton->setText(newOrientation->caption());
-
-  m_flipOrientationButton->setIcon(createQIcon("toggle_xsheet_orientation"));
-  m_flipOrientationButton->setIconSize(QSize(20, 20));
-
-  removeLayout();
-  createLayout();
-}
-
-//-----------------------------------------------------------------------------
-
 void NoteArea::toggleNewNote() {
   if (!m_newNotePopup)
     m_newNotePopup.reset(new XsheetGUI::NotePopup(m_viewer, -1));
@@ -669,7 +592,6 @@ void NoteArea::toggleNewNote() {
 }
 
 //-----------------------------------------------------------------------------
-
 void NoteArea::nextNote() {
   int currentNoteIndex = m_viewer->getCurrentNoteIndex();
   TXshNoteSet *notes   = m_viewer->getXsheet()->getNotes();
@@ -683,21 +605,18 @@ void NoteArea::nextNote() {
 }
 
 //-----------------------------------------------------------------------------
-
 void NoteArea::precNote() {
   int currentNoteIndex = m_viewer->getCurrentNoteIndex();
   m_viewer->setCurrentNoteIndex(--currentNoteIndex);
 }
 
 //-----------------------------------------------------------------------------
-
 void NoteArea::onFrameDisplayStyleChanged(int id) {
   m_viewer->setFrameDisplayStyle((XsheetViewer::FrameDisplayStyle)id);
   m_viewer->updateRows();
 }
 
 //-----------------------------------------------------------------------------
-
 void NoteArea::onClickHamburger() {
   m_popup->move(
       m_hamburgerButton->mapToGlobal(m_hamburgerButton->rect().center()));

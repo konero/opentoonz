@@ -23,7 +23,7 @@ namespace XsheetGUI {
 // Toolbar
 //-----------------------------------------------------------------------------
 
-XSheetToolbar::XSheetToolbar(XsheetViewer *parent, Qt::WindowFlags flags,
+XSheetToolbar::XSheetToolbar(XsheetViewer* parent, Qt::WindowFlags flags,
                              bool isCollapsible)
     : CommandBar(parent, flags, isCollapsible, true), m_viewer(parent) {
   setObjectName("cornerWidget");

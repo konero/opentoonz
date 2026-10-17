@@ -1,6 +1,7 @@
 
 
 #include "tapp.h"
+#include "xsheetviewer.h"
 
 // Tnz6 includes
 #include "cleanupsettingspopup.h"
@@ -197,6 +198,10 @@ TApp *TApp::instance() {
 //-----------------------------------------------------------------------------
 
 TApp::~TApp() {}
+
+void TApp::setCurrentSheetViewer(XsheetViewer* viewer) {
+  m_sheetViewer = viewer;
+}
 
 //-----------------------------------------------------------------------------
 

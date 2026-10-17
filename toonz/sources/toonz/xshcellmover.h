@@ -116,7 +116,7 @@ protected:
   bool canMoveColumns(const TPoint &pos);
 
 public:
-  LevelMoverTool(XsheetViewer *viewer);
+  LevelMoverTool(XsheetViewer* viewer);
   ~LevelMoverTool();
 
   void onClick(const QMouseEvent *e) override;

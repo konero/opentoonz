@@ -75,6 +75,8 @@ set(MOC_HEADERS
 )
 
 set(HEADERS
+    ../include/orientation.h
+    ../include/toonz/columnfan.h
     ${MOC_HEADERS}
     ../include/tools/cursormanager.h
     docklayout.h
@@ -107,6 +109,10 @@ set(HEADERS
 )
 
 set(SOURCES
+    orientation.cpp
+    xsheetlayout.cpp
+    timelinelayout.cpp
+    columnfan.cpp
     ../tnztools/cursormanager.cpp
     checkbox.cpp
     colorfield.cpp

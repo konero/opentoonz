@@ -18,7 +18,7 @@
 #include "toonz/txshsimplelevel.h"
 #include "toonz/txshcell.h"
 #include "toonz/levelproperties.h"
-#include "orientation.h"
+#include "xsheetviewer.h"
 #include "toonz/preferences.h"
 #include "toonz/txshchildlevel.h"
 #include "toonz/tcolumnhandle.h"
@@ -307,19 +307,13 @@ void TColumnSelection::cloneChild() {
 //-----------------------------------------------------------------------------
 
 void TColumnSelection::hideColumns() {
-  TApp* app = TApp::instance();
-  for (auto o : Orientations::all()) {
-    ColumnFan* columnFan =
-        app->getCurrentXsheet()->getXsheet()->getColumnFan(o);
-    std::set<int>::iterator it = m_indices.begin();
-    for (; it != m_indices.end(); ++it) columnFan->deactivate(*it);
-  }
+  XsheetViewer* viewer = TApp::instance()->getCurrentSheetViewer();
+  if (!viewer || !viewer->columnFan()) return;
+  ColumnFoldState folded = viewer->columnFan()->foldedState();
+  for (int column : m_indices) folded.setFolded(column, true);
+  if (viewer->getXsheet()->setColumnFoldState(folded))
+    TApp::instance()->getCurrentScene()->setDirtyFlag(true);
   m_indices.clear();
-  app->getCurrentXsheet()->notifyXsheetChanged();
-  // DA FARE (non c'e una notica per il solo cambiamento della testa delle
-  // colonne)
-  //  TApp::instance()->->notify(TColumnHeadChange());
-  app->getCurrentScene()->setDirtyFlag(true);
 }
 
 // obtain level set contained in the column specified by indices

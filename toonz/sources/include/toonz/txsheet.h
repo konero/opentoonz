@@ -42,12 +42,11 @@ class TVectorImageP;
 class FxDag;
 class TControlPointObserver;
 class TOfflineGL;
-class ColumnFan;
+class ColumnFoldState;
 class ToonzScene;
 class TXshSoundColumn;
 class TXshNoteSet;
 class TFrameId;
-class Orientation;
 class TXsheetColumnChangeObserver;
 class ExpressionReferenceMonitor;
 class NavigationTags;
@@ -91,8 +90,7 @@ insertColumn()
 moveColumn().
 
         You can manage also column visualization in xsheet, using the xsheet
-object \b ColumnFan
-        getColumnFan(), and find column icon getColumnIcon().
+logical column folding via getColumnFoldState().
 
                 cell positions will be identified by a pair of row+column index,
 which is a separate class.
@@ -160,6 +158,7 @@ private:
   TXshColumnP m_cameraColumn;  //!< Smart pointer – ref‑counted
 
   TXsheetColumnChangeObserver *m_observer;
+  std::set<TXsheetColumnChangeListener*> m_columnListeners;
 
   DECLARE_CLASS_CODE
 
@@ -521,11 +520,12 @@ in TXsheetImp.
      schematic.
   */
   FxDag *getFxDag() const;
-  /*! Returns a pointer to object \b ColumnFan contained in \b TXsheetImp, this
-          object allows the user to manage columns visualization in xsheet.
-          TXsheet maintains one column fan per each orientation.
-  */
-  ColumnFan *getColumnFan(const Orientation *o) const;
+  // Logical folding is shared by all panel projections and saved with the
+  // xsheet. Each UI panel owns only its pixel geometry.
+  const ColumnFoldState& getColumnFoldState() const;
+  bool setColumnFoldState(const ColumnFoldState& state);
+  void addColumnChangeListener(TXsheetColumnChangeListener* listener);
+  void removeColumnChangeListener(TXsheetColumnChangeListener* listener);
   /*! Returns a pointer to \b ToonzScene contained in \b TXsheetImp, that is the
      scene to
           which the xsheet refers.

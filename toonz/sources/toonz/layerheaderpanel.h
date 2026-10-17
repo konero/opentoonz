@@ -27,10 +27,10 @@ public:
   QToolButton *m_lockButton;
 
 private:
-  XsheetViewer *m_viewer;
+  XsheetViewer* m_viewer;
 
 public:
-  LayerHeaderPanel(XsheetViewer *viewer, QWidget *parent = nullptr,
+  LayerHeaderPanel(XsheetViewer* viewer, QWidget* parent = nullptr,
                    Qt::WindowFlags flags = Qt::WindowFlags());
   ~LayerHeaderPanel();
 

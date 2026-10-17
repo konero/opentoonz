@@ -7,7 +7,6 @@
 #include "cellkeyframedata.h"
 #include "tapp.h"
 #include "menubarcommandids.h"
-#include "xsheetviewer.h"
 
 // TnzQt includes
 #include "toonzqt/menubarcommand.h"
@@ -395,18 +394,12 @@ void TKeyframeSelection::shiftKeyframes(int direction) {
 
   std::set<Position> positions = m_positions;
 
-  int r0 = positions.begin()->first;
-  int c0 = positions.begin()->second;
 
   TXsheet *xsh = TApp::instance()->getCurrentXsheet()->getXsheet();
-  TKeyframeData *data = new TKeyframeData();
-  data->setKeyframes(positions, xsh);
 
   TUndoManager::manager()->beginBlock();
 
-  XsheetViewer *viewer = TApp::instance()->getCurrentXsheetViewer();
-  TKeyframeSelection *selection = viewer->getKeyframeSelection();
-  selection->selectNone();
+  selectNone();
 
   std::set<Position>::iterator it = positions.begin(), itEnd = positions.end();
   for(; it != itEnd; ++it) {
@@ -418,7 +411,7 @@ void TKeyframeSelection::shiftKeyframes(int direction) {
 	if (!column || column->isLocked()) continue;
 
     shiftKeyframes(r, r + direction, c, c, false);
-	selection->select(r + direction, c);
+    select(r + direction, c);
   }
 
   TUndoManager::manager()->endBlock();

@@ -40,12 +40,13 @@ class RenameCellField final : public QLineEdit {
 
   int m_row;
   int m_col;
-  XsheetViewer *m_viewer;
+  XsheetViewer* m_viewer;
   bool m_isCtrlPrssed = false;
   QString m_initialText;
 
 public:
-  RenameCellField(QWidget *parent, XsheetViewer *viewer);
+  RenameCellField(QWidget* parent, XsheetViewer* viewer);
+  void cancel();
   ~RenameCellField() {}
 
   void showInRowCol(int row, int col, bool multiColumnSelected = false);
@@ -76,7 +77,7 @@ protected slots:
 class CellArea final : public QWidget {
   Q_OBJECT
 
-  XsheetViewer *m_viewer;
+  XsheetViewer* m_viewer;
   // smart tab
   QRect m_levelExtenderRect;
   // upper-directional smart tab
@@ -84,6 +85,7 @@ class CellArea final : public QWidget {
   QList<QRect> m_soundLevelModifyRects;
 
   bool m_isPanning;
+  bool m_isControlPressed = false;
   bool m_isMousePressed;
 
   QPoint m_pos;
@@ -111,7 +113,6 @@ class CellArea final : public QWidget {
   // == ShowLevelNameOnColumnHeader
   void drawLevelCell(QPainter &p, int row, int col, bool isReference = false,
                      bool showLevelName = true);
-  void drawSoundTextCell(QPainter &p, int row, int col);
   void drawSoundTextColumn(QPainter &p, int r0, int r1, int col);
   void drawSoundCell(QPainter &p, int row, int col, bool isReference = false);
   void drawPaletteCell(QPainter &p, int row, int col, bool isReference = false);
@@ -138,7 +139,7 @@ class CellArea final : public QWidget {
   void setDragTool(DragTool *dragTool);
 
 public:
-  CellArea(XsheetViewer *parent, Qt::WindowFlags flags = Qt::WindowFlags());
+  CellArea(XsheetViewer* parent, Qt::WindowFlags flags = Qt::WindowFlags());
   ~CellArea();
 
   // Event handlers
@@ -146,7 +147,8 @@ public:
 
   // Display upper-directional smart tab only when pressing ctrl key
   void onControlPressed(bool pressed);
-  const bool isControlPressed();
+  void resetInteraction();
+  bool isControlPressed() const;
 
   // Edit current cell's ID
   void onNumberPressed(int number);
